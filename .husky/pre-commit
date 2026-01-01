@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Type-check do pacote shared
+echo "🔍 Type-checking shared package..."
+pnpm types:check || {
+  echo "❌ Type errors found in packages/shared"
+  echo "💡 Run 'pnpm types:generate' if database schema changed"
+  exit 1
+}
+
+# Lint-staged (se configurado)
+pnpm lint-staged 2>/dev/null || true
+

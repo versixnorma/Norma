@@ -1,0 +1,16 @@
+{
+  "eslint": {
+    "maxWarnings": 50,
+    "maxErrors": 0
+  },
+  "build": {
+    "preview": {
+      "maxWarnings": 100,
+      "maxErrors": 0
+    },
+    "production": {
+      "maxWarnings": 80,
+      "maxErrors": 0
+    }
+  }
+}

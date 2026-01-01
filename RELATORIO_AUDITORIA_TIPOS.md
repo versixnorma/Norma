@@ -1,0 +1,1381 @@
+# Relatório de Auditoria: Tipos TypeScript vs Schema do Banco
+
+**Data:** Thu Jan 1 20:15:25 UTC 2026
+
+## Resumo
+
+- Tabelas analisadas: 51
+- Interfaces TypeScript: 90
+- **Inconsistências encontradas: 679**
+
+## Inconsistências Detalhadas
+
+### MISSING_IN_DB (426 ocorrências)
+
+- **UsuarioCanaisPreferencias.usuario_id**
+  - Campo existe em TypeScript mas não na tabela usuarios
+- **UsuarioCanaisPreferencias.push_habilitado**
+  - Campo existe em TypeScript mas não na tabela usuarios
+- **UsuarioCanaisPreferencias.email_habilitado**
+  - Campo existe em TypeScript mas não na tabela usuarios
+- **UsuarioCanaisPreferencias.in_app_habilitado**
+  - Campo existe em TypeScript mas não na tabela usuarios
+- **UsuarioCanaisPreferencias.whatsapp_habilitado**
+  - Campo existe em TypeScript mas não na tabela usuarios
+- **UsuarioCanaisPreferencias.sms_habilitado**
+  - Campo existe em TypeScript mas não na tabela usuarios
+- **UsuarioCanaisPreferencias.voz_habilitado**
+  - Campo existe em TypeScript mas não na tabela usuarios
+- **UsuarioCanaisPreferencias.receber_comunicados**
+  - Campo existe em TypeScript mas não na tabela usuarios
+- **UsuarioCanaisPreferencias.receber_avisos**
+  - Campo existe em TypeScript mas não na tabela usuarios
+- **UsuarioCanaisPreferencias.receber_alertas**
+  - Campo existe em TypeScript mas não na tabela usuarios
+- **UsuarioCanaisPreferencias.receber_emergencias**
+  - Campo existe em TypeScript mas não na tabela usuarios
+- **UsuarioCanaisPreferencias.receber_lembretes**
+  - Campo existe em TypeScript mas não na tabela usuarios
+- **UsuarioCanaisPreferencias.receber_cobrancas**
+  - Campo existe em TypeScript mas não na tabela usuarios
+- **UsuarioCanaisPreferencias.receber_assembleias**
+  - Campo existe em TypeScript mas não na tabela usuarios
+- **UsuarioCanaisPreferencias.receber_ocorrencias**
+  - Campo existe em TypeScript mas não na tabela usuarios
+- **UsuarioCanaisPreferencias.receber_chamados**
+  - Campo existe em TypeScript mas não na tabela usuarios
+- **UsuarioCanaisPreferencias.horario_inicio_preferido**
+  - Campo existe em TypeScript mas não na tabela usuarios
+- **UsuarioCanaisPreferencias.horario_fim_preferido**
+  - Campo existe em TypeScript mas não na tabela usuarios
+- **UsuarioCanaisPreferencias.push_tokens**
+  - Campo existe em TypeScript mas não na tabela usuarios
+- **UsuarioCanaisPreferencias.token**
+  - Campo existe em TypeScript mas não na tabela usuarios
+- **UsuarioCanaisPreferencias.device_type**
+  - Campo existe em TypeScript mas não na tabela usuarios
+- **UsuarioCanaisPreferencias.device_name**
+  - Campo existe em TypeScript mas não na tabela usuarios
+- **UsuarioCanaisPreferencias.last_used**
+  - Campo existe em TypeScript mas não na tabela usuarios
+- **Comunicado.resumo**
+  - Campo existe em TypeScript mas não na tabela comunicados
+- **Comunicado.status**
+  - Campo existe em TypeScript mas não na tabela comunicados
+- **Comunicado.destaque**
+  - Campo existe em TypeScript mas não na tabela comunicados
+- **Comunicado.publicar_em**
+  - Campo existe em TypeScript mas não na tabela comunicados
+- **Comunicado.expirar_em**
+  - Campo existe em TypeScript mas não na tabela comunicados
+- **Comunicado.published_at**
+  - Campo existe em TypeScript mas não na tabela comunicados
+- **Comunicado.deleted_at**
+  - Campo existe em TypeScript mas não na tabela comunicados
+- **Comunicado.autor**
+  - Campo existe em TypeScript mas não na tabela comunicados
+- **Ocorrencia.reportado_por_usuario**
+  - Campo existe em TypeScript mas não na tabela ocorrencias
+- **Ocorrencia.condominio_id**
+  - Campo existe em TypeScript mas não na tabela ocorrencias_historico
+- **Ocorrencia.reportado_por**
+  - Campo existe em TypeScript mas não na tabela ocorrencias_historico
+- **Ocorrencia.anonimo**
+  - Campo existe em TypeScript mas não na tabela ocorrencias_historico
+- **Ocorrencia.unidade_relacionada_id**
+  - Campo existe em TypeScript mas não na tabela ocorrencias_historico
+- **Ocorrencia.local_descricao**
+  - Campo existe em TypeScript mas não na tabela ocorrencias_historico
+- **Ocorrencia.titulo**
+  - Campo existe em TypeScript mas não na tabela ocorrencias_historico
+- **Ocorrencia.descricao**
+  - Campo existe em TypeScript mas não na tabela ocorrencias_historico
+- **Ocorrencia.categoria**
+  - Campo existe em TypeScript mas não na tabela ocorrencias_historico
+- **Ocorrencia.prioridade**
+  - Campo existe em TypeScript mas não na tabela ocorrencias_historico
+- **Ocorrencia.status**
+  - Campo existe em TypeScript mas não na tabela ocorrencias_historico
+- **Ocorrencia.responsavel_id**
+  - Campo existe em TypeScript mas não na tabela ocorrencias_historico
+- **Ocorrencia.resolucao**
+  - Campo existe em TypeScript mas não na tabela ocorrencias_historico
+- **Ocorrencia.resolvido_em**
+  - Campo existe em TypeScript mas não na tabela ocorrencias_historico
+- **Ocorrencia.resolvido_por**
+  - Campo existe em TypeScript mas não na tabela ocorrencias_historico
+- **Ocorrencia.anexos**
+  - Campo existe em TypeScript mas não na tabela ocorrencias_historico
+- **Ocorrencia.updated_at**
+  - Campo existe em TypeScript mas não na tabela ocorrencias_historico
+- **Ocorrencia.deleted_at**
+  - Campo existe em TypeScript mas não na tabela ocorrencias_historico
+- **Ocorrencia.reportado_por_usuario**
+  - Campo existe em TypeScript mas não na tabela ocorrencias_historico
+- **Chamado.solicitante**
+  - Campo existe em TypeScript mas não na tabela chamados
+- **Chamado.condominio_id**
+  - Campo existe em TypeScript mas não na tabela chamados_mensagens
+- **Chamado.solicitante_id**
+  - Campo existe em TypeScript mas não na tabela chamados_mensagens
+- **Chamado.titulo**
+  - Campo existe em TypeScript mas não na tabela chamados_mensagens
+- **Chamado.descricao**
+  - Campo existe em TypeScript mas não na tabela chamados_mensagens
+- **Chamado.categoria**
+  - Campo existe em TypeScript mas não na tabela chamados_mensagens
+- **Chamado.prioridade**
+  - Campo existe em TypeScript mas não na tabela chamados_mensagens
+- **Chamado.status**
+  - Campo existe em TypeScript mas não na tabela chamados_mensagens
+- **Chamado.atendente_id**
+  - Campo existe em TypeScript mas não na tabela chamados_mensagens
+- **Chamado.resposta_final**
+  - Campo existe em TypeScript mas não na tabela chamados_mensagens
+- **Chamado.resolvido_em**
+  - Campo existe em TypeScript mas não na tabela chamados_mensagens
+- **Chamado.avaliacao_nota**
+  - Campo existe em TypeScript mas não na tabela chamados_mensagens
+- **Chamado.avaliacao_comentario**
+  - Campo existe em TypeScript mas não na tabela chamados_mensagens
+- **Chamado.avaliado_em**
+  - Campo existe em TypeScript mas não na tabela chamados_mensagens
+- **Chamado.updated_at**
+  - Campo existe em TypeScript mas não na tabela chamados_mensagens
+- **Chamado.deleted_at**
+  - Campo existe em TypeScript mas não na tabela chamados_mensagens
+- **Chamado.solicitante**
+  - Campo existe em TypeScript mas não na tabela chamados_mensagens
+- **FAQ.tags**
+  - Campo existe em TypeScript mas não na tabela faq
+- **FAQ.util_sim**
+  - Campo existe em TypeScript mas não na tabela faq
+- **FAQ.util_nao**
+  - Campo existe em TypeScript mas não na tabela faq
+- **FAQ.utilidade_percentual**
+  - Campo existe em TypeScript mas não na tabela faq
+- **FAQ.condominio_id**
+  - Campo existe em TypeScript mas não na tabela faq_votos
+- **FAQ.pergunta**
+  - Campo existe em TypeScript mas não na tabela faq_votos
+- **FAQ.resposta**
+  - Campo existe em TypeScript mas não na tabela faq_votos
+- **FAQ.categoria**
+  - Campo existe em TypeScript mas não na tabela faq_votos
+- **FAQ.tags**
+  - Campo existe em TypeScript mas não na tabela faq_votos
+- **FAQ.ordem**
+  - Campo existe em TypeScript mas não na tabela faq_votos
+- **FAQ.destaque**
+  - Campo existe em TypeScript mas não na tabela faq_votos
+- **FAQ.ativo**
+  - Campo existe em TypeScript mas não na tabela faq_votos
+- **FAQ.visualizacoes**
+  - Campo existe em TypeScript mas não na tabela faq_votos
+- **FAQ.util_sim**
+  - Campo existe em TypeScript mas não na tabela faq_votos
+- **FAQ.util_nao**
+  - Campo existe em TypeScript mas não na tabela faq_votos
+- **FAQ.criado_por**
+  - Campo existe em TypeScript mas não na tabela faq_votos
+- **FAQ.updated_at**
+  - Campo existe em TypeScript mas não na tabela faq_votos
+- **FAQ.deleted_at**
+  - Campo existe em TypeScript mas não na tabela faq_votos
+- **FAQ.utilidade_percentual**
+  - Campo existe em TypeScript mas não na tabela faq_votos
+- **PrestacaoContas.lancamentos**
+  - Campo existe em TypeScript mas não na tabela prestacao_contas
+- **PrestacaoContas.lancamentos_por_categoria**
+  - Campo existe em TypeScript mas não na tabela prestacao_contas
+- **Assembleia.ata_assinada**
+  - Campo existe em TypeScript mas não na tabela assembleias
+- **Assembleia.notificacao_convocacao_enviada**
+  - Campo existe em TypeScript mas não na tabela assembleias
+- **Assembleia.notificacao_lembrete_enviada**
+  - Campo existe em TypeScript mas não na tabela assembleias
+- **Assembleia.notificacao_resultado_enviada**
+  - Campo existe em TypeScript mas não na tabela assembleias
+- **Assembleia.metadata**
+  - Campo existe em TypeScript mas não na tabela assembleias
+- **Assembleia.pautas**
+  - Campo existe em TypeScript mas não na tabela assembleias
+- **Assembleia.presencas**
+  - Campo existe em TypeScript mas não na tabela assembleias
+- **Assembleia.quorum**
+  - Campo existe em TypeScript mas não na tabela assembleias
+- **Assembleia.condominio_id**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.tipo**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.numero_sequencial**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.ano_referencia**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.data_primeira_convocacao**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.data_segunda_convocacao**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.data_inicio**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.data_fim**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.permite_voto_antecipado**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.data_limite_voto_antecipado**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.permite_procuracao**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.max_procuracoes_por_pessoa**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.quorum_minimo_primeira**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.quorum_minimo_segunda**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.quorum_atingido**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.local_presencial**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.endereco_presencial**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.link_video**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.codigo_acesso_video**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.qr_token**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.ata_texto**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.ata_pdf_path**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.ata_hash**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.ata_assinada**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.observacoes_internas**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.notificacao_convocacao_enviada**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.notificacao_lembrete_enviada**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.notificacao_resultado_enviada**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.metadata**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.criado_por**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.convocada_em**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.iniciada_em**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.encerrada_em**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.arquivada_em**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.pautas**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.presencas**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.quorum**
+  - Campo existe em TypeScript mas não na tabela assembleia_pautas
+- **Assembleia.condominio_id**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.tipo**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.numero_sequencial**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.ano_referencia**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.data_primeira_convocacao**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.data_segunda_convocacao**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.data_inicio**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.data_fim**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.permite_voto_antecipado**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.data_limite_voto_antecipado**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.permite_procuracao**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.max_procuracoes_por_pessoa**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.quorum_minimo_primeira**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.quorum_minimo_segunda**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.quorum_atingido**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.local_presencial**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.endereco_presencial**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.link_video**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.codigo_acesso_video**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.qr_token**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.status**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.ata_texto**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.ata_pdf_path**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.ata_hash**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.ata_assinada**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.observacoes_internas**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.notificacao_convocacao_enviada**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.notificacao_lembrete_enviada**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.notificacao_resultado_enviada**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.metadata**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.criado_por**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.convocada_em**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.iniciada_em**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.updated_at**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.encerrada_em**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.arquivada_em**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.pautas**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.presencas**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.quorum**
+  - Campo existe em TypeScript mas não na tabela assembleia_pauta_opcoes
+- **Assembleia.condominio_id**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.titulo**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.descricao**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.numero_sequencial**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.ano_referencia**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.data_primeira_convocacao**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.data_segunda_convocacao**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.data_inicio**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.data_fim**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.permite_voto_antecipado**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.data_limite_voto_antecipado**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.permite_procuracao**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.max_procuracoes_por_pessoa**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.quorum_minimo_primeira**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.quorum_minimo_segunda**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.quorum_atingido**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.local_presencial**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.endereco_presencial**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.link_video**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.codigo_acesso_video**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.qr_token**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.status**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.ata_texto**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.ata_pdf_path**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.ata_hash**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.ata_assinada**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.observacoes_internas**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.notificacao_convocacao_enviada**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.notificacao_lembrete_enviada**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.notificacao_resultado_enviada**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.metadata**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.criado_por**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.convocada_em**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.iniciada_em**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.updated_at**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.encerrada_em**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.arquivada_em**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.pautas**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.presencas**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.quorum**
+  - Campo existe em TypeScript mas não na tabela assembleia_presencas
+- **Assembleia.condominio_id**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.tipo**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.titulo**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.descricao**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.numero_sequencial**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.ano_referencia**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.data_primeira_convocacao**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.data_segunda_convocacao**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.data_inicio**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.data_fim**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.permite_voto_antecipado**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.data_limite_voto_antecipado**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.permite_procuracao**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.max_procuracoes_por_pessoa**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.quorum_minimo_primeira**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.quorum_minimo_segunda**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.quorum_atingido**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.local_presencial**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.endereco_presencial**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.link_video**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.codigo_acesso_video**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.qr_token**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.status**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.ata_texto**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.ata_pdf_path**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.ata_hash**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.ata_assinada**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.observacoes_internas**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.notificacao_convocacao_enviada**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.notificacao_lembrete_enviada**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.notificacao_resultado_enviada**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.metadata**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.criado_por**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.convocada_em**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.iniciada_em**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.updated_at**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.encerrada_em**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.arquivada_em**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.pautas**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.presencas**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.quorum**
+  - Campo existe em TypeScript mas não na tabela assembleia_votos
+- **Assembleia.tipo**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.titulo**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.descricao**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.numero_sequencial**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.ano_referencia**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.data_primeira_convocacao**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.data_segunda_convocacao**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.data_inicio**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.data_fim**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.permite_voto_antecipado**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.data_limite_voto_antecipado**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.permite_procuracao**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.max_procuracoes_por_pessoa**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.quorum_minimo_primeira**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.quorum_minimo_segunda**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.quorum_atingido**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.local_presencial**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.endereco_presencial**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.link_video**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.codigo_acesso_video**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.qr_token**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.ata_texto**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.ata_pdf_path**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.ata_hash**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.ata_assinada**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.observacoes_internas**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.notificacao_convocacao_enviada**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.notificacao_lembrete_enviada**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.notificacao_resultado_enviada**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.metadata**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.criado_por**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.convocada_em**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.iniciada_em**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.encerrada_em**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.arquivada_em**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.pautas**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.presencas**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.quorum**
+  - Campo existe em TypeScript mas não na tabela assembleia_procuracoes
+- **Assembleia.condominio_id**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.tipo**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.titulo**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.descricao**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.numero_sequencial**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.ano_referencia**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.data_primeira_convocacao**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.data_segunda_convocacao**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.data_inicio**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.data_fim**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.permite_voto_antecipado**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.data_limite_voto_antecipado**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.permite_procuracao**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.max_procuracoes_por_pessoa**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.quorum_minimo_primeira**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.quorum_minimo_segunda**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.quorum_atingido**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.local_presencial**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.endereco_presencial**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.link_video**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.codigo_acesso_video**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.qr_token**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.status**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.ata_texto**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.ata_pdf_path**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.ata_hash**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.ata_assinada**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.observacoes_internas**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.notificacao_convocacao_enviada**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.notificacao_lembrete_enviada**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.notificacao_resultado_enviada**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.metadata**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.criado_por**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.convocada_em**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.iniciada_em**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.updated_at**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.encerrada_em**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.arquivada_em**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.pautas**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.presencas**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.quorum**
+  - Campo existe em TypeScript mas não na tabela assembleia_assinaturas
+- **Assembleia.condominio_id**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.tipo**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.titulo**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.descricao**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.numero_sequencial**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.ano_referencia**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.data_primeira_convocacao**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.data_segunda_convocacao**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.data_inicio**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.data_fim**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.permite_voto_antecipado**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.data_limite_voto_antecipado**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.permite_procuracao**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.max_procuracoes_por_pessoa**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.quorum_minimo_primeira**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.quorum_minimo_segunda**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.quorum_atingido**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.local_presencial**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.endereco_presencial**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.link_video**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.codigo_acesso_video**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.qr_token**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.status**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.ata_texto**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.ata_pdf_path**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.ata_hash**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.ata_assinada**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.observacoes_internas**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.notificacao_convocacao_enviada**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.notificacao_lembrete_enviada**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.notificacao_resultado_enviada**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.metadata**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.criado_por**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.convocada_em**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.iniciada_em**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.updated_at**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.encerrada_em**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.arquivada_em**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.pautas**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.presencas**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **Assembleia.quorum**
+  - Campo existe em TypeScript mas não na tabela assembleia_logs
+- **NotificacoesConfig.tempo_espera_push_para_email**
+  - Campo existe em TypeScript mas não na tabela notificacoes_config
+- **NotificacoesConfig.tempo_espera_email_para_whatsapp**
+  - Campo existe em TypeScript mas não na tabela notificacoes_config
+- **NotificacoesConfig.tempo_espera_whatsapp_para_sms**
+  - Campo existe em TypeScript mas não na tabela notificacoes_config
+- **NotificacoesConfig.creditos_voz**
+  - Campo existe em TypeScript mas não na tabela notificacoes_config
+- **Notificacao.referencia_tipo**
+  - Campo existe em TypeScript mas não na tabela templates_notificacao
+- **Notificacao.referencia_id**
+  - Campo existe em TypeScript mas não na tabela templates_notificacao
+- **Notificacao.titulo**
+  - Campo existe em TypeScript mas não na tabela templates_notificacao
+- **Notificacao.corpo_resumo**
+  - Campo existe em TypeScript mas não na tabela templates_notificacao
+- **Notificacao.prioridade**
+  - Campo existe em TypeScript mas não na tabela templates_notificacao
+- **Notificacao.destinatarios_tipo**
+  - Campo existe em TypeScript mas não na tabela templates_notificacao
+- **Notificacao.destinatarios_filtro**
+  - Campo existe em TypeScript mas não na tabela templates_notificacao
+- **Notificacao.agendada_para**
+  - Campo existe em TypeScript mas não na tabela templates_notificacao
+- **Notificacao.enviada_em**
+  - Campo existe em TypeScript mas não na tabela templates_notificacao
+- **Notificacao.gerar_mural**
+  - Campo existe em TypeScript mas não na tabela templates_notificacao
+- **Notificacao.mural_path**
+  - Campo existe em TypeScript mas não na tabela templates_notificacao
+- **Notificacao.criado_por**
+  - Campo existe em TypeScript mas não na tabela templates_notificacao
+- **Notificacao.entregas**
+  - Campo existe em TypeScript mas não na tabela templates_notificacao
+- **Notificacao.dashboard**
+  - Campo existe em TypeScript mas não na tabela templates_notificacao
+- **NotificacoesConfig.push_habilitado**
+  - Campo existe em TypeScript mas não na tabela notificacoes
+- **NotificacoesConfig.email_habilitado**
+  - Campo existe em TypeScript mas não na tabela notificacoes
+- **NotificacoesConfig.whatsapp_habilitado**
+  - Campo existe em TypeScript mas não na tabela notificacoes
+- **NotificacoesConfig.sms_habilitado**
+  - Campo existe em TypeScript mas não na tabela notificacoes
+- **NotificacoesConfig.voz_habilitado**
+  - Campo existe em TypeScript mas não na tabela notificacoes
+- **NotificacoesConfig.tempo_espera_push_para_email**
+  - Campo existe em TypeScript mas não na tabela notificacoes
+- **NotificacoesConfig.tempo_espera_email_para_whatsapp**
+  - Campo existe em TypeScript mas não na tabela notificacoes
+- **NotificacoesConfig.tempo_espera_whatsapp_para_sms**
+  - Campo existe em TypeScript mas não na tabela notificacoes
+- **NotificacoesConfig.horario_inicio**
+  - Campo existe em TypeScript mas não na tabela notificacoes
+- **NotificacoesConfig.horario_fim**
+  - Campo existe em TypeScript mas não na tabela notificacoes
+- **NotificacoesConfig.emergencia_ignora_horario**
+  - Campo existe em TypeScript mas não na tabela notificacoes
+- **NotificacoesConfig.whatsapp_phone_id**
+  - Campo existe em TypeScript mas não na tabela notificacoes
+- **NotificacoesConfig.whatsapp_business_id**
+  - Campo existe em TypeScript mas não na tabela notificacoes
+- **NotificacoesConfig.creditos_sms**
+  - Campo existe em TypeScript mas não na tabela notificacoes
+- **NotificacoesConfig.creditos_voz**
+  - Campo existe em TypeScript mas não na tabela notificacoes
+- **Notificacao.tipo**
+  - Campo existe em TypeScript mas não na tabela webhooks_notificacao
+- **Notificacao.referencia_tipo**
+  - Campo existe em TypeScript mas não na tabela webhooks_notificacao
+- **Notificacao.referencia_id**
+  - Campo existe em TypeScript mas não na tabela webhooks_notificacao
+- **Notificacao.titulo**
+  - Campo existe em TypeScript mas não na tabela webhooks_notificacao
+- **Notificacao.corpo**
+  - Campo existe em TypeScript mas não na tabela webhooks_notificacao
+- **Notificacao.corpo_resumo**
+  - Campo existe em TypeScript mas não na tabela webhooks_notificacao
+- **Notificacao.prioridade**
+  - Campo existe em TypeScript mas não na tabela webhooks_notificacao
+- **Notificacao.destinatarios_tipo**
+  - Campo existe em TypeScript mas não na tabela webhooks_notificacao
+- **Notificacao.destinatarios_filtro**
+  - Campo existe em TypeScript mas não na tabela webhooks_notificacao
+- **Notificacao.agendada_para**
+  - Campo existe em TypeScript mas não na tabela webhooks_notificacao
+- **Notificacao.enviada_em**
+  - Campo existe em TypeScript mas não na tabela webhooks_notificacao
+- **Notificacao.gerar_mural**
+  - Campo existe em TypeScript mas não na tabela webhooks_notificacao
+- **Notificacao.mural_path**
+  - Campo existe em TypeScript mas não na tabela webhooks_notificacao
+- **Notificacao.criado_por**
+  - Campo existe em TypeScript mas não na tabela webhooks_notificacao
+- **Notificacao.entregas**
+  - Campo existe em TypeScript mas não na tabela webhooks_notificacao
+- **Notificacao.dashboard**
+  - Campo existe em TypeScript mas não na tabela webhooks_notificacao
+- **ApiLog.method**
+  - Campo existe em TypeScript mas não na tabela api_logs
+- **ApiLog.body_preview**
+  - Campo existe em TypeScript mas não na tabela api_logs
+- **ApiLog.ip_origem**
+  - Campo existe em TypeScript mas não na tabela api_logs
+- **ApiLog.erro**
+  - Campo existe em TypeScript mas não na tabela api_logs
+
+### MISSING_IN_TS (205 ocorrências)
+
+- **usuarios.auth_id**
+  - Campo existe no banco mas não em UsuarioCanaisPreferencias
+- **usuarios.condominio_id**
+  - Campo existe no banco mas não em UsuarioCanaisPreferencias
+- **usuarios.unidade_id**
+  - Campo existe no banco mas não em UsuarioCanaisPreferencias
+- **usuarios.nome**
+  - Campo existe no banco mas não em UsuarioCanaisPreferencias
+- **usuarios.email**
+  - Campo existe no banco mas não em UsuarioCanaisPreferencias
+- **usuarios.cpf**
+  - Campo existe no banco mas não em UsuarioCanaisPreferencias
+- **usuarios.telefone**
+  - Campo existe no banco mas não em UsuarioCanaisPreferencias
+- **usuarios.avatar_url**
+  - Campo existe no banco mas não em UsuarioCanaisPreferencias
+- **usuarios.data_nascimento**
+  - Campo existe no banco mas não em UsuarioCanaisPreferencias
+- **usuarios.role**
+  - Campo existe no banco mas não em UsuarioCanaisPreferencias
+- **usuarios.status**
+  - Campo existe no banco mas não em UsuarioCanaisPreferencias
+- **usuarios.tipo_residente**
+  - Campo existe no banco mas não em UsuarioCanaisPreferencias
+- **usuarios.notificacoes_email**
+  - Campo existe no banco mas não em UsuarioCanaisPreferencias
+- **usuarios.notificacoes_push**
+  - Campo existe no banco mas não em UsuarioCanaisPreferencias
+- **usuarios.notificacoes_whatsapp**
+  - Campo existe no banco mas não em UsuarioCanaisPreferencias
+- **usuarios.ultimo_acesso**
+  - Campo existe no banco mas não em UsuarioCanaisPreferencias
+- **usuarios.deleted_at**
+  - Campo existe no banco mas não em UsuarioCanaisPreferencias
+- **usuarios.deleted_reason**
+  - Campo existe no banco mas não em UsuarioCanaisPreferencias
+- **usuarios.created_at**
+  - Campo existe no banco mas não em UsuarioCanaisPreferencias
+- **usuarios.updated_at**
+  - Campo existe no banco mas não em UsuarioCanaisPreferencias
+- **comunicados.prioridade**
+  - Campo existe no banco mas não em Comunicado
+- **comunicados.publicado**
+  - Campo existe no banco mas não em Comunicado
+- **comunicados.data_publicacao**
+  - Campo existe no banco mas não em Comunicado
+- **comunicados.data_expiracao**
+  - Campo existe no banco mas não em Comunicado
+- **comunicados.destinatarios_blocos**
+  - Campo existe no banco mas não em Comunicado
+- **comunicados.destinatarios_unidades**
+  - Campo existe no banco mas não em Comunicado
+- **ocorrencias_historico.ocorrencia_id**
+  - Campo existe no banco mas não em Ocorrencia
+- **ocorrencias_historico.usuario_id**
+  - Campo existe no banco mas não em Ocorrencia
+- **ocorrencias_historico.status_anterior**
+  - Campo existe no banco mas não em Ocorrencia
+- **ocorrencias_historico.status_novo**
+  - Campo existe no banco mas não em Ocorrencia
+- **ocorrencias_historico.comentario**
+  - Campo existe no banco mas não em Ocorrencia
+- **chamados_mensagens.chamado_id**
+  - Campo existe no banco mas não em Chamado
+- **chamados_mensagens.autor_id**
+  - Campo existe no banco mas não em Chamado
+- **chamados_mensagens.mensagem**
+  - Campo existe no banco mas não em Chamado
+- **chamados_mensagens.interno**
+  - Campo existe no banco mas não em Chamado
+- **faq.votos_util**
+  - Campo existe no banco mas não em FAQ
+- **faq.votos_inutil**
+  - Campo existe no banco mas não em FAQ
+- **faq_votos.faq_id**
+  - Campo existe no banco mas não em FAQ
+- **faq_votos.usuario_id**
+  - Campo existe no banco mas não em FAQ
+- **faq_votos.util**
+  - Campo existe no banco mas não em FAQ
+- **assembleia_pautas.assembleia_id**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_pautas.ordem**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_pautas.tipo_votacao**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_pautas.voto_secreto**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_pautas.quorum_especial**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_pautas.permite_abstencao**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_pautas.cargo**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_pautas.max_eleitos**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_pautas.bloqueia_inadimplentes**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_pautas.resultado**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_pautas.votacao_iniciada_em**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_pautas.votacao_encerrada_em**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_pauta_opcoes.pauta_id**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_pauta_opcoes.ordem**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_pauta_opcoes.candidato_id**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_pauta_opcoes.candidato_nome**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_pauta_opcoes.candidato_unidade**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_pauta_opcoes.votos_count**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_pauta_opcoes.votos_fracao**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_pauta_opcoes.eleito**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_presencas.assembleia_id**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_presencas.usuario_id**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_presencas.unidade_id**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_presencas.representante_id**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_presencas.procuracao_id**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_presencas.fracao_ideal**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_presencas.check_in_at**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_presencas.check_out_at**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_presencas.ip_address**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_presencas.user_agent**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_presencas.dispositivo**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_votos.pauta_id**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_votos.presenca_id**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_votos.voto**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_votos.opcao_id**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_votos.fracao_ideal**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_votos.usuario_id**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_votos.unidade_id**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_votos.voto_hash**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_votos.voto_anterior_hash**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_votos.votado_em**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_votos.ip_address**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_procuracoes.outorgante_id**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_procuracoes.outorgante_unidade_id**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_procuracoes.outorgado_id**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_procuracoes.assembleia_id**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_procuracoes.validade_inicio**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_procuracoes.validade_fim**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_procuracoes.pode_votar**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_procuracoes.pode_falar**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_procuracoes.restricoes**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_procuracoes.aceite_em**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_procuracoes.aceite_ip**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_procuracoes.documento_path**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_procuracoes.documento_hash**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_assinaturas.assembleia_id**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_assinaturas.usuario_id**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_assinaturas.papel**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_assinaturas.assinado_em**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_assinaturas.ip_address**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_assinaturas.user_agent**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_assinaturas.documento_hash**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_logs.assembleia_id**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_logs.usuario_id**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_logs.acao**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_logs.detalhes**
+  - Campo existe no banco mas não em Assembleia
+- **assembleia_logs.ip_address**
+  - Campo existe no banco mas não em Assembleia
+- **notificacoes_config.in_app_habilitado**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes_config.mural_habilitado**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes_config.cascata_habilitada**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes_config.tempo_push_para_email**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes_config.tempo_email_para_whatsapp**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes_config.tempo_whatsapp_para_sms**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes_config.respeitar_horario**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes_config.whatsapp_token_encrypted**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes_config.email_remetente**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes_config.email_nome_remetente**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes_config.creditos_voz_minutos**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes_config.creditos_whatsapp**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes_config.limite_email_mensal**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes_config.limite_push_mensal**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **templates_notificacao.codigo**
+  - Campo existe no banco mas não em Notificacao
+- **templates_notificacao.nome**
+  - Campo existe no banco mas não em Notificacao
+- **templates_notificacao.descricao**
+  - Campo existe no banco mas não em Notificacao
+- **templates_notificacao.canal**
+  - Campo existe no banco mas não em Notificacao
+- **templates_notificacao.assunto**
+  - Campo existe no banco mas não em Notificacao
+- **templates_notificacao.corpo_html**
+  - Campo existe no banco mas não em Notificacao
+- **templates_notificacao.whatsapp_template_id**
+  - Campo existe no banco mas não em Notificacao
+- **templates_notificacao.whatsapp_namespace**
+  - Campo existe no banco mas não em Notificacao
+- **templates_notificacao.variaveis_disponiveis**
+  - Campo existe no banco mas não em Notificacao
+- **templates_notificacao.ativo**
+  - Campo existe no banco mas não em Notificacao
+- **templates_notificacao.updated_at**
+  - Campo existe no banco mas não em Notificacao
+- **notificacoes.tipo**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes.prioridade**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes.titulo**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes.corpo**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes.corpo_resumo**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes.corpo_html**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes.anexos**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes.destinatarios_tipo**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes.destinatarios_filtro**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes.total_destinatarios**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes.referencia_tipo**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes.referencia_id**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes.acao_url**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes.acao_texto**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes.agendada_para**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes.gerar_mural**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes.mural_pdf_path**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes.mural_qr_code**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes.status**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes.enviada_em**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes.cancelada_em**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes.criado_por**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes.stats_enviados**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes.stats_entregues**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes.stats_lidos**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **notificacoes.stats_falhas**
+  - Campo existe no banco mas não em NotificacoesConfig
+- **webhooks_notificacao.nome**
+  - Campo existe no banco mas não em Notificacao
+- **webhooks_notificacao.url**
+  - Campo existe no banco mas não em Notificacao
+- **webhooks_notificacao.secret**
+  - Campo existe no banco mas não em Notificacao
+- **webhooks_notificacao.eventos**
+  - Campo existe no banco mas não em Notificacao
+- **webhooks_notificacao.ativo**
+  - Campo existe no banco mas não em Notificacao
+- **webhooks_notificacao.max_tentativas**
+  - Campo existe no banco mas não em Notificacao
+- **webhooks_notificacao.timeout_segundos**
+  - Campo existe no banco mas não em Notificacao
+- **webhooks_notificacao.total_enviados**
+  - Campo existe no banco mas não em Notificacao
+- **webhooks_notificacao.total_sucesso**
+  - Campo existe no banco mas não em Notificacao
+- **webhooks_notificacao.total_falha**
+  - Campo existe no banco mas não em Notificacao
+- **webhooks_notificacao.ultimo_erro**
+  - Campo existe no banco mas não em Notificacao
+- **webhooks_notificacao.ultimo_sucesso_em**
+  - Campo existe no banco mas não em Notificacao
+- **webhooks_notificacao.ultimo_erro_em**
+  - Campo existe no banco mas não em Notificacao
+- **webhooks_notificacao.updated_at**
+  - Campo existe no banco mas não em Notificacao
+- **integracoes.id**
+  - Campo existe no banco mas não em IntegracoesFilters
+- **integracoes.condominio_id**
+  - Campo existe no banco mas não em IntegracoesFilters
+- **integracoes.nome**
+  - Campo existe no banco mas não em IntegracoesFilters
+- **integracoes.descricao**
+  - Campo existe no banco mas não em IntegracoesFilters
+- **integracoes.ambiente**
+  - Campo existe no banco mas não em IntegracoesFilters
+- **integracoes.api_key**
+  - Campo existe no banco mas não em IntegracoesFilters
+- **integracoes.api_key_hash**
+  - Campo existe no banco mas não em IntegracoesFilters
+- **integracoes.api_key_prefix**
+  - Campo existe no banco mas não em IntegracoesFilters
+- **integracoes.secret_key**
+  - Campo existe no banco mas não em IntegracoesFilters
+- **integracoes.url_destino**
+  - Campo existe no banco mas não em IntegracoesFilters
+- **integracoes.headers_custom**
+  - Campo existe no banco mas não em IntegracoesFilters
+- **integracoes.oauth_provider**
+  - Campo existe no banco mas não em IntegracoesFilters
+- **integracoes.oauth_client_id**
+  - Campo existe no banco mas não em IntegracoesFilters
+- **integracoes.oauth_tokens**
+  - Campo existe no banco mas não em IntegracoesFilters
+- **integracoes.scopes**
+  - Campo existe no banco mas não em IntegracoesFilters
+- **integracoes.rate_limit_requests**
+  - Campo existe no banco mas não em IntegracoesFilters
+- **integracoes.rate_limit_periodo**
+  - Campo existe no banco mas não em IntegracoesFilters
+- **integracoes.rate_limit_usado**
+  - Campo existe no banco mas não em IntegracoesFilters
+- **integracoes.rate_limit_reset_em**
+  - Campo existe no banco mas não em IntegracoesFilters
+- **integracoes.ip_whitelist**
+  - Campo existe no banco mas não em IntegracoesFilters
+- **integracoes.ultimo_uso**
+  - Campo existe no banco mas não em IntegracoesFilters
+- **integracoes.total_requests**
+  - Campo existe no banco mas não em IntegracoesFilters
+- **integracoes.total_sucesso**
+  - Campo existe no banco mas não em IntegracoesFilters
+- **integracoes.total_erros**
+  - Campo existe no banco mas não em IntegracoesFilters
+- **integracoes.criado_por**
+  - Campo existe no banco mas não em IntegracoesFilters
+- **integracoes.created_at**
+  - Campo existe no banco mas não em IntegracoesFilters
+- **integracoes.updated_at**
+  - Campo existe no banco mas não em IntegracoesFilters
+- **api_logs.metodo**
+  - Campo existe no banco mas não em ApiLog
+- **api_logs.headers**
+  - Campo existe no banco mas não em ApiLog
+- **api_logs.body_size**
+  - Campo existe no banco mas não em ApiLog
+- **api_logs.response_size**
+  - Campo existe no banco mas não em ApiLog
+- **api_logs.erro_codigo**
+  - Campo existe no banco mas não em ApiLog
+- **api_logs.ip_address**
+  - Campo existe no banco mas não em ApiLog
+
+### NULLABLE_MISMATCH (28 ocorrências)
+
+- **usuarios.id**
+  - Campo é nullable no banco mas não em TypeScript
+- **comunicados.anexos**
+  - Campo é nullable no banco mas não em TypeScript
+- **comunicados.id**
+  - Campo é nullable no banco mas não em TypeScript
+- **ocorrencias.anexos**
+  - Campo é nullable no banco mas não em TypeScript
+- **ocorrencias.id**
+  - Campo é nullable no banco mas não em TypeScript
+- **ocorrencias_historico.id**
+  - Campo é nullable no banco mas não em TypeScript
+- **chamados.anexos**
+  - Campo é nullable no banco mas não em TypeScript
+- **chamados.id**
+  - Campo é nullable no banco mas não em TypeScript
+- **chamados_mensagens.anexos**
+  - Campo é nullable no banco mas não em TypeScript
+- **chamados_mensagens.id**
+  - Campo é nullable no banco mas não em TypeScript
+- **faq.id**
+  - Campo é nullable no banco mas não em TypeScript
+- **faq_votos.id**
+  - Campo é nullable no banco mas não em TypeScript
+- **prestacao_contas.id**
+  - Campo é nullable no banco mas não em TypeScript
+- **assembleias.id**
+  - Campo é nullable no banco mas não em TypeScript
+- **assembleia_pautas.id**
+  - Campo é nullable no banco mas não em TypeScript
+- **assembleia_pauta_opcoes.id**
+  - Campo é nullable no banco mas não em TypeScript
+- **assembleia_presencas.id**
+  - Campo é nullable no banco mas não em TypeScript
+- **assembleia_votos.id**
+  - Campo é nullable no banco mas não em TypeScript
+- **assembleia_procuracoes.id**
+  - Campo é nullable no banco mas não em TypeScript
+- **assembleia_assinaturas.id**
+  - Campo é nullable no banco mas não em TypeScript
+- **assembleia_logs.id**
+  - Campo é nullable no banco mas não em TypeScript
+- **notificacoes_config.id**
+  - Campo é nullable no banco mas não em TypeScript
+- **templates_notificacao.id**
+  - Campo é nullable no banco mas não em TypeScript
+- **templates_notificacao.condominio_id**
+  - Campo é nullable no banco mas não em TypeScript
+- **notificacoes.id**
+  - Campo é nullable no banco mas não em TypeScript
+- **webhooks_notificacao.id**
+  - Campo é nullable no banco mas não em TypeScript
+- **webhooks_notificacao.condominio_id**
+  - Campo é nullable no banco mas não em TypeScript
+- **api_logs.id**
+  - Campo é nullable no banco mas não em TypeScript
+
+### TYPE_MISMATCH (20 ocorrências)
+
+- **comunicados.anexos**
+  - Tipo no banco: JSONB → esperado TS: any, atual: Anexo[]
+- **comunicados.categoria**
+  - Tipo no banco: public.comunicado_categoria → esperado TS: unknown, atual: ComunicadoCategoria
+- **ocorrencias.anexos**
+  - Tipo no banco: JSONB → esperado TS: any, atual: Anexo[]
+- **ocorrencias.status**
+  - Tipo no banco: public.ocorrencia_status → esperado TS: unknown, atual: OcorrenciaStatus
+- **ocorrencias.categoria**
+  - Tipo no banco: public.ocorrencia_categoria → esperado TS: unknown, atual: OcorrenciaCategoria
+- **ocorrencias.prioridade**
+  - Tipo no banco: public.prioridade → esperado TS: unknown, atual: Prioridade
+- **chamados.prioridade**
+  - Tipo no banco: public.prioridade → esperado TS: unknown, atual: Prioridade
+- **chamados.anexos**
+  - Tipo no banco: JSONB → esperado TS: any, atual: Anexo[]
+- **chamados.status**
+  - Tipo no banco: public.chamado_status → esperado TS: unknown, atual: ChamadoStatus
+- **chamados.categoria**
+  - Tipo no banco: public.chamado_categoria → esperado TS: unknown, atual: ChamadoCategoria
+- **chamados_mensagens.anexos**
+  - Tipo no banco: JSONB → esperado TS: any, atual: Anexo[]
+- **prestacao_contas.status**
+  - Tipo no banco: public.prestacao_status → esperado TS: unknown, atual: PrestacaoStatus
+- **assembleias.status**
+  - Tipo no banco: public.assembleia_status → esperado TS: unknown, atual: AssembleiaStatus
+- **assembleias.tipo**
+  - Tipo no banco: public.assembleia_tipo → esperado TS: unknown, atual: AssembleiaTipo
+- **assembleia_pautas.status**
+  - Tipo no banco: public.pauta_status → esperado TS: unknown, atual: AssembleiaStatus
+- **assembleia_presencas.tipo**
+  - Tipo no banco: public.presenca_tipo → esperado TS: unknown, atual: AssembleiaTipo
+- **assembleia_procuracoes.status**
+  - Tipo no banco: public.procuracao_status → esperado TS: unknown, atual: AssembleiaStatus
+- **templates_notificacao.tipo**
+  - Tipo no banco: public.tipo_notificacao → esperado TS: unknown, atual: string
+- **integracoes.status**
+  - Tipo no banco: public.integracao_status → esperado TS: unknown, atual: IntegracaoStatus
+- **integracoes.tipo**
+  - Tipo no banco: public.integracao_tipo → esperado TS: unknown, atual: IntegracaoTipo

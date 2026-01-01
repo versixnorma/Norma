@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
+  <defs>
+    <linearGradient id="comGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f3460"/>
+      <stop offset="100%" style="stop-color:#16213e"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="96" height="96" rx="20" fill="url(#comGrad)"/>
+  
+  <!-- Megaphone/speaker icon -->
+  <g fill="white">
+    <!-- Speaker body -->
+    <path d="M24 36 L40 36 L60 22 L60 74 L40 60 L24 60 Z" fill="white"/>
+    <!-- Sound waves -->
+    <path d="M68 38 Q78 48 68 58" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/>
+    <path d="M74 30 Q90 48 74 66" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" opacity="0.6"/>
+  </g>
+  
+  <!-- Notification dot -->
+  <circle cx="76" cy="24" r="10" fill="#e94560"/>
+</svg>

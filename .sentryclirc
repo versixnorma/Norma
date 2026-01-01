@@ -1,0 +1,6 @@
+[defaults]
+project=versix-norma
+org=versix-solutions
+
+[auth]
+token=$SENTRY_AUTH_TOKEN

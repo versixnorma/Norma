@@ -1,0 +1,57 @@
+{
+  "name": "versix-norma",
+  "version": "1.0.1",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@8.15.0",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @versix/web dev",
+    "build": "pnpm --filter @versix/web build",
+    "start": "pnpm --filter @versix/web start",
+    "lint": "eslint apps/web/src",
+    "lint:fix": "pnpm lint -- --fix",
+    "type-check": "tsc --noEmit -p apps/web",
+    "test": "pnpm --filter @versix/shared test:run",
+    "test:e2e": "pnpm --filter @versix/web test:e2e",
+    "clean": "rm -rf node_modules apps/web/node_modules apps/web/.next",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "types:generate": "bash scripts/regenerate-types.sh",
+    "types:check": "tsc --noEmit -p packages/shared",
+    "supabase:gen-types": "supabase gen types typescript --local > packages/shared/database.types.ts",
+    "supabase:setup-cron": "psql -f scripts/setup-pg-cron.sql",
+    "create-test-users": "node scripts/create-test-users.js",
+    "sentry:upload-sourcemaps": "cd apps/web && npx @sentry/cli sourcemaps upload .next/server/chunks --release versix-norma@latest",
+    "prepare": "husky install || true"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.57.0",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "14.2.5",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.2",
+    "prettier": "^3.7.4",
+    "prettier-plugin-tailwindcss": "^0.7.2",
+    "typescript": "^5.9.3"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "dotenv": "^17.2.3"
+  }
+}

@@ -1,0 +1,256 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  NODE_VERSION: '20.x'
+  PNPM_VERSION: '8'
+
+jobs:
+  # ============================================
+  # LINT & TYPE CHECK
+  # ============================================
+  lint:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run ESLint
+        run: pnpm lint
+        continue-on-error: true
+
+      - name: Check ESLint warnings
+        run: |
+          WARNING_COUNT=$(pnpm lint 2>&1 | grep -c "warning\|Warning" || true)
+          ERROR_COUNT=$(pnpm lint 2>&1 | grep -c "error\|Error" || true)
+
+          MAX_WARNINGS=$(jq -r '.eslint.maxWarnings' .warnings-config.json)
+          MAX_ERRORS=$(jq -r '.eslint.maxErrors' .warnings-config.json)
+
+          echo "ESLint Warnings: $WARNING_COUNT (max: $MAX_WARNINGS)"
+          echo "ESLint Errors: $ERROR_COUNT (max: $MAX_ERRORS)"
+
+          if [ "$ERROR_COUNT" -gt "$MAX_ERRORS" ]; then
+            echo "ESLint errors found ($ERROR_COUNT > $MAX_ERRORS). Failing build."
+            exit 1
+          fi
+
+          if [ "$WARNING_COUNT" -gt "$MAX_WARNINGS" ]; then
+            echo "Too many ESLint warnings ($WARNING_COUNT > $MAX_WARNINGS). Failing build."
+            echo "Please fix warnings or update the warning limit in .warnings-config.json if necessary."
+
+  # ============================================
+  # DEPLOY PREVIEW (apenas para PRs)
+  # ============================================
+  deploy-preview:
+    name: Deploy Preview
+    runs-on: ubuntu-latest
+    needs: lint
+    if: github.event_name == 'pull_request'
+    environment:
+      name: preview
+      url: ${{ steps.deploy.outputs.deployment-url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build application
+        id: build
+        run: |
+          cd apps/web
+          BUILD_OUTPUT=$(pnpm build 2>&1)
+          echo "$BUILD_OUTPUT"
+
+          WARNING_COUNT=$(echo "$BUILD_OUTPUT" | grep -c "Warning\|warning" || true)
+          ERROR_COUNT=$(echo "$BUILD_OUTPUT" | grep -c "Error\|error" || true)
+
+          MAX_WARNINGS=$(jq -r '.build.preview.maxWarnings' ../../../.warnings-config.json)
+          MAX_ERRORS=$(jq -r '.build.preview.maxErrors' ../../../.warnings-config.json)
+
+          echo "Build Warnings: $WARNING_COUNT (max: $MAX_WARNINGS)"
+          echo "Build Errors: $ERROR_COUNT (max: $MAX_ERRORS)"
+
+          if [ "$ERROR_COUNT" -gt "$MAX_ERRORS" ]; then
+            echo "Build errors found ($ERROR_COUNT > $MAX_ERRORS). Failing build."
+            exit 1
+          fi
+
+          if [ "$WARNING_COUNT" -gt "$MAX_WARNINGS" ]; then
+            echo "Too many build warnings ($WARNING_COUNT > $MAX_WARNINGS). Failing build."
+            echo "Please fix warnings or update the warning limit in .warnings-config.json if necessary."
+            exit 1
+          fi
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+          NEXT_PUBLIC_APP_NAME: ${{ secrets.NEXT_PUBLIC_APP_NAME }}
+          NEXT_PUBLIC_DEMO_CONDOMINIO_ID: ${{ secrets.NEXT_PUBLIC_DEMO_CONDOMINIO_ID }}
+          NEXT_PUBLIC_DEMO_CODIGO_CONVITE: ${{ secrets.NEXT_PUBLIC_DEMO_CODIGO_CONVITE }}
+          NEXT_PUBLIC_ENABLE_PWA: ${{ secrets.NEXT_PUBLIC_ENABLE_PWA || 'true' }}
+          NEXT_PUBLIC_ENABLE_NORMA_AI: ${{ secrets.NEXT_PUBLIC_ENABLE_NORMA_AI || 'true' }}
+
+      - name: Create environment file for preview
+        run: |
+          cd apps/web
+          cat > .env.production << EOF
+          NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_APP_URL=${{ secrets.NEXT_PUBLIC_APP_URL || 'https://norma-preview.vercel.app' }}
+          NEXT_PUBLIC_APP_NAME=${{ secrets.NEXT_PUBLIC_APP_NAME || 'Versix Norma (Preview)' }}
+          EOF
+
+      - name: Deploy to Vercel (Preview)
+        id: deploy
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./apps/web
+
+      - name: Comment PR with preview URL
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🚀 **Preview Deploy**\n\nAplicativo disponível em: ${{ steps.deploy.outputs.deployment-url }}\n\n**Credenciais de teste:**\n- Email: demo@versix.com.br\n- Senha: demo123`
+            })
+
+  # ============================================
+  # DEPLOY PRODUCTION (apenas main branch)
+  # ============================================
+  deploy-production:
+    name: Deploy Production
+    runs-on: ubuntu-latest
+    needs: lint  # Changed from build to lint to avoid artifact dependency issues
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: production
+      url: https://app.versixnorma.com.br
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+      NEXT_PUBLIC_APP_NAME: ${{ secrets.NEXT_PUBLIC_APP_NAME }}
+      NEXT_PUBLIC_DEMO_CONDOMINIO_ID: ${{ secrets.NEXT_PUBLIC_DEMO_CONDOMINIO_ID }}
+      NEXT_PUBLIC_DEMO_CODIGO_CONVITE: ${{ secrets.NEXT_PUBLIC_DEMO_CODIGO_CONVITE }}
+      NEXT_PUBLIC_ENABLE_PWA: ${{ secrets.NEXT_PUBLIC_ENABLE_PWA || 'true' }}
+      NEXT_PUBLIC_ENABLE_NORMA_AI: ${{ secrets.NEXT_PUBLIC_ENABLE_NORMA_AI || 'true' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build application
+        run: |
+          BUILD_OUTPUT=$(pnpm build 2>&1)
+          echo "$BUILD_OUTPUT"
+
+          WARNING_COUNT=$(echo "$BUILD_OUTPUT" | grep -c "Warning\|warning" || true)
+          ERROR_COUNT=$(echo "$BUILD_OUTPUT" | grep -c "Error\|error" || true)
+
+          MAX_WARNINGS=$(jq -r '.build.production.maxWarnings' .warnings-config.json)
+          MAX_ERRORS=$(jq -r '.build.production.maxErrors' .warnings-config.json)
+
+          echo "Build Warnings: $WARNING_COUNT (max: $MAX_WARNINGS)"
+          echo "Build Errors: $ERROR_COUNT (max: $MAX_ERRORS)"
+
+          if [ "$ERROR_COUNT" -gt "$MAX_ERRORS" ]; then
+            echo "Build errors found ($ERROR_COUNT > $MAX_ERRORS). Failing production build."
+            exit 1
+          fi
+
+          if [ "$WARNING_COUNT" -gt "$MAX_WARNINGS" ]; then
+            echo "Too many build warnings ($WARNING_COUNT > $MAX_WARNINGS). Failing production build."
+            echo "Please fix warnings before deploying to production."
+            exit 1
+          fi
+
+      - name: Upload sourcemaps to Sentry
+        run: |
+          cd apps/web
+          npx @sentry/cli sourcemaps upload .next/server/chunks --release versix-norma@${{ github.sha }} --dist ${{ github.run_number }}
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: versix-solutions
+          SENTRY_PROJECT: versix-norma
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Create environment file
+        run: |
+          cd apps/web
+          cat > .env.production << EOF
+          NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_APP_URL=${{ secrets.NEXT_PUBLIC_APP_URL || 'https://app.versixnorma.com.br' }}
+          NEXT_PUBLIC_APP_NAME=${{ secrets.NEXT_PUBLIC_APP_NAME || 'Versix Norma' }}
+          EOF
+
+      - name: Deploy to Vercel (Production)
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+          working-directory: ./apps/web
+
+      - name: Notify deployment success
+        run: |
+          echo "✅ Deploy para produção concluído com sucesso!"
+          echo "🌐 URL: https://app.versixnorma.com.br"

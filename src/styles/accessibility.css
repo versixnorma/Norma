@@ -1,0 +1,69 @@
+/* styles/accessibility.css */
+
+/* Modo alto contraste */
+.high-contrast {
+  --color-text: #000000;
+  --color-background: #ffffff;
+  --color-primary: #0000ff;
+  --color-secondary: #000080;
+  --color-success: #008000;
+  --color-error: #ff0000;
+  --color-warning: #ff8c00;
+  --color-border: #000000;
+}
+
+.high-contrast * {
+  border-color: var(--color-border) !important;
+}
+
+.high-contrast .bg-gray-50,
+.high-contrast .bg-gray-100 {
+  background-color: var(--color-background) !important;
+  border: 2px solid var(--color-border) !important;
+}
+
+.high-contrast .text-gray-500,
+.high-contrast .text-gray-600 {
+  color: var(--color-text) !important;
+}
+
+.high-contrast button,
+.high-contrast a {
+  outline: 3px solid transparent !important;
+}
+
+.high-contrast button:focus,
+.high-contrast a:focus {
+  outline: 3px solid var(--color-primary) !important;
+  outline-offset: 2px !important;
+}
+
+/* Movimento reduzido */
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+/* Foco visível */
+:focus-visible {
+  outline: 3px solid #4f46e5;
+  outline-offset: 2px;
+}
+
+/* Skip link */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #4f46e5;
+  color: white;
+  padding: 8px 16px;
+  z-index: 100;
+}
+
+.skip-link:focus {
+  top: 0;
+}

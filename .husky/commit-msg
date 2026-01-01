@@ -1,0 +1,8 @@
+commit_regex='^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .{1,100}$'
+
+if ! grep -qE "$commit_regex" "$1"; then
+    echo "❌ Commit message inválido!"
+    echo "Formato: <type>(<scope>): <description>"
+    echo "Exemplo: feat(auth): adiciona login com Google"
+    exit 1
+fi

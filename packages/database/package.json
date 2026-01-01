@@ -1,0 +1,21 @@
+{
+  "name": "@versix/database",
+  "version": "1.0.1",
+  "private": true,
+  "main": "./types/index.ts",
+  "types": "./types/index.ts",
+  "exports": {
+    ".": "./types/index.ts",
+    "./types": "./types/database.ts"
+  },
+  "scripts": {
+    "generate": "supabase gen types typescript --local > types/database.ts",
+    "generate:remote": "supabase gen types typescript --project-id $SUPABASE_PROJECT_REF > types/database.ts",
+    "lint": "echo 'No lint for generated types'",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "supabase": "^1.150.0",
+    "typescript": "^5.4.0"
+  }
+}
