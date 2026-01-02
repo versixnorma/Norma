@@ -1,24 +1,24 @@
 /// <reference lib="webworker" />
 
-// Declaração do escopo global do Service Worker
-declare const self: ServiceWorkerGlobalScope;
+// Utilizar 'self' com type assertion para evitar conflito de variáveis globais
+const sw = self as unknown as ServiceWorkerGlobalScope;
 
 // Importar utilitários se necessário (aqui mantemos simples para evitar deps complexas no worker)
 
-self.addEventListener('install', (event) => {
+sw.addEventListener('install', (event) => {
   console.log('[Worker] Instalando Service Worker customizado...');
-  event.waitUntil(self.skipWaiting());
+  event.waitUntil(sw.skipWaiting());
 });
 
-self.addEventListener('activate', (event) => {
+sw.addEventListener('activate', (event) => {
   console.log('[Worker] Ativando Service Worker customizado...');
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(sw.clients.claim());
 });
 
 // ============================================
 // BACKGROUND SYNC
 // ============================================
-self.addEventListener('sync', (event) => {
+sw.addEventListener('sync', (event) => {
   console.log('[Worker] Sync event disparado:', event.tag);
 
   if (event.tag === 'sync-critical-data') {
@@ -31,7 +31,7 @@ async function syncCriticalData() {
     console.log('[Worker] Executando sincronização crítica em background...');
 
     // Notificar a aplicação que o sync começou (se houver clientes abertos)
-    const clients = await self.clients.matchAll();
+    const clients = await sw.clients.matchAll();
     clients.forEach((client) => {
       client.postMessage({ type: 'SYNC_STARTED', timestamp: Date.now() });
     });
@@ -54,7 +54,7 @@ async function syncCriticalData() {
 // ============================================
 // PUSH NOTIFICATIONS
 // ============================================
-self.addEventListener('push', (event) => {
+sw.addEventListener('push', (event) => {
   if (!event.data) return;
 
   try {
@@ -69,18 +69,18 @@ self.addEventListener('push', (event) => {
       tag: data.tag || 'versix-norma-notification',
     };
 
-    event.waitUntil(self.registration.showNotification(title, options));
+    event.waitUntil(sw.registration.showNotification(title, options));
   } catch (err) {
     console.error('[Worker] Erro ao processar push:', err);
   }
 });
 
-self.addEventListener('notificationclick', (event) => {
+sw.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
   // Abrir app ao clicar
   event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+    sw.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       if (clientList.length > 0) {
         let client = clientList[0];
         for (let i = 0; i < clientList.length; i++) {
@@ -90,7 +90,7 @@ self.addEventListener('notificationclick', (event) => {
         }
         return client.focus();
       }
-      return self.clients.openWindow('/');
+      return sw.clients.openWindow('/');
     })
   );
 });
