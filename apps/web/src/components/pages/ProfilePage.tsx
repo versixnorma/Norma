@@ -15,7 +15,7 @@ export function ProfilePage({ onScroll }: ProfilePageProps) {
   const { profile, logout } = useAuthContext();
 
   const unidadeInfo = profile?.condominios?.find(
-    c => c.condominio_id === profile?.condominio_atual?.id
+    (c) => c.condominio_id === profile?.condominio_atual?.id
   );
 
   const { meusChamados } = useChamados({
@@ -33,39 +33,44 @@ export function ProfilePage({ onScroll }: ProfilePageProps) {
   };
 
   const userInitials = profile?.nome
-    ? profile.nome.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
+    ? profile.nome
+        .split(' ')
+        .map((n) => n[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase()
     : 'US';
 
   return (
     <div
-      className="flex-1 overflow-y-auto hide-scroll pb-32 pt-6 relative z-0 px-6 animate-slide-up space-y-6"
+      className="hide-scroll relative z-0 flex-1 animate-slide-up space-y-6 overflow-y-auto px-6 pb-32 pt-6"
       onScroll={onScroll}
     >
       {/* Avatar Section */}
       <div className="flex flex-col items-center pt-2">
-        <div className="w-24 h-24 rounded-full border-4 border-white dark:border-card-dark shadow-lg overflow-hidden mb-3 relative group cursor-pointer bg-secondary flex items-center justify-center">
-          <span className="text-white font-bold text-3xl">{userInitials}</span>
-          <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="group relative mb-3 flex h-24 w-24 cursor-pointer items-center justify-center overflow-hidden rounded-full border-4 border-white bg-secondary shadow-lg dark:border-card-dark">
+          <span className="text-3xl font-bold text-white">{userInitials}</span>
+          <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition-opacity group-hover:opacity-100">
             <span className="material-symbols-outlined text-white">edit</span>
           </div>
         </div>
-        <h2 className="text-xl font-bold text-primary dark:text-white font-display">
+        <h2 className="font-display text-xl font-bold text-primary dark:text-white">
           {profile?.nome || 'Usuário'}
         </h2>
-        <p className="text-sm text-text-sub font-medium">
+        <p className="text-sm font-medium text-text-sub">
           {profile?.condominio_atual?.nome || 'Condomínio'}
         </p>
-        <div className="flex items-center gap-2 mt-1 flex-wrap justify-center">
+        <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
           {unidadeInfo?.unidade_identificador && (
-            <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+            <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700">
               {unidadeInfo.unidade_identificador}
             </span>
           )}
-          <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+          <span className="flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold text-green-700">
             <span className="material-symbols-outlined text-[10px]">check_circle</span>
             {profile?.status === 'active' ? 'Ativo' : profile?.status}
           </span>
-          <span className="bg-purple-100 text-purple-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+          <span className="rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-bold text-purple-700">
             {profile?.condominio_atual?.role || 'morador'}
           </span>
         </div>
@@ -73,14 +78,14 @@ export function ProfilePage({ onScroll }: ProfilePageProps) {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-2 gap-4">
-        <button className="bg-white dark:bg-card-dark p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col items-center gap-2 hover:bg-gray-50 transition-colors group">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+        <button className="group flex flex-col items-center gap-2 rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-card-dark">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary transition-transform group-hover:scale-110">
             <span className="material-symbols-outlined text-xl">qr_code_2</span>
           </div>
           <span className="text-xs font-bold text-gray-700 dark:text-gray-300">Meu QR Code</span>
         </button>
-        <button className="bg-white dark:bg-card-dark p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col items-center gap-2 hover:bg-gray-50 transition-colors group">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+        <button className="group flex flex-col items-center gap-2 rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-card-dark">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary transition-transform group-hover:scale-110">
             <span className="material-symbols-outlined text-xl">manage_accounts</span>
           </div>
           <span className="text-xs font-bold text-gray-700 dark:text-gray-300">Editar Dados</span>
@@ -88,31 +93,35 @@ export function ProfilePage({ onScroll }: ProfilePageProps) {
       </div>
 
       {/* User Info */}
-      <div className="bg-white dark:bg-card-dark p-5 rounded-home-xl shadow-sm border border-gray-100 dark:border-gray-700">
-        <h3 className="text-sm font-bold text-gray-800 dark:text-white uppercase tracking-wide mb-4">
+      <div className="rounded-home-xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-card-dark">
+        <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-gray-800 dark:text-white">
           Informações
         </h3>
 
         <div className="space-y-3">
-          <div className="flex items-center gap-3 py-2 border-b border-gray-50 dark:border-gray-800">
+          <div className="flex items-center gap-3 border-b border-gray-50 py-2 dark:border-gray-800">
             <span className="material-symbols-outlined text-gray-400">mail</span>
             <div>
-              <p className="text-[10px] text-text-sub uppercase">Email</p>
+              <p className="text-[10px] uppercase text-text-sub">Email</p>
               <p className="text-sm text-gray-800 dark:text-white">{profile?.email || '-'}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 py-2 border-b border-gray-50 dark:border-gray-800">
+          <div className="flex items-center gap-3 border-b border-gray-50 py-2 dark:border-gray-800">
             <span className="material-symbols-outlined text-gray-400">phone</span>
             <div>
-              <p className="text-[10px] text-text-sub uppercase">Telefone</p>
-              <p className="text-sm text-gray-800 dark:text-white">{profile?.telefone || 'Não informado'}</p>
+              <p className="text-[10px] uppercase text-text-sub">Telefone</p>
+              <p className="text-sm text-gray-800 dark:text-white">
+                {profile?.telefone || 'Não informado'}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-3 py-2">
             <span className="material-symbols-outlined text-gray-400">badge</span>
             <div>
-              <p className="text-[10px] text-text-sub uppercase">Documento</p>
-              <p className="text-sm text-gray-800 dark:text-white">{profile?.documento || 'Não informado'}</p>
+              <p className="text-[10px] uppercase text-text-sub">Documento</p>
+              <p className="text-sm text-gray-800 dark:text-white">
+                {profile?.documento || 'Não informado'}
+              </p>
             </div>
           </div>
         </div>
@@ -121,36 +130,49 @@ export function ProfilePage({ onScroll }: ProfilePageProps) {
       {/* Activity Timeline */}
       {meusChamados.length > 0 && (
         <div>
-          <h3 className="text-lg font-bold text-gray-800 dark:text-white font-display mb-4">
+          <h3 className="mb-4 font-display text-lg font-bold text-gray-800 dark:text-white">
             Meus Chamados
           </h3>
           <div className="space-y-4">
             {meusChamados.slice(0, 5).map((chamado, i) => (
-              <div key={chamado.id} className="flex gap-4 relative">
+              <div key={chamado.id} className="relative flex gap-4">
                 <div className="flex flex-col items-center">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10 ${
-                    chamado.status === 'resolvido' ? 'bg-green-100 text-green-600' :
-                    chamado.status === 'em_atendimento' ? 'bg-blue-100 text-blue-600' :
-                    'bg-orange-100 text-orange-600'
-                  }`}>
+                  <div
+                    className={`z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+                      chamado.status === 'resolvido'
+                        ? 'bg-green-100 text-green-600'
+                        : chamado.status === 'em_atendimento'
+                          ? 'bg-blue-100 text-blue-600'
+                          : 'bg-orange-100 text-orange-600'
+                    }`}
+                  >
                     <span className="material-symbols-outlined text-sm">
-                      {chamado.status === 'resolvido' ? 'check_circle' :
-                       chamado.status === 'em_atendimento' ? 'pending' : 'schedule'}
+                      {chamado.status === 'resolvido'
+                        ? 'check_circle'
+                        : chamado.status === 'em_atendimento'
+                          ? 'pending'
+                          : 'schedule'}
                     </span>
                   </div>
                   {i < meusChamados.length - 1 && (
-                    <div className="w-0.5 h-full bg-gray-200 dark:bg-gray-700 absolute top-8" />
+                    <div className="absolute top-8 h-full w-0.5 bg-gray-200 dark:bg-gray-700" />
                   )}
                 </div>
-                <div className="pb-4 flex-1">
-                  <h4 className="text-sm font-bold text-gray-800 dark:text-white">{chamado.titulo}</h4>
-                  <p className="text-xs text-text-sub line-clamp-1">{chamado.descricao}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                      chamado.status === 'resolvido' ? 'bg-green-100 text-green-600' :
-                      chamado.status === 'em_atendimento' ? 'bg-blue-100 text-blue-600' :
-                      'bg-orange-100 text-orange-600'
-                    }`}>
+                <div className="flex-1 pb-4">
+                  <h4 className="text-sm font-bold text-gray-800 dark:text-white">
+                    {chamado.titulo}
+                  </h4>
+                  <p className="line-clamp-1 text-xs text-text-sub">{chamado.descricao}</p>
+                  <div className="mt-1 flex items-center gap-2">
+                    <span
+                      className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${
+                        chamado.status === 'resolvido'
+                          ? 'bg-green-100 text-green-600'
+                          : chamado.status === 'em_atendimento'
+                            ? 'bg-blue-100 text-blue-600'
+                            : 'bg-orange-100 text-orange-600'
+                      }`}
+                    >
                       {chamado.status.replace('_', ' ')}
                     </span>
                     <span className="text-[10px] text-gray-400">
@@ -165,8 +187,8 @@ export function ProfilePage({ onScroll }: ProfilePageProps) {
       )}
 
       {/* Settings Section */}
-      <div className="bg-white dark:bg-card-dark p-5 rounded-home-xl shadow-sm border border-gray-100 dark:border-gray-700">
-        <h3 className="text-sm font-bold text-gray-800 dark:text-white uppercase tracking-wide mb-4">
+      <div className="rounded-home-xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-card-dark">
+        <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-gray-800 dark:text-white">
           Configurações
         </h3>
 
@@ -176,10 +198,10 @@ export function ProfilePage({ onScroll }: ProfilePageProps) {
       </div>
 
       {/* Actions */}
-      <div className="pt-2 pb-4 space-y-3">
+      <div className="space-y-3 pb-4 pt-2">
         <button
           onClick={handleLogout}
-          className="w-full py-3 text-brand-danger text-xs font-bold hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-colors flex items-center justify-center gap-2"
+          className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-xs font-bold text-brand-danger transition-colors hover:bg-red-50 dark:hover:bg-red-900/10"
         >
           <span className="material-symbols-outlined text-sm">logout</span>
           Sair do App
@@ -190,7 +212,8 @@ export function ProfilePage({ onScroll }: ProfilePageProps) {
 }
 
 function NotificationToggle() {
-  const { supported, permission, isSubscribed, loading, enablePush, disablePush } = usePushNotifications();
+  const { supported, permission, isSubscribed, loading, enablePush, disablePush } =
+    usePushNotifications();
 
   if (!supported) return null;
 
@@ -212,9 +235,11 @@ function NotificationToggle() {
   return (
     <div className="flex items-center justify-between py-1">
       <div className="flex items-center gap-3">
-        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-          isSubscribed ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-400'
-        }`}>
+        <div
+          className={`flex h-8 w-8 items-center justify-center rounded-full ${
+            isSubscribed ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-400'
+          }`}
+        >
           <span className="material-symbols-outlined text-sm">
             {isSubscribed ? 'notifications_active' : 'notifications_off'}
           </span>
@@ -230,13 +255,16 @@ function NotificationToggle() {
       <button
         onClick={handleToggle}
         disabled={loading}
-        className={`w-12 h-6 rounded-full relative transition-colors ${
+        className={`relative h-6 w-12 rounded-full transition-colors ${
           isSubscribed ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-700'
         }`}
       >
-        <div className={`w-5 h-5 bg-white rounded-full shadow-sm absolute top-0.5 transition-all ${
-          isSubscribed ? 'left-[calc(100%-22px)]' : 'left-0.5'
-        }`} />
+        <div
+          className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-all ${
+            isSubscribed ? 'left-[calc(100%-22px)]' : 'left-0.5'
+          }`}
+        />
       </button>
     </div>
   );
+}
