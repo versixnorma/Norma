@@ -27,8 +27,12 @@ let browserClient: SupabaseBrowserClient | null = null;
 export function getSupabaseClient(): SupabaseAnyClient {
   if (typeof window === 'undefined') {
     // Server-side: sempre criar novo
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      console.error('❌ NEXT_PUBLIC_SUPABASE_URL is missing in Server Environment!');
+      throw new Error('supabaseUrl is required (server)');
+    }
     return createSupabaseClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
   }
