@@ -60,7 +60,7 @@ sw.addEventListener('push', (event) => {
   try {
     const data = event.data.json();
     const title = data.title || 'Nova Notificação';
-    const options: NotificationOptions = {
+    const options: any = {
       body: data.body || '',
       icon: '/icons/icon-192x192.png',
       badge: '/icons/badge-72x72.png',
