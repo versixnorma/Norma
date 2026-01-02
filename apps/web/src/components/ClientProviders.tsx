@@ -3,8 +3,9 @@
 import { PWAProvider } from '@/components/pwa/PWAProvider';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
+import { initSentry } from '@/lib/sentry';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { Toaster } from 'sonner';
 
 const queryClient = new QueryClient();
@@ -14,13 +15,15 @@ interface ClientProvidersProps {
 }
 
 export function ClientProviders({ children }: ClientProvidersProps) {
+  useEffect(() => {
+    initSentry();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="light">
         <AuthProvider>
-          <PWAProvider>
-            {children}
-          </PWAProvider>
+          <PWAProvider>{children}</PWAProvider>
           <Toaster
             position="top-center"
             toastOptions={{
