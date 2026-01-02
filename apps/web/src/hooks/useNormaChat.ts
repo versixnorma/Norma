@@ -54,7 +54,7 @@ export function useNormaChat({ condominioId, userId }: UseNormaChatOptions): Use
 
     try {
       const { data, error } = await supabase
-        .from('norma_chat_logs')
+        .from('norma_chat_logs' as any)
         .select('*')
         .eq('condominio_id', condominioId)
         .eq('user_id', userId)
@@ -159,20 +159,23 @@ export function useNormaChat({ condominioId, userId }: UseNormaChatOptions): Use
         }
 
         // Call Edge Function with streaming
-        const response = await fetch(`${supabase.supabaseUrl}/functions/v1/ask-norma`, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            message: text.trim(),
-            condominioId,
-            userId,
-            conversationHistory,
-          }),
-          signal: abortController.signal,
-        });
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/ask-norma`,
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              message: text.trim(),
+              condominioId,
+              userId,
+              conversationHistory,
+            }),
+            signal: abortController.signal,
+          }
+        );
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -206,7 +209,7 @@ export function useNormaChat({ condominioId, userId }: UseNormaChatOptions): Use
                   suggestions = generateSuggestions(fullResponse, sources);
 
                   // Log the interaction
-                  await supabase.from('norma_chat_logs').insert({
+                  await supabase.from('norma_chat_logs' as any).insert({
                     condominio_id: condominioId,
                     user_id: userId,
                     message: text.trim(),

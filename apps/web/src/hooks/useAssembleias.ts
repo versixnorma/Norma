@@ -23,13 +23,14 @@ interface AssembleiaQueryResult extends AssembleiaRow {
   presencas?: PresencaRow[];
 }
 
-const toAssembleia = (data: AssembleiaQueryResult): AssembleiaComJoins => ({
-  ...data,
-  convocador: data.convocador,
-  secretario: data.secretario,
-  pautas: data.pautas || [],
-  presencas: data.presencas || [],
-});
+const toAssembleia = (data: AssembleiaQueryResult): AssembleiaComJoins =>
+  ({
+    ...data,
+    convocador: data.convocador,
+    secretario: data.secretario,
+    pautas: (data.pautas as any) || [],
+    presencas: data.presencas || [],
+  }) as unknown as AssembleiaComJoins;
 
 /**
  * Hook para gerenciamento de assembleias condominiais
@@ -95,7 +96,7 @@ export function useAssembleias() {
           .single();
 
         return {
-          ...toAssembleia(data as AssembleiaQueryResult),
+          ...toAssembleia(data as unknown as AssembleiaQueryResult),
           quorum,
         } as unknown as AssembleiaComJoins;
       } catch (err: unknown) {

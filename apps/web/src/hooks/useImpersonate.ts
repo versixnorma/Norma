@@ -11,7 +11,7 @@ export interface ImpersonateSession {
   started_at: string;
   expires_at: string;
   revoked_at: string | null;
-  alvo: { nome: string; email: string; role: string; };
+  alvo: { nome: string; email: string; role: string };
 }
 
 interface ImpersonateResponse {
@@ -19,7 +19,7 @@ interface ImpersonateResponse {
   session_id?: string;
   access_token?: string;
   expires_at?: string;
-  usuario?: { id: string; nome: string; email: string; role: string; };
+  usuario?: { id: string; nome: string; email: string; role: string };
   error?: string;
 }
 
@@ -52,44 +52,62 @@ export function useImpersonate() {
     }
   }, []);
 
-  useEffect(() => { checkImpersonateStatus(); }, [checkImpersonateStatus]);
+  useEffect(() => {
+    checkImpersonateStatus();
+  }, [checkImpersonateStatus]);
 
-  const startImpersonate = useCallback(async (userId: string, motivo: string): Promise<ImpersonateResponse> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (sessionData?.session?.access_token) {
-        localStorage.setItem(ORIGINAL_TOKEN_KEY, sessionData.session.access_token);
-      }
-      // @ts-expect-error - Supabase function invoke typing
-      const response = await supabase.functions.invoke<ImpersonateResponse>('impersonate', {
-        body: { usuario_alvo_id: userId, motivo },
-      });
-      if (response.error) throw new Error(response.error.message);
-      if (!response.data?.success) throw new Error(response.data?.error || 'Erro ao iniciar impersonate');
+  const startImpersonate = useCallback(
+    async (userId: string, motivo: string): Promise<ImpersonateResponse> => {
+      setLoading(true);
+      setError(null);
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData?.session?.access_token) {
+          localStorage.setItem(ORIGINAL_TOKEN_KEY, sessionData.session.access_token);
+        }
 
-      const session: ImpersonateSession = {
-        id: response.data.session_id!, superadmin_id: '', usuario_alvo_id: userId, motivo,
-        started_at: new Date().toISOString(), expires_at: response.data.expires_at!, revoked_at: null,
-        alvo: { nome: response.data.usuario?.nome || '', email: response.data.usuario?.email || '', role: response.data.usuario?.role || '' },
-      };
-      localStorage.setItem(IMPERSONATE_KEY, JSON.stringify(session));
-      setImpersonateSession(session);
-      setIsImpersonating(true);
-      if (response.data.access_token) {
-        await supabase.auth.setSession({ access_token: response.data.access_token, refresh_token: '' });
+        const response = await supabase.functions.invoke<ImpersonateResponse>('impersonate', {
+          body: { usuario_alvo_id: userId, motivo },
+        });
+        if (response.error) throw new Error(response.error.message);
+        if (!response.data?.success)
+          throw new Error(response.data?.error || 'Erro ao iniciar impersonate');
+
+        const session: ImpersonateSession = {
+          id: response.data.session_id!,
+          superadmin_id: '',
+          usuario_alvo_id: userId,
+          motivo,
+          started_at: new Date().toISOString(),
+          expires_at: response.data.expires_at!,
+          revoked_at: null,
+          alvo: {
+            nome: response.data.usuario?.nome || '',
+            email: response.data.usuario?.email || '',
+            role: response.data.usuario?.role || '',
+          },
+        };
+        localStorage.setItem(IMPERSONATE_KEY, JSON.stringify(session));
+        setImpersonateSession(session);
+        setIsImpersonating(true);
+        if (response.data.access_token) {
+          await supabase.auth.setSession({
+            access_token: response.data.access_token,
+            refresh_token: '',
+          });
+        }
+        window.location.reload();
+        return response.data;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Erro ao iniciar impersonate';
+        setError(errorMessage);
+        return { success: false, error: errorMessage };
+      } finally {
+        setLoading(false);
       }
-      window.location.reload();
-      return response.data;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao iniciar impersonate';
-      setError(errorMessage);
-      return { success: false, error: errorMessage };
-    } finally {
-      setLoading(false);
-    }
-  }, [supabase]);
+    },
+    [supabase]
+  );
 
   const stopImpersonate = useCallback(async (): Promise<boolean> => {
     setLoading(true);
@@ -115,5 +133,13 @@ export function useImpersonate() {
     }
   }, [supabase]);
 
-  return { isImpersonating, impersonateSession, loading, error, startImpersonate, stopImpersonate, checkImpersonateStatus };
+  return {
+    isImpersonating,
+    impersonateSession,
+    loading,
+    error,
+    startImpersonate,
+    stopImpersonate,
+    checkImpersonateStatus,
+  };
 }

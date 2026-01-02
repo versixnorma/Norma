@@ -74,7 +74,7 @@ export function useTaxas() {
         const { data, error: fetchError, count } = await query;
         if (fetchError) throw fetchError;
 
-        setTaxas(data || []);
+        setTaxas((data as unknown as TaxaUnidade[]) || []);
         setPagination({ page, pageSize, total: count || 0 });
         return { data: data || [], total: count || 0 };
       } catch (err) {
@@ -91,13 +91,13 @@ export function useTaxas() {
     async (userId: string, condominioId: string): Promise<TaxaUnidade[]> => {
       try {
         const { data: unidadesUser } = await supabase
-          .from('usuarios_unidades')
+          .from('usuarios_unidades' as any)
           .select('unidade_id')
           .eq('usuario_id', userId)
           .eq('ativo', true);
         if (!unidadesUser || unidadesUser.length === 0) return [];
 
-        const unidadeIds = unidadesUser.map((u: { unidade_id: string }) => u.unidade_id);
+        const unidadeIds = (unidadesUser as any[]).map((u: any) => u.unidade_id);
 
         const { data, error: fetchError } = await supabase
           .from('taxas_unidades')
@@ -128,8 +128,8 @@ export function useTaxas() {
           .select()
           .single();
         if (insertError) throw insertError;
-        setTaxas((prev) => [data, ...prev]);
-        return data;
+        setTaxas((prev) => [data as unknown as TaxaUnidade, ...prev]);
+        return data as unknown as TaxaUnidade;
       } catch (err) {
         setError(getErrorMessage(err));
         return null;
@@ -160,8 +160,8 @@ export function useTaxas() {
           .select()
           .single();
         if (updateError) throw updateError;
-        setTaxas((prev) => prev.map((t) => (t.id === id ? data : t)));
-        return data;
+        setTaxas((prev) => prev.map((t) => (t.id === id ? (data as unknown as TaxaUnidade) : t)));
+        return data as unknown as TaxaUnidade;
       } catch (err) {
         setError(getErrorMessage(err));
         return null;
@@ -220,7 +220,7 @@ export function useTaxas() {
 
   const atualizarTaxasAtrasadas = useCallback(async (): Promise<number> => {
     try {
-      const { data, error: rpcError } = await supabase.rpc('atualizar_taxas_atrasadas');
+      const { data, error: rpcError } = await supabase.rpc('atualizar_taxas_atrasadas' as any);
       if (rpcError) throw rpcError;
       return data || 0;
     } catch {
@@ -240,18 +240,15 @@ export function useTaxas() {
           .in('status', ['pendente', 'atrasado'])
           .order('data_vencimento');
 
-        const atrasadas = (data || []).filter((t: TaxaUnidade) => t.status === 'atrasado');
-        const pendentes = (data || []).filter((t: TaxaUnidade) => t.status === 'pendente');
+        const atrasadas = (data || []).filter((t: any) => t.status === 'atrasado');
+        const pendentes = (data || []).filter((t: any) => t.status === 'pendente');
 
         return {
           total_em_aberto: (data || []).reduce(
-            (sum: number, t: TaxaUnidade) => sum + (t.valor_final ?? 0),
+            (sum: number, t: any) => sum + (t.valor_final ?? 0),
             0
           ),
-          total_atrasado: atrasadas.reduce(
-            (sum: number, t: TaxaUnidade) => sum + (t.valor_final ?? 0),
-            0
-          ),
+          total_atrasado: atrasadas.reduce((sum: number, t: any) => sum + (t.valor_final ?? 0), 0),
           qtd_atrasadas: atrasadas.length,
           qtd_pendentes: pendentes.length,
           taxas_atrasadas: atrasadas,

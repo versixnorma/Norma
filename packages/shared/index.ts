@@ -21,10 +21,16 @@ export type {
 
 // Operational input types (only those not in derived)
 export type {
+  Comentario,
   CreateAssembleiaInput,
+  CreateComentarioInput,
   CreatePautaInput,
+  PautaStatus,
+  Presenca,
   UpdateAssembleiaInput,
   UpdatePautaInput,
+  VotarInput,
+  Voto,
 } from './src/types/assembleias';
 
 export type {
@@ -38,10 +44,14 @@ export type {
   UpdateOcorrenciaInput,
 } from './src/types/operational';
 
-export type { CreateLancamentoInput, UpdateLancamentoInput } from './src/types/financial';
+export * from './src/types/financial';
 
 // FAQ types
 export type { CreateFAQInput, FAQFilters, UpdateFAQInput } from './src/types/derived';
 
 // Feature Flags
 export type { FeatureFlag } from './src/types/derived';
+
+// Missing Exports
+export type { ApiLog, WebhookEntrega } from './src/types/derived';
+export type { ApiLogsFilters } from './src/validators/integracoes';

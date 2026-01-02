@@ -16,7 +16,7 @@ export interface Anexo {
 // Converter Json para Anexo[]
 export function parseAnexos(anexos: Json | null | undefined): Anexo[] {
   if (!anexos || !Array.isArray(anexos)) return [];
-  return anexos as Anexo[];
+  return anexos as unknown as Anexo[];
 }
 
 // Converter Json para objeto genérico

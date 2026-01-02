@@ -53,12 +53,12 @@ export type OcorrenciaStatus = Enums['ocorrencia_status'];
 export type Prioridade = Enums['prioridade'];
 
 // Financeiro
-export type TaxaTipo = Enums['taxa_tipo'];
-export type CobrancaStatus = Enums['cobranca_status'];
-export type LancamentoTipo = Enums['lancamento_tipo'];
-export type LancamentoStatus = Enums['lancamento_status'];
-export type CategoriaTipo = Enums['categoria_tipo'];
-export type PrestacaoStatus = Enums['prestacao_status'];
+// export type TaxaTipo = Enums['taxa_tipo'];
+// export type CobrancaStatus = Enums['cobranca_status'];
+// export type LancamentoTipo = Enums['lancamento_tipo'];
+// export type LancamentoStatus = Enums['lancamento_status'];
+// export type CategoriaTipo = Enums['categoria_tipo'];
+// export type PrestacaoStatus = Enums['prestacao_status'];
 
 // Unidades
 export type UnidadeTipo = Enums['unidade_tipo'];
@@ -112,13 +112,13 @@ export type FAQ = Tables['faq']['Row'];
 export type FAQVoto = Tables['faq_votos']['Row'];
 
 // Financeiro
-export type TaxaUnidade = Tables['taxas_unidades']['Row'];
-export type LancamentoFinanceiro = Tables['lancamentos_financeiros']['Row'];
-export type CategoriaFinanceira = Tables['categorias_financeiras']['Row'];
-export type ContaBancaria = Tables['contas_bancarias']['Row'];
+// export type TaxaUnidade = Tables['taxas_unidades']['Row'];
+// export type LancamentoFinanceiro = Tables['lancamentos_financeiros']['Row'];
+// export type CategoriaFinanceira = Tables['categorias_financeiras']['Row'];
+// export type ContaBancaria = Tables['contas_bancarias']['Row'];
 export type ContaBancariaHistorico = Tables['contas_bancarias_historico']['Row'];
 export type ConfiguracoesFinanceiras = Tables['configuracoes_financeiras']['Row'];
-export type PrestacaoContas = Tables['prestacao_contas']['Row'];
+// export type PrestacaoContas = Tables['prestacao_contas']['Row'];
 
 // Sistema
 export type AuditLog = Tables['audit_logs']['Row'];

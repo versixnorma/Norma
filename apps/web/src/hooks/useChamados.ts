@@ -50,7 +50,7 @@ export function useChamados(options?: {
 
   const toChamado = (data: ChamadoQueryResult): ChamadoComJoins => ({
     ...data,
-    anexos: parseAnexos(data.anexos),
+    anexos: parseAnexos(data.anexos) as any,
     solicitante: data.solicitante ?? undefined,
     atendente: data.atendente ?? undefined,
   });
@@ -160,13 +160,13 @@ export function useChamados(options?: {
 
         const mensagensComAutor = (mensagens || []).map((msg: ChamadoMensagemQueryResult) => ({
           ...msg,
-          anexos: parseAnexos(msg.anexos),
+          anexos: parseAnexos(msg.anexos) as any,
           autor: msg.autor ?? undefined,
         }));
 
         return {
           ...(data as ChamadoRow),
-          anexos: parseAnexos(data.anexos),
+          anexos: parseAnexos(data.anexos) as any,
           solicitante: (data as ChamadoQueryResult).solicitante ?? undefined,
           atendente: (data as ChamadoQueryResult).atendente ?? undefined,
           mensagens: mensagensComAutor,
@@ -322,27 +322,24 @@ export function useChamados(options?: {
         };
         const stats: EstatisticasChamados = {
           total: data.length,
-          novos: data.filter((c: ChamadoComJoins) => c.status === 'novo').length,
-          em_atendimento: data.filter((c: ChamadoComJoins) => c.status === 'em_atendimento').length,
-          resolvidos: data.filter((c: ChamadoComJoins) =>
-            ['resolvido', 'fechado'].includes(c.status)
-          ).length,
+          novos: data.filter((c: any) => c.status === 'novo').length,
+          em_atendimento: data.filter((c: any) => c.status === 'em_atendimento').length,
+          resolvidos: data.filter((c: any) => ['resolvido', 'fechado'].includes(c.status)).length,
           por_categoria: {},
           avaliacao_media: null,
           tempo_medio_resolucao_horas: null,
         };
-        data.forEach((c: ChamadoComJoins) => {
+        data.forEach((c: any) => {
           stats.por_categoria[c.categoria] = (stats.por_categoria[c.categoria] || 0) + 1;
         });
-        const comNota = data.filter((c: ChamadoComJoins) => c.avaliacao_nota);
+        const comNota = data.filter((c: any) => c.avaliacao_nota);
         if (comNota.length > 0)
           stats.avaliacao_media =
-            comNota.reduce((a: number, c: ChamadoComJoins) => a + c.avaliacao_nota!, 0) /
-            comNota.length;
-        const resolvidos = data.filter((c: ChamadoComJoins) => c.resolvido_em);
+            comNota.reduce((a: number, c: any) => a + c.avaliacao_nota!, 0) / comNota.length;
+        const resolvidos = data.filter((c: any) => c.resolvido_em);
         if (resolvidos.length > 0) {
           const tempos = resolvidos.map(
-            (c: ChamadoComJoins) =>
+            (c: any) =>
               (new Date(c.resolvido_em!).getTime() - new Date(c.created_at).getTime()) / 3600000
           );
           stats.tempo_medio_resolucao_horas =

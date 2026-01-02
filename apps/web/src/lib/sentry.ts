@@ -1,4 +1,3 @@
-
 import { logger } from '@/lib/logger';
 // =====================================================
 // SPRINT 10: SENTRY CONFIGURATION
@@ -93,12 +92,13 @@ export function initSentry() {
       // Remover dados sensíveis do request
       if (event.request?.data) {
         try {
-          const data = typeof event.request.data === 'string'
-            ? JSON.parse(event.request.data)
-            : event.request.data;
+          const data =
+            typeof event.request.data === 'string'
+              ? JSON.parse(event.request.data)
+              : event.request.data;
 
           const sensitiveFields = ['password', 'senha', 'cpf', 'telefone', 'token', 'api_key'];
-          sensitiveFields.forEach(field => {
+          sensitiveFields.forEach((field) => {
             if (data[field]) data[field] = '[REDACTED]';
           });
 
@@ -111,7 +111,7 @@ export function initSentry() {
       // Remover headers sensíveis
       if (event.request?.headers) {
         const sensitiveHeaders = ['authorization', 'cookie', 'x-api-key'];
-        sensitiveHeaders.forEach(header => {
+        sensitiveHeaders.forEach((header) => {
           if (event.request!.headers![header]) {
             event.request!.headers![header] = '[REDACTED]';
           }
@@ -227,10 +227,7 @@ export function captureMessage(
 // PERFORMANCE MONITORING
 // =====================================================
 
-export function startTransaction(
-  name: string,
-  op: string
-) {
+export function startTransaction(name: string, op: string) {
   return Sentry.startInactiveSpan({
     name,
     op,
@@ -243,23 +240,13 @@ export async function measureAsync<T>(
   operation: string,
   fn: () => Promise<T>
 ): Promise<T> {
-  return Sentry.startSpan(
-    { name, op: operation },
-    async () => {
-      return await fn();
-    }
-  );
+  return Sentry.startSpan({ name, op: operation }, async () => {
+    return await fn();
+  });
 }
 
-export function measureSync<T>(
-  name: string,
-  operation: string,
-  fn: () => T
-): T {
-  return Sentry.startSpan(
-    { name, op: operation },
-    () => fn()
-  );
+export function measureSync<T>(name: string, operation: string, fn: () => T): T {
+  return Sentry.startSpan({ name, op: operation }, () => fn());
 }
 
 // =====================================================
@@ -268,7 +255,7 @@ export function measureSync<T>(
 
 export function setCustomMetric(name: string, value: number, unit?: string) {
   // Sentry.setMeasurement accepts string units - just pass directly
-  Sentry.setMeasurement(name, value, unit);
+  Sentry.setMeasurement(name, value, unit as any);
 }
 
 // =====================================================
@@ -290,13 +277,18 @@ export function trackApiError(
   errorMessage?: string,
   requestId?: string
 ) {
-  addBreadcrumb('api_error', `${method} ${endpoint} → ${statusCode}`, {
-    endpoint,
-    method,
-    statusCode,
-    errorMessage,
-    requestId,
-  }, 'error');
+  addBreadcrumb(
+    'api_error',
+    `${method} ${endpoint} → ${statusCode}`,
+    {
+      endpoint,
+      method,
+      statusCode,
+      errorMessage,
+      requestId,
+    },
+    'error'
+  );
 
   if (statusCode >= 500) {
     captureMessage(`API Error: ${method} ${endpoint}`, 'error', {
@@ -316,5 +308,4 @@ export function trackApiError(
 export { Sentry };
 
 // Re-export useful types
-  export type { SeverityLevel } from '@sentry/react';
-
+export type { SeverityLevel } from '@sentry/react';

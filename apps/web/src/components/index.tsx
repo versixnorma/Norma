@@ -10,9 +10,9 @@ import dynamic from 'next/dynamic';
 // NORMA CHAT
 // ============================================
 export const NormaChatDynamic = dynamic(
-  () => import('./features/NormaChat').then(mod => ({ default: mod.NormaChat })),
+  () => import('./features/NormaChat').then((mod) => ({ default: mod.NormaChat })),
   {
-    loading: () => <div className="p-4 bg-blue-50 rounded-lg">Carregando Norma...</div>,
+    loading: () => <div className="rounded-lg bg-blue-50 p-4">Carregando Norma...</div>,
     ssr: false, // Carrega apenas no cliente
   }
 );
@@ -21,25 +21,31 @@ export const NormaChatDynamic = dynamic(
 // OBSERVABILIDADE
 // ============================================
 export const AlertasPanelDynamic = dynamic(
-  () => import('./observabilidade/AlertasPanel').then(mod => ({ default: mod.AlertasPanel })),
+  () => import('./observabilidade/AlertasPanel').then((mod) => ({ default: mod.AlertasPanel })),
   {
-    loading: () => <div className="p-4 bg-gray-50 rounded-lg animate-pulse">Carregando alertas...</div>,
+    loading: () => (
+      <div className="animate-pulse rounded-lg bg-gray-50 p-4">Carregando alertas...</div>
+    ),
     ssr: true,
   }
 );
 
 export const MetricasCardsDynamic = dynamic(
-  () => import('./observabilidade/MetricasCards').then(mod => ({ default: mod.MetricasCards })),
+  () => import('./observabilidade/MetricasCards').then((mod) => ({ default: mod.MetricasCards })),
   {
-    loading: () => <div className="p-4 bg-gray-50 rounded-lg animate-pulse">Carregando métricas...</div>,
+    loading: () => (
+      <div className="animate-pulse rounded-lg bg-gray-50 p-4">Carregando métricas...</div>
+    ),
     ssr: true,
   }
 );
 
 export const SystemStatusDynamic = dynamic(
-  () => import('./observabilidade/SystemStatus').then(mod => ({ default: mod.SystemStatus })),
+  () => import('./observabilidade/SystemStatus').then((mod) => ({ default: mod.SystemStatus })),
   {
-    loading: () => <div className="p-4 bg-gray-50 rounded-lg animate-pulse">Carregando status...</div>,
+    loading: () => (
+      <div className="animate-pulse rounded-lg bg-gray-50 p-4">Carregando status...</div>
+    ),
     ssr: true,
   }
 );
@@ -48,9 +54,14 @@ export const SystemStatusDynamic = dynamic(
 // FINANCEIRO
 // ============================================
 export const DashboardFinanceiroDynamic = dynamic(
-  () => import('./financeiro/DashboardFinanceiroCards').then(mod => ({ default: mod.DashboardFinanceiroCards })),
+  () =>
+    import('./financeiro/DashboardFinanceiroCards').then((mod) => ({
+      default: mod.DashboardFinanceiroCards,
+    })),
   {
-    loading: () => <div className="p-4 bg-gray-50 rounded-lg animate-pulse">Carregando dashboard...</div>,
+    loading: () => (
+      <div className="animate-pulse rounded-lg bg-gray-50 p-4">Carregando dashboard...</div>
+    ),
     ssr: true,
   }
 );
@@ -59,9 +70,11 @@ export const DashboardFinanceiroDynamic = dynamic(
 // ASSEMBLEIAS
 // ============================================
 export const ResultadoVotacaoDynamic = dynamic(
-  () => import('./assembleias/ResultadoVotacao').then(mod => ({ default: mod.ResultadoVotacao })),
+  () => import('./assembleias/ResultadoVotacao').then((mod) => ({ default: mod.ResultadoVotacao })),
   {
-    loading: () => <div className="p-4 bg-gray-50 rounded-lg animate-pulse">Carregando resultado...</div>,
+    loading: () => (
+      <div className="animate-pulse rounded-lg bg-gray-50 p-4">Carregando resultado...</div>
+    ),
     ssr: true,
   }
 );
@@ -70,7 +83,7 @@ export const ResultadoVotacaoDynamic = dynamic(
 // PWA
 // ============================================
 export const InstallPromptDynamic = dynamic(
-  () => import('./pwa/InstallPrompt').then(mod => ({ default: mod.InstallPrompt })),
+  () => import('./pwa/InstallPrompt').then((mod) => ({ default: mod.InstallPrompt })),
   {
     loading: () => null,
     ssr: false,
@@ -78,7 +91,7 @@ export const InstallPromptDynamic = dynamic(
 );
 
 export const AccessibilityMenuDynamic = dynamic(
-  () => import('./pwa/AccessibilityMenu').then(mod => ({ default: mod.AccessibilityMenu })),
+  () => import('./pwa/AccessibilityMenu').then((mod) => ({ default: mod.AccessibilityMenu })),
   {
     loading: () => null,
     ssr: false,
@@ -89,9 +102,87 @@ export const AccessibilityMenuDynamic = dynamic(
 // COMUNICAÇÃO
 // ============================================
 export const PreferenciasCanalsDynamic = dynamic(
-  () => import('./notificacoes/PreferenciasCanais').then(mod => ({ default: mod.PreferenciasCanais })),
+  () =>
+    import('./notificacoes/PreferenciasCanais').then((mod) => ({
+      default: mod.PreferenciasCanais,
+    })),
   {
-    loading: () => <div className="p-4 bg-gray-50 rounded-lg animate-pulse">Carregando preferências...</div>,
+    loading: () => (
+      <div className="animate-pulse rounded-lg bg-gray-50 p-4">Carregando preferências...</div>
+    ),
     ssr: true,
+  }
+);
+
+// ============================================
+// ADMIN
+// ============================================
+export const UserTableDynamic = dynamic(
+  () => import('./admin/UserTable').then((mod) => ({ default: mod.UserTable })),
+  {
+    loading: () => (
+      <div className="animate-pulse rounded-lg bg-gray-50 p-4">Carregando usuários...</div>
+    ),
+    ssr: false, // Admin tables often client-side heavy
+  }
+);
+
+export const AuditLogViewerDynamic = dynamic(
+  () => import('./admin/AuditLogViewer').then((mod) => ({ default: mod.AuditLogViewer })),
+  {
+    loading: () => (
+      <div className="animate-pulse rounded-lg bg-gray-50 p-4">Carregando logs...</div>
+    ),
+    ssr: false,
+  }
+);
+
+export const ApprovalListDynamic = dynamic(
+  () => import('./admin/ApprovalList').then((mod) => ({ default: mod.ApprovalList })),
+  {
+    loading: () => (
+      <div className="animate-pulse rounded-lg bg-gray-50 p-4">Carregando aprovações...</div>
+    ),
+    ssr: false,
+  }
+);
+
+// ============================================
+// FEATURES
+// ============================================
+export const QuickAccessDynamic = dynamic(
+  () => import('./features/QuickAccess').then((mod) => ({ default: mod.QuickAccess })),
+  {
+    loading: () => <div className="h-24 animate-pulse rounded-xl bg-gray-50"></div>,
+    ssr: true,
+  }
+);
+
+export const MuralDigitalDynamic = dynamic(
+  () => import('./features/MuralDigital').then((mod) => ({ default: mod.MuralDigital })),
+  {
+    loading: () => <div className="h-64 animate-pulse rounded-xl bg-gray-50"></div>,
+    ssr: true,
+  }
+);
+
+export const MarketplaceCarouselDynamic = dynamic(
+  () =>
+    import('./features/MarketplaceCarousel').then((mod) => ({ default: mod.MarketplaceCarousel })),
+  {
+    loading: () => <div className="h-48 animate-pulse rounded-xl bg-gray-50"></div>,
+    ssr: true,
+  }
+);
+
+// ============================================
+// NOTIFICAÇÕES & EMERGÊNCIA
+// ============================================
+export const EmergenciaButtonDynamic = dynamic(
+  () =>
+    import('./notificacoes/EmergenciaButton').then((mod) => ({ default: mod.EmergenciaButton })),
+  {
+    loading: () => <div className="h-12 w-full animate-pulse rounded-xl bg-red-100"></div>,
+    ssr: false,
   }
 );

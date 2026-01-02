@@ -1,4 +1,3 @@
-
 import { logger } from '@/lib/logger';
 // ============================================
 // VERSIX NORMA - PWA UTILITIES
@@ -19,7 +18,7 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
   try {
     const registration = await navigator.serviceWorker.register('/sw.js', {
       scope: '/',
-      updateViaCache: 'none'
+      updateViaCache: 'none',
     });
 
     // Verificar atualizações
@@ -36,9 +35,9 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
     // Registrar periodic sync para dados críticos
     if ('periodicSync' in registration) {
       try {
-        const regWithSync = registration as ServiceWorkerRegistrationWithPeriodicSync;
+        const regWithSync = registration as any;
         await regWithSync.periodicSync?.register('update-critical-data', {
-          minInterval: 12 * 60 * 60 * 1000 // 12 horas
+          minInterval: 12 * 60 * 60 * 1000, // 12 horas
         });
       } catch {
         logger.log('Periodic sync não disponível');
@@ -63,7 +62,9 @@ export function updateServiceWorker(registration: ServiceWorkerRegistration): vo
 // HOOK: useOnlineStatus
 // ============================================
 export function useOnlineStatus(): boolean {
-  const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
+  const [isOnline, setIsOnline] = useState(
+    typeof navigator !== 'undefined' ? navigator.onLine : true
+  );
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -93,7 +94,7 @@ export function useInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(() => {
     if (typeof window === 'undefined') return false;
-    const navigatorWithStandalone = navigator as NavigatorWithStandalone;
+    const navigatorWithStandalone = navigator as any;
     return (
       window.matchMedia('(display-mode: standalone)').matches ||
       navigatorWithStandalone.standalone === true
@@ -145,7 +146,7 @@ export function useInstallPrompt() {
     canInstall: !!deferredPrompt,
     isInstalled,
     isIOS,
-    promptInstall
+    promptInstall,
   };
 }
 
@@ -199,11 +200,14 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
   return Notification.permission;
 }
 
-export async function subscribeToPush(registration: ServiceWorkerRegistration, vapidPublicKey: string): Promise<PushSubscription | null> {
+export async function subscribeToPush(
+  registration: ServiceWorkerRegistration,
+  vapidPublicKey: string
+): Promise<PushSubscription | null> {
   try {
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) as BufferSource
+      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) as BufferSource,
     });
     return subscription;
   } catch (error) {
@@ -226,7 +230,11 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 // ============================================
 // STORAGE ESTIMATE
 // ============================================
-export async function getStorageEstimate(): Promise<{ used: number; quota: number; percent: number }> {
+export async function getStorageEstimate(): Promise<{
+  used: number;
+  quota: number;
+  percent: number;
+}> {
   if ('storage' in navigator && 'estimate' in navigator.storage) {
     const estimate = await navigator.storage.estimate();
     const used = estimate.usage || 0;
@@ -240,16 +248,22 @@ export async function getStorageEstimate(): Promise<{ used: number; quota: numbe
 // ============================================
 // NETWORK INFORMATION
 // ============================================
-export function getNetworkInfo(): { effectiveType: string; downlink: number; rtt: number; saveData: boolean } {
-  const navigator_ = navigator as Navigator & { connection?: NetworkInformation; mozConnection?: NetworkInformation; webkitConnection?: NetworkInformation };
-  const connection = navigator_.connection || navigator_.mozConnection || navigator_.webkitConnection;
+export function getNetworkInfo(): {
+  effectiveType: string;
+  downlink: number;
+  rtt: number;
+  saveData: boolean;
+} {
+  const navigator_ = navigator as any;
+  const connection =
+    navigator_.connection || navigator_.mozConnection || navigator_.webkitConnection;
 
   if (connection) {
     return {
       effectiveType: connection.effectiveType || 'unknown',
       downlink: connection.downlink || 0,
       rtt: connection.rtt || 0,
-      saveData: connection.saveData || false
+      saveData: connection.saveData || false,
     };
   }
 
@@ -263,7 +277,7 @@ export async function requestBackgroundSync(tag: string): Promise<boolean> {
   if ('serviceWorker' in navigator && 'SyncManager' in window) {
     try {
       const registration = await navigator.serviceWorker.ready;
-      const regWithSync = registration as ServiceWorkerRegistrationWithPeriodicSync & { sync?: { register(tag: string): Promise<void> } };
+      const regWithSync = registration as any;
       await regWithSync.sync?.register(tag);
       return true;
     } catch {

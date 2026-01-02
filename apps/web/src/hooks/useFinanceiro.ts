@@ -73,7 +73,7 @@ export function useFinanceiro() {
           .eq('ativo', true)
           .order('principal', { ascending: false });
         if (fetchError) throw fetchError;
-        return data || [];
+        return (data as unknown as ContaBancaria[]) || [];
       } catch (err: unknown) {
         const errorMessage =
           err instanceof Error ? err.message : 'Erro desconhecido ao buscar contas bancárias';
@@ -128,9 +128,9 @@ export function useFinanceiro() {
         const { data, error: fetchError, count } = await query;
         if (fetchError) throw fetchError;
 
-        setLancamentos(data || []);
+        setLancamentos((data || []) as any);
         setPagination({ page, pageSize, total: count || 0 });
-        return { data: data || [], total: count || 0 };
+        return { data: (data || []) as any, total: count || 0 };
       } catch (err: unknown) {
         const errorMessage =
           err instanceof Error ? err.message : 'Erro desconhecido ao buscar lançamentos';
@@ -153,12 +153,12 @@ export function useFinanceiro() {
       try {
         const { data, error: insertError } = await supabase
           .from('lancamentos_financeiros')
-          .insert({ condominio_id: condominioId, criado_por: criadoPor, ...input })
+          .insert({ condominio_id: condominioId, criado_por: criadoPor, ...input } as any)
           .select()
           .single();
         if (insertError) throw insertError;
-        setLancamentos((prev) => [data, ...prev]);
-        return data;
+        setLancamentos((prev) => [data as any, ...prev]);
+        return data as any;
       } catch (err: unknown) {
         const errorMessage =
           err instanceof Error ? err.message : 'Erro desconhecido ao criar lançamento';
@@ -178,13 +178,13 @@ export function useFinanceiro() {
         const { id, ...updates } = input;
         const { data, error: updateError } = await supabase
           .from('lancamentos_financeiros')
-          .update(updates)
+          .update(updates as any)
           .eq('id', id)
           .select()
           .single();
         if (updateError) throw updateError;
-        setLancamentos((prev) => prev.map((l) => (l.id === id ? data : l)));
-        return data;
+        setLancamentos((prev) => prev.map((l) => (l.id === id ? (data as any) : l)));
+        return data as any;
       } catch (err: unknown) {
         const errorMessage =
           err instanceof Error ? err.message : 'Erro desconhecido ao atualizar lançamento';
@@ -344,8 +344,8 @@ export function useFinanceiro() {
             ),
             percentual: totalUnidades ? (inadimplentes.length / totalUnidades) * 100 : 0,
           },
-          contas,
-          ultimos_lancamentos: ultimos || [],
+          contas: contas as any,
+          ultimos_lancamentos: (ultimos || []) as any,
           despesas_por_categoria: Object.entries(despesasPorCategoria).map(
             ([categoria, valor]) => ({
               categoria,

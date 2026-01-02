@@ -53,7 +53,7 @@ function validateCategoria(categoria?: ComunicadoCategoria): ComunicadoCategoria
 
 const toComunicado = (data: ComunicadoQueryResult): ComunicadoComJoins => ({
   ...data,
-  anexos: parseAnexos(data.anexos),
+  anexos: parseAnexos(data.anexos) as any,
   autor: data.autor ?? undefined,
   lido: data.lido,
   total_leituras: data.total_leituras,
@@ -252,7 +252,7 @@ export function useComunicados(_options?: {
       try {
         const { error: deleteError } = await supabase
           .from('comunicados')
-          .update({ deleted_at: new Date().toISOString() })
+          .update({ deleted_at: new Date().toISOString() } as any)
           .eq('id', id);
         if (deleteError) throw deleteError;
         setComunicados((prev) => prev.filter((c) => c.id !== id));

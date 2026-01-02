@@ -15,7 +15,8 @@ export function usePushNotifications() {
 
   // Verificar suporte
   useEffect(() => {
-    const isSupported = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
+    const isSupported =
+      'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
     setSupported(isSupported);
 
     if (isSupported) {
@@ -59,9 +60,9 @@ export function usePushNotifications() {
       setSubscription(sub);
 
       // 4. Salvar subscription no servidor
-      const { error } = await supabase.rpc('registrar_fcm_token', {
+      const { error } = await supabase.rpc('registrar_fcm_token' as any, {
         p_token: JSON.stringify(sub.toJSON()),
-        p_provider: 'webpush'
+        p_provider: 'webpush',
       });
 
       if (error) throw error;
@@ -85,8 +86,9 @@ export function usePushNotifications() {
       await subscription.unsubscribe();
 
       // 2. Remover do servidor
-      await supabase.rpc('remover_fcm_token', {
-        p_token: JSON.stringify(subscription.toJSON())
+      // 2. Remover do servidor
+      await supabase.rpc('remover_fcm_token' as any, {
+        p_token: JSON.stringify(subscription.toJSON()),
       });
 
       setSubscription(null);
@@ -109,7 +111,7 @@ export function usePushNotifications() {
         body: 'Push notifications configuradas com sucesso!',
         icon: '/icons/icon-192x192.png',
         badge: '/icons/badge-72x72.png',
-        tag: 'test'
+        tag: 'test',
       });
       return true;
     } catch {
@@ -124,6 +126,6 @@ export function usePushNotifications() {
     loading,
     enablePush,
     disablePush,
-    sendTestNotification
+    sendTestNotification,
   };
 }

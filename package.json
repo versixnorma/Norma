@@ -16,6 +16,7 @@
     "lint:fix": "pnpm lint -- --fix",
     "type-check": "tsc --noEmit -p apps/web",
     "test": "pnpm --filter @versix/shared test:run",
+    "test:coverage": "pnpm --filter @versix/shared test:coverage",
     "test:e2e": "pnpm --filter @versix/web test:e2e",
     "clean": "rm -rf node_modules apps/web/node_modules apps/web/.next",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",

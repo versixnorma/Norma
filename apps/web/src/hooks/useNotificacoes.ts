@@ -34,7 +34,7 @@ export function useNotificacoes() {
 
       if (fetchError) throw fetchError;
 
-      const notificacoesData = data || [];
+      const notificacoesData = (data as unknown as NotificacaoUsuario[]) || [];
       setNotificacoes(notificacoesData);
       setNaoLidas(notificacoesData.filter((n: any) => n.status !== 'lido').length);
       return notificacoesData;
@@ -55,7 +55,7 @@ export function useNotificacoes() {
 
       if (!userId) return 0;
 
-      const { data, error: rpcError } = (await supabase.rpc('get_contagem_nao_lidas', {
+      const { data, error: rpcError } = (await supabase.rpc('get_contagem_nao_lidas' as any, {
         p_usuario_id: userId,
       })) as { data: number | null; error: SupabaseError | null };
 
@@ -78,7 +78,7 @@ export function useNotificacoes() {
 
         if (!userId) return false;
 
-        const { data, error: rpcError } = (await supabase.rpc('confirmar_leitura', {
+        const { data, error: rpcError } = (await supabase.rpc('confirmar_leitura' as any, {
           p_notificacao_id: notificacaoId,
           p_usuario_id: userId,
         })) as { data: boolean; error: SupabaseError | null };
@@ -141,7 +141,7 @@ export function useNotificacoes() {
 
         if (!userId) throw new Error('Usuário não autenticado');
 
-        const { data, error: rpcError } = (await supabase.rpc('enviar_notificacao', {
+        const { data, error: rpcError } = (await supabase.rpc('enviar_notificacao' as any, {
           p_condominio_id: condominioId,
           p_tipo: input.tipo,
           p_titulo: input.titulo,
@@ -173,14 +173,14 @@ export function useNotificacoes() {
     async (condominioId: string): Promise<NotificacaoDashboard[]> => {
       try {
         const { data, error: fetchError } = await supabase
-          .from('v_notificacoes_dashboard')
+          .from('v_notificacoes_dashboard' as any)
           .select('*')
           .eq('condominio_id', condominioId)
           .order('created_at', { ascending: false })
           .limit(20);
 
         if (fetchError) throw fetchError;
-        return data || [];
+        return (data as unknown as NotificacaoDashboard[]) || [];
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : 'Erro ao buscar dashboard de notificações';
@@ -213,8 +213,9 @@ export function useNotificacoes() {
                 .single();
 
               if (data) {
-                onNew(data);
-                setNotificacoes((prev) => [data, ...prev]);
+                const newData = data as any;
+                onNew(newData);
+                setNotificacoes((prev) => [newData, ...prev]);
                 setNaoLidas((prev) => prev + 1);
               }
             } catch (err) {

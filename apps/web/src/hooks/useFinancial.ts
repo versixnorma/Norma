@@ -10,12 +10,7 @@
  */
 
 import { getSupabaseClient } from '@/lib/supabase';
-import type {
-  ContaBancaria,
-  LancamentoFinanceiro,
-  LancamentoStatus,
-  LancamentoTipo,
-} from '@versix/shared';
+import type { LancamentoFinanceiro, LancamentoStatus, LancamentoTipo } from '@versix/shared';
 import { useCallback, useEffect, useState } from 'react';
 
 // ============================================
@@ -171,7 +166,7 @@ export function useFinancial({
 
     if (!error && data) {
       setContas(
-        data.map((c: ContaBancaria) => ({
+        data.map((c: any) => ({
           id: c.id,
           nome: c.nome_exibicao,
           banco: c.banco_nome,
@@ -203,7 +198,7 @@ export function useFinancial({
     if (!error && data) {
       setLancamentos(
         (
-          data as (LancamentoFinanceiro & {
+          data as unknown as (LancamentoFinanceiro & {
             categoria?: { nome?: string };
             conta?: { nome_exibicao?: string };
           })[]
@@ -212,7 +207,7 @@ export function useFinancial({
           categoria_nome: l.categoria?.nome,
           conta_nome: l.conta?.nome_exibicao,
           unidade_identificador: undefined,
-          data_exibicao: l.data_competencia || l.data_lancamento,
+          data_exibicao: l.data_competencia || (l as any).data_lancamento,
         }))
       );
     }
@@ -300,7 +295,10 @@ export function useFinancial({
 
   const updateLancamento = async (id: string, data: Partial<LancamentoFinanceiro>) => {
     try {
-      const { error } = await supabase.from('lancamentos_financeiros').update(data).eq('id', id);
+      const { error } = await supabase
+        .from('lancamentos_financeiros')
+        .update(data as any)
+        .eq('id', id);
 
       if (error) throw error;
 

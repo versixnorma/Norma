@@ -37,9 +37,9 @@ export function useObservabilidadeDashboard() {
       ]);
 
       return {
-        status: statusRes.data as SystemStatus,
+        status: statusRes.data as unknown as SystemStatus,
         alertas: alertasRes,
-        metricas: metricasRes,
+        metricas: metricasRes as any,
         performance: performanceRes,
         uptime: uptimeRes,
         custos: await fetchCustos(),
@@ -61,7 +61,7 @@ export function useSystemStatus() {
         .single();
 
       if (error) throw error;
-      return data as SystemStatus;
+      return data as unknown as SystemStatus;
     },
     refetchInterval: 15000,
   });
@@ -234,7 +234,7 @@ export function useResolverAlerta() {
       const { data, error } = await getSupabaseClient().rpc('resolver_alerta', {
         p_alerta_id: alerta_id,
         p_resolvido_por: user.id,
-        p_notas: notas || null,
+        p_notas: notas || undefined,
       });
 
       if (error) throw error;
@@ -326,7 +326,7 @@ async function fetchMetricasGlobais() {
 
   // Calcular tendência
   const tendencia = (semanaRes.data || []).reduce(
-    (acc: { data: string; metrica: string; valor: number }[], m: MetricasUso) => {
+    (acc: { data: string; metrica: string; valor: number }[], m: any) => {
       acc.push(
         { data: m.periodo, metrica: 'usuarios', valor: m.usuarios_ativos },
         { data: m.periodo, metrica: 'requests', valor: m.sessoes_totais }
