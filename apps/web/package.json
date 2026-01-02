@@ -12,7 +12,11 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:all": "pnpm dev & sleep 10 && pnpm test:e2e",
     "test:e2e:bg": "pnpm dev & sleep 10 && pnpm test:e2e && pkill -f 'next dev'",
-    "test:e2e:prod": "playwright test"
+    "test:e2e:prod": "playwright test",
+    "analyze": "cross-env ANALYZE=true next build",
+    "test:lighthouse": "lhci autorun",
+    "test:unit": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -67,17 +71,26 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@lhci/cli": "^0.15.1",
+    "@next/bundle-analyzer": "^16.1.1",
     "@playwright/test": "^1.57.0",
+    "@testing-library/react": "^16.3.1",
     "@types/node": "^20.14.0",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^5.1.2",
+    "@vitest/coverage-v8": "^4.0.16",
     "autoprefixer": "^10.4.19",
     "babel-loader": "^10.0.0",
+    "cross-env": "^10.1.0",
     "eslint": "^8.57.0",
     "eslint-config-next": "14.2.5",
+    "jsdom": "^27.4.0",
     "postcss": "^8.4.39",
     "sharp": "^0.34.5",
     "tailwindcss": "^3.4.6",
-    "typescript": "^5.5.3"
+    "typescript": "^5.5.3",
+    "vite-tsconfig-paths": "^6.0.3",
+    "vitest": "^4.0.16"
   }
 }

@@ -17,6 +17,7 @@ const withPWA = withPWAInit({
     /_next\/static\/.*\.js\.map$/,
     /_next\/static\/chunks\/.*\.js\.map$/,
   ],
+  customWorkerDir: 'src/worker',
   runtimeCaching: [
     {
       urlPattern: /^https:\/\/.*\/_next\/static\/.*/,
@@ -272,13 +273,20 @@ const nextConfig = {
   },
 };
 
-// export default withPWA(nextConfig);
-export default withSentryConfig(withPWA(nextConfig), {
-  silent: true,
-  org: 'versix-solutions',
-  project: 'versix-norma',
-  // Upload sourcemaps automaticamente durante o build
-  sourcemaps: {
-    deleteSourcemapsAfterUpload: true,
-  },
+const withBundleAnalyzer = (await import('@next/bundle-analyzer')).default({
+  enabled: process.env.ANALYZE === 'true',
+  openAnalyzer: false,
 });
+
+// export default withPWA(nextConfig);
+export default withBundleAnalyzer(
+  withSentryConfig(withPWA(nextConfig), {
+    silent: true,
+    org: 'versix-solutions',
+    project: 'versix-norma',
+    // Upload sourcemaps automaticamente durante o build
+    sourcemaps: {
+      deleteSourcemapsAfterUpload: true,
+    },
+  })
+);

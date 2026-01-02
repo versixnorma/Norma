@@ -2,6 +2,7 @@
 
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useChamados } from '@/hooks/useChamados';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -163,19 +164,79 @@ export function ProfilePage({ onScroll }: ProfilePageProps) {
         </div>
       )}
 
+      {/* Settings Section */}
+      <div className="bg-white dark:bg-card-dark p-5 rounded-home-xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <h3 className="text-sm font-bold text-gray-800 dark:text-white uppercase tracking-wide mb-4">
+          Configurações
+        </h3>
+
+        <div className="space-y-4">
+          <NotificationToggle />
+        </div>
+      </div>
+
       {/* Actions */}
       <div className="pt-2 pb-4 space-y-3">
-        <button className="w-full py-3 border border-gray-200 dark:border-gray-700 rounded-xl text-xs font-bold text-text-sub hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center justify-center gap-2 transition-colors">
-          <span className="material-symbols-outlined text-sm">settings</span>
-          Configurações de Privacidade
-        </button>
         <button
           onClick={handleLogout}
-          className="w-full py-3 text-brand-danger text-xs font-bold hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-colors"
+          className="w-full py-3 text-brand-danger text-xs font-bold hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-colors flex items-center justify-center gap-2"
         >
+          <span className="material-symbols-outlined text-sm">logout</span>
           Sair do App
         </button>
       </div>
     </div>
   );
 }
+
+function NotificationToggle() {
+  const { supported, permission, isSubscribed, loading, enablePush, disablePush } = usePushNotifications();
+
+  if (!supported) return null;
+
+  const handleToggle = async () => {
+    if (loading) return;
+
+    if (isSubscribed) {
+      const success = await disablePush();
+      if (success) toast.success('Notificações desativadas');
+    } else {
+      const success = await enablePush();
+      if (success) toast.success('Notificações ativadas! Você receberá alertas importantes.');
+      else if (permission === 'denied') {
+        toast.error('Permissão negada. Ative nas configurações do navegador.');
+      }
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-between py-1">
+      <div className="flex items-center gap-3">
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+          isSubscribed ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-400'
+        }`}>
+          <span className="material-symbols-outlined text-sm">
+            {isSubscribed ? 'notifications_active' : 'notifications_off'}
+          </span>
+        </div>
+        <div>
+          <p className="text-sm font-bold text-gray-800 dark:text-white">Notificações Push</p>
+          <p className="text-[10px] text-text-sub">
+            {isSubscribed ? 'Recebendo alertas importantes' : 'Toque para ativar alertas'}
+          </p>
+        </div>
+      </div>
+
+      <button
+        onClick={handleToggle}
+        disabled={loading}
+        className={`w-12 h-6 rounded-full relative transition-colors ${
+          isSubscribed ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-700'
+        }`}
+      >
+        <div className={`w-5 h-5 bg-white rounded-full shadow-sm absolute top-0.5 transition-all ${
+          isSubscribed ? 'left-[calc(100%-22px)]' : 'left-0.5'
+        }`} />
+      </button>
+    </div>
+  );

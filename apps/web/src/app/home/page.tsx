@@ -3,9 +3,9 @@
 import { NormaChatDynamic } from '@/components';
 import { AvatarMenu } from '@/components/features/AvatarMenu';
 import { BottomNav } from '@/components/features/BottomNav';
-import { FinancialPulse } from '@/components/features/FinancialPulse';
-import { MarketplaceCarousel } from '@/components/features/MarketplaceCarousel';
-import { MuralDigital } from '@/components/features/MuralDigital';
+// FinancialPulse loaded dynamically
+// MarketplaceCarousel loaded dynamically
+// MuralDigital loaded dynamically
 import { NotificationPanel } from '@/components/features/NotificationPanel';
 import { QuickAccess } from '@/components/features/QuickAccess';
 import { SOSButton } from '@/components/features/SOSButton';
@@ -17,9 +17,31 @@ import { SkeletonGrid, SkeletonPulse } from '@/components/ui/Skeleton';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useComunicados } from '@/hooks/useComunicados';
 import { useFinancial } from '@/hooks/useFinancial';
+import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { startTransition, useEffect, useState } from 'react';
+
+const FinancialPulse = dynamic(
+  () => import('@/components/features/FinancialPulse').then((mod) => mod.FinancialPulse),
+  { loading: () => <SkeletonPulse /> }
+);
+const MarketplaceCarousel = dynamic(
+  () => import('@/components/features/MarketplaceCarousel').then((mod) => mod.MarketplaceCarousel),
+  {
+    loading: () => (
+      <div className="h-32 w-full animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800" />
+    ),
+  }
+);
+const MuralDigital = dynamic(
+  () => import('@/components/features/MuralDigital').then((mod) => mod.MuralDigital),
+  {
+    loading: () => (
+      <div className="h-40 w-full animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800" />
+    ),
+  }
+);
 
 function HomeContent() {
   const router = useRouter();
@@ -79,7 +101,12 @@ function HomeContent() {
   // Dados do usuário
   const userName = profile?.nome?.split(' ')[0] || 'Usuário';
   const userInitials = profile?.nome
-    ? profile.nome.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
+    ? profile.nome
+        .split(' ')
+        .map((n) => n[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase()
     : 'US';
   const condominioNome = profile?.condominio_atual?.nome || 'Condomínio';
 
@@ -98,7 +125,7 @@ function HomeContent() {
       default:
         return (
           <div
-            className="flex-1 overflow-y-auto hide-scroll pb-32 pt-6 relative z-0 space-y-8"
+            className="hide-scroll relative z-0 flex-1 space-y-8 overflow-y-auto pb-32 pt-6"
             onScroll={handleScroll}
           >
             {isLoading ? <SkeletonPulse /> : <FinancialPulse dashboard={dashboard} />}
@@ -112,19 +139,19 @@ function HomeContent() {
   };
 
   return (
-    <div className="bg-bg-light dark:bg-bg-dark font-sans text-gray-800 dark:text-gray-100 h-screen flex justify-center overflow-hidden">
-      <div className="w-full max-w-md h-full bg-white dark:bg-bg-dark shadow-2xl relative flex flex-col overflow-hidden">
+    <div className="flex h-screen justify-center overflow-hidden bg-bg-light font-sans text-gray-800 dark:bg-bg-dark dark:text-gray-100">
+      <div className="relative flex h-full w-full max-w-md flex-col overflow-hidden bg-white shadow-2xl dark:bg-bg-dark">
         {/* Header */}
         <div
-          className={`relative z-20 shrink-0 shadow-soft transition-all duration-500 ease-in-out overflow-hidden rounded-b-[2.5rem] ${
-            isScrolled ? 'h-24 pt-8 pb-0' : 'h-64 pt-12 pb-6'
+          className={`relative z-20 shrink-0 overflow-hidden rounded-b-[2.5rem] shadow-soft transition-all duration-500 ease-in-out ${
+            isScrolled ? 'h-24 pb-0 pt-8' : 'h-64 pb-6 pt-12'
           }`}
         >
           {/* Background Image */}
-          <div className="absolute inset-0 z-0 pointer-events-none">
+          <div className="pointer-events-none absolute inset-0 z-0">
             <Image
               alt="Background"
-              className="w-full h-full object-cover filter brightness-[0.4] contrast-125"
+              className="h-full w-full object-cover brightness-[0.4] contrast-125 filter"
               src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop"
               fill
               priority
@@ -134,90 +161,94 @@ function HomeContent() {
           </div>
 
           {/* Header Content */}
-          <div className="relative z-10 px-6 h-full flex flex-col">
+          <div className="relative z-10 flex h-full flex-col px-6">
             {/* Top Bar */}
-            <div className="flex justify-between items-center relative h-12 shrink-0">
+            <div className="relative flex h-12 shrink-0 items-center justify-between">
               <div className="transition-all duration-300">
                 <SOSButton />
               </div>
 
               <h1
-                className={`absolute top-1/2 text-white font-display font-bold text-2xl tracking-widest drop-shadow-md transition-all duration-500 ease-in-out whitespace-nowrap pointer-events-none ${
+                className={`pointer-events-none absolute top-1/2 whitespace-nowrap font-display text-2xl font-bold tracking-widest text-white drop-shadow-md transition-all duration-500 ease-in-out ${
                   isScrolled
-                    ? 'left-14 -translate-y-1/2 translate-x-0 scale-90 origin-left'
-                    : 'left-1/2 -translate-y-1/2 -translate-x-1/2 scale-100 origin-center'
+                    ? 'left-14 origin-left -translate-y-1/2 translate-x-0 scale-90'
+                    : 'left-1/2 origin-center -translate-x-1/2 -translate-y-1/2 scale-100'
                 }`}
               >
                 NORMA
               </h1>
 
               {/* Right Icons */}
-              <div className="flex items-center gap-3 relative z-10">
+              <div className="relative z-10 flex items-center gap-3">
                 <div
-                  className={`relative p-2 rounded-full hover:bg-white/20 transition-all cursor-pointer backdrop-blur-sm ${
-                    isScrolled ? 'opacity-100 block' : 'opacity-0 hidden'
+                  className={`relative cursor-pointer rounded-full p-2 backdrop-blur-sm transition-all hover:bg-white/20 ${
+                    isScrolled ? 'block opacity-100' : 'hidden opacity-0'
                   }`}
                   onClick={() => setShowNormaChat(true)}
                 >
-                  <span className="material-symbols-outlined text-white text-xl">smart_toy</span>
+                  <span className="material-symbols-outlined text-xl text-white">smart_toy</span>
                 </div>
 
                 <div
-                  className="relative p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer backdrop-blur-sm"
+                  className="relative cursor-pointer rounded-full bg-white/10 p-2 backdrop-blur-sm transition-colors hover:bg-white/20"
                   onClick={() => setShowNotifications(!showNotifications)}
                 >
-                  <span className="material-symbols-outlined text-white text-xl">notifications</span>
+                  <span className="material-symbols-outlined text-xl text-white">
+                    notifications
+                  </span>
                   {naoLidos > 0 && (
-                    <span className="absolute top-1 right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full border-2 border-primary text-white text-[10px] font-bold flex items-center justify-center">
+                    <span className="absolute right-1 top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-primary bg-red-500 text-[10px] font-bold text-white">
                       {naoLidos > 9 ? '9+' : naoLidos}
                     </span>
                   )}
                 </div>
 
                 <div
-                  className="w-10 h-10 rounded-full border-2 border-white/30 overflow-hidden shadow-sm cursor-pointer hover:border-white/50 transition-colors bg-secondary flex items-center justify-center"
+                  className="flex h-10 w-10 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-white/30 bg-secondary shadow-sm transition-colors hover:border-white/50"
                   onClick={() => setShowAvatarMenu(!showAvatarMenu)}
                 >
-                  <span className="text-white font-bold text-sm">{userInitials}</span>
+                  <span className="text-sm font-bold text-white">{userInitials}</span>
                 </div>
               </div>
             </div>
 
             {/* Welcome Section */}
             <div
-              className={`flex-1 flex flex-col justify-center transition-all duration-300 ${
+              className={`flex flex-1 flex-col justify-center transition-all duration-300 ${
                 isScrolled
-                  ? 'opacity-0 scale-95 pointer-events-none'
-                  : 'opacity-100 scale-100 delay-100'
+                  ? 'pointer-events-none scale-95 opacity-0'
+                  : 'scale-100 opacity-100 delay-100'
               }`}
             >
-              <h2 className="text-white font-display font-bold text-3xl tracking-tight drop-shadow-sm">
+              <h2 className="font-display text-3xl font-bold tracking-tight text-white drop-shadow-sm">
                 Olá, {userName}!
               </h2>
-              <div className="flex items-center mt-1 ml-0.5 opacity-90 text-blue-200">
-                <span className="material-symbols-outlined text-sm mr-1">location_on</span>
+              <div className="ml-0.5 mt-1 flex items-center text-blue-200 opacity-90">
+                <span className="material-symbols-outlined mr-1 text-sm">location_on</span>
                 <p className="text-sm font-medium">{condominioNome}</p>
               </div>
               {/* Texto para Playwright: Bem-vindo */}
-              <div className="text-white text-lg font-bold mt-4" style={{display:'block'}}>
+              <div className="mt-4 text-lg font-bold text-white" style={{ display: 'block' }}>
                 Bem-vindo
               </div>
             </div>
 
             {/* Search Bar */}
             <div
-              className={`relative mt-auto transition-all duration-500 ease-in-out origin-bottom shrink-0 ${
-                isScrolled ? 'opacity-0 scale-y-0 h-0 overflow-hidden mt-0' : 'opacity-100 scale-y-100 h-auto'
+              className={`relative mt-auto shrink-0 origin-bottom transition-all duration-500 ease-in-out ${
+                isScrolled
+                  ? 'mt-0 h-0 scale-y-0 overflow-hidden opacity-0'
+                  : 'h-auto scale-y-100 opacity-100'
               }`}
             >
               <input
-                className="w-full pl-4 pr-12 py-3 rounded-xl bg-white/95 dark:bg-gray-800/95 backdrop-blur-md border-none text-gray-700 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-secondary focus:bg-white dark:focus:bg-gray-800 shadow-lg transition-all text-sm cursor-pointer"
+                className="w-full cursor-pointer rounded-xl border-none bg-white/95 py-3 pl-4 pr-12 text-sm text-gray-700 placeholder-gray-500 shadow-lg backdrop-blur-md transition-all focus:bg-white focus:ring-2 focus:ring-secondary dark:bg-gray-800/95 dark:text-gray-200 dark:placeholder-gray-400 dark:focus:bg-gray-800"
                 placeholder="Pergunte à Norma sobre o regimento..."
                 type="text"
                 onClick={() => setShowNormaChat(true)}
                 readOnly
               />
-              <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
                 <span className="material-symbols-outlined text-gray-400">smart_toy</span>
               </div>
             </div>
@@ -225,18 +256,9 @@ function HomeContent() {
         </div>
 
         {/* Modals */}
-        <NotificationPanel
-          isOpen={showNotifications}
-          onClose={() => setShowNotifications(false)}
-        />
-        <AvatarMenu
-          isOpen={showAvatarMenu}
-          onClose={() => setShowAvatarMenu(false)}
-        />
-        <NormaChatDynamic
-          isOpen={showNormaChat}
-          onClose={() => setShowNormaChat(false)}
-        />
+        <NotificationPanel isOpen={showNotifications} onClose={() => setShowNotifications(false)} />
+        <AvatarMenu isOpen={showAvatarMenu} onClose={() => setShowAvatarMenu(false)} />
+        <NormaChatDynamic isOpen={showNormaChat} onClose={() => setShowNormaChat(false)} />
 
         {/* Content */}
         {renderContent()}
