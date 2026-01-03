@@ -28,22 +28,70 @@ export const test = base.extend<AuthFixtures>({
     });
 
     if (error || !data.session) {
-      // Fallback: Try to sign up if login fails (First run)
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            nome: 'Test Automation User',
-            telefone: '11999999999',
-          },
-        },
-      });
+      console.log('Login failed, attempting to ensuring test user via Admin API context...');
 
-      if (signUpError || !signUpData.session) {
-        throw new Error(`Auth failed: ${error?.message || signUpError?.message}`);
+      const serviceKey =
+        process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+      // Simple check: if key is short (anon key), we can't do admin stuff. Service key is usually long.
+      // But we will try anyway if provided.
+
+      // If we have a service key, we can try to fix the user
+      if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        const adminAuth = createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY).auth
+          .admin;
+
+        // 1. Check if user exists
+        const { data: users } = await adminAuth.listUsers();
+        const existingUser = users.users.find((u) => u.email === email);
+
+        if (existingUser) {
+          // 2a. Update existing user (confirm email + reset password)
+          console.log('Updating existing test user credentials...');
+          await adminAuth.updateUserById(existingUser.id, {
+            password: password,
+            email_confirm: true,
+            user_metadata: { nome: 'Test Automation User' },
+          });
+        } else {
+          // 2b. Create new confirmed user
+          console.log('Creating new confirmed test user...');
+          await adminAuth.createUser({
+            email,
+            password,
+            email_confirm: true,
+            user_metadata: { nome: 'Test Automation User', telefone: '11999999999' },
+          });
+        }
+
+        // 3. Retry Login
+        const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (retryError || !retryData.session) {
+          throw new Error(`Auth retry failed after Admin fix: ${retryError?.message}`);
+        }
+        data.session = retryData.session;
+      } else {
+        // Fallback for non-admin environments (CI without secrets?)
+        // Try public sign up (will fail if confirmation needed)
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              nome: 'Test Automation User',
+              telefone: '11999999999',
+            },
+          },
+        });
+
+        if (signUpError || !signUpData.session) {
+          throw new Error(`Auth failed (Public SignUp): ${error?.message || signUpError?.message}`);
+        }
+        data.session = signUpData.session;
       }
-      data.session = signUpData.session;
     }
 
     // 2. Set LocalStorage (Supabase-js client relies on this)
@@ -77,25 +125,24 @@ export const test = base.extend<AuthFixtures>({
     const sessionStr = JSON.stringify(data.session);
     const cookieValue = `base64-${Buffer.from(sessionStr).toString('base64')}`;
 
+    // Determine domain for cookies
+    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+    const domain = new URL(baseUrl).hostname;
+
     await page.context().addCookies([
       {
         name: cookieName,
         value: cookieValue,
-        // When testing against production, we cannot set domain to 'localhost'.
-        // Omitting domain allows it to apply to the current context or we can use url
-        url: process.env.BASE_URL || 'http://localhost:3000',
+        domain,
         path: '/',
-        httpOnly: false, // We can't simulate httpOnly=true easily from client side but for test context it's fine
+        httpOnly: false,
         secure: false,
         sameSite: 'Lax',
       },
-      // Also set the "condominio_atual" cookie if we want to simulate persistent selection
       {
         name: 'condominio_atual',
-        // We need a valid ID. For now let's hope the default works or we fetch it.
-        // Ideally we fetch the user's condominium from DB but let's skip for basic auth.
         value: '',
-        url: process.env.BASE_URL || 'http://localhost:3000',
+        domain,
         path: '/',
       },
     ]);
