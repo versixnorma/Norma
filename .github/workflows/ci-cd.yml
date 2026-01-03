@@ -255,9 +255,10 @@ jobs:
           fi
 
       - name: Upload sourcemaps to Sentry
+        continue-on-error: true
         run: |
           cd apps/web
-          npx @sentry/cli sourcemaps upload .next/server/chunks --release versix-norma@${{ github.sha }} --dist ${{ github.run_number }}
+          pnpm dlx @sentry/cli sourcemaps upload .next/server/chunks --release versix-norma@${{ github.sha }} --dist ${{ github.run_number }}
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: versix-solutions
