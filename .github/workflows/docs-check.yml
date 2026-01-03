@@ -1,0 +1,29 @@
+name: Validate API Documentation
+
+on:
+  push:
+    paths:
+      - 'EDGE_FUNCTIONS_API.yaml'
+      - '.github/workflows/docs-check.yml'
+  pull_request:
+    paths:
+      - 'EDGE_FUNCTIONS_API.yaml'
+
+jobs:
+  validate-openapi:
+    name: Lint OpenAPI Spec
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Redocly CLI
+        run: npm install -g @redocly/cli
+
+      - name: Lint OpenAPI definition
+        run: redocly lint EDGE_FUNCTIONS_API.yaml

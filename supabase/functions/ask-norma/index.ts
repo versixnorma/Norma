@@ -1,6 +1,12 @@
+import * as Sentry from 'https://esm.sh/@sentry/deno@7.80.0';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { z } from 'https://esm.sh/zod@3.22.4';
 import { corsHeaders } from '../_shared/cors.ts';
+
+Sentry.init({
+  dsn: Deno.env.get('SENTRY_DSN'),
+  tracesSampleRate: 1.0,
+});
 
 interface AskNormaRequest {
   message: string;
@@ -103,6 +109,17 @@ export async function handler(req: Request): Promise<Response> {
 
     const { message, condominioId, userId, conversationHistory } = validation.data;
 
+    // Set Sentry Context
+    Sentry.setUser({ id: userId });
+    Sentry.setTag('condominio_id', condominioId);
+    Sentry.setTag('function_nane', 'ask-norma');
+    Sentry.addBreadcrumb({
+      category: 'ai',
+      message: 'User asked a question',
+      data: { message_length: message.length },
+      level: 'info',
+    });
+
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -141,7 +158,11 @@ export async function handler(req: Request): Promise<Response> {
     });
 
     if (!embeddingResponse.ok) {
-      console.error('Failed to generate embedding:', await embeddingResponse.text());
+      const errorText = await embeddingResponse.text();
+      console.error('Failed to generate embedding:', errorText);
+      Sentry.captureException(new Error(`OpenAI Embedding API Error: ${errorText}`), {
+        extra: { input_length: message.length },
+      });
       return new Response(JSON.stringify({ error: 'Failed to process message' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -164,7 +185,14 @@ export async function handler(req: Request): Promise<Response> {
 
     if (searchError) {
       console.error('Search error:', searchError);
+      Sentry.captureException(searchError, { tags: { component: 'pgvector_search' } });
       // Continue without context if search fails
+    } else if (!relevantChunks || relevantChunks.length === 0) {
+      Sentry.addBreadcrumb({
+        category: 'rag',
+        message: 'No relevant chunks found',
+        level: 'warning',
+      });
     }
 
     // Build context from relevant chunks
@@ -234,7 +262,11 @@ Conteúdo: ${chunk.content}`;
     });
 
     if (!groqResponse.ok) {
-      console.error('Groq API error:', await groqResponse.text());
+      const errorText = await groqResponse.text();
+      console.error('Groq API error:', errorText);
+      Sentry.captureException(new Error(`Groq API Error: ${errorText}`), {
+        tags: { provider: 'groq' },
+      });
       return new Response(JSON.stringify({ error: 'Failed to generate response' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -304,6 +336,7 @@ Conteúdo: ${chunk.content}`;
     });
   } catch (error) {
     console.error('Error in ask-norma function:', error);
+    Sentry.captureException(error);
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
