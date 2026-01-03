@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { z } from 'https://esm.sh/zod@3.22.4';
 import { corsHeaders } from '../_shared/cors.ts';
 
 interface AskNormaRequest {
@@ -23,6 +24,21 @@ interface DocumentChunk {
   };
   similarity: number;
 }
+
+const AskNormaSchema = z.object({
+  message: z.string().min(1, 'Mensagem é obrigatória'),
+  condominioId: z.string().uuid('ID de condomínio inválido'),
+  userId: z.string().uuid('ID de usuário inválido'),
+  conversationHistory: z
+    .array(
+      z.object({
+        role: z.enum(['user', 'assistant']),
+        content: z.string(),
+        timestamp: z.string(),
+      })
+    )
+    .optional(),
+});
 
 const SYSTEM_PROMPT = `Você é Norma, uma assistente de governança condominial inteligente e profissional.
 
@@ -67,15 +83,25 @@ export async function handler(req: Request): Promise<Response> {
       });
     }
 
-    // Parse request body
-    const { message, condominioId, userId, conversationHistory }: AskNormaRequest = await req.json();
+    // Parse and validate request body
+    const body = await req.json();
+    const validation = AskNormaSchema.safeParse(body);
 
-    if (!message || !condominioId || !userId) {
-      return new Response(JSON.stringify({ error: 'Missing required fields' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    if (!validation.success) {
+      console.warn('Validation error:', validation.error);
+      return new Response(
+        JSON.stringify({
+          error: 'Invalid request parameters',
+          details: validation.error.issues,
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     }
+
+    const { message, condominioId, userId, conversationHistory } = validation.data;
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -87,20 +113,24 @@ export async function handler(req: Request): Promise<Response> {
     if (!groqApiKey) {
       console.error('GROQ_API_KEY not configured');
       // Fallback to mock response for development
-      return new Response(JSON.stringify({
-        response: 'Olá! Sou Norma, sua assistente de governança condominial. No momento, estou em modo de desenvolvimento e retornarei uma resposta simulada.',
-        sources: [],
-        suggestions: ['Verificar regimento interno', 'Agendar assembleia', 'Consultar síndico']
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify({
+          response:
+            'Olá! Sou Norma, sua assistente de governança condominial. No momento, estou em modo de desenvolvimento e retornarei uma resposta simulada.',
+          sources: [],
+          suggestions: ['Verificar regimento interno', 'Agendar assembleia', 'Consultar síndico'],
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     // Generate embedding for the user message
     const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        Authorization: `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -122,12 +152,15 @@ export async function handler(req: Request): Promise<Response> {
     const queryEmbedding = embeddingData.data[0].embedding;
 
     // Search for relevant document chunks
-    const { data: relevantChunks, error: searchError } = await supabase.rpc('search_document_chunks', {
-      query_embedding: queryEmbedding,
-      match_threshold: 0.7,
-      match_count: 5,
-      condominio_id: condominioId,
-    });
+    const { data: relevantChunks, error: searchError } = await supabase.rpc(
+      'search_document_chunks',
+      {
+        query_embedding: queryEmbedding,
+        match_threshold: 0.7,
+        match_count: 5,
+        condominio_id: condominioId,
+      }
+    );
 
     if (searchError) {
       console.error('Search error:', searchError);
@@ -158,7 +191,7 @@ Conteúdo: ${chunk.content}`;
     if (conversationHistory && conversationHistory.length > 0) {
       conversationContext = conversationHistory
         .slice(-5) // Last 5 messages for context
-        .map(msg => `${msg.role === 'user' ? 'Usuário' : 'Norma'}: ${msg.content}`)
+        .map((msg) => `${msg.role === 'user' ? 'Usuário' : 'Norma'}: ${msg.content}`)
         .join('\n');
     }
 
@@ -166,12 +199,18 @@ Conteúdo: ${chunk.content}`;
     const messages = [
       {
         role: 'system',
-        content: SYSTEM_PROMPT + (contextText ? `\n\nContexto dos documentos do condomínio:\n${contextText}` : ''),
+        content:
+          SYSTEM_PROMPT +
+          (contextText ? `\n\nContexto dos documentos do condomínio:\n${contextText}` : ''),
       },
-      ...(conversationContext ? [{
-        role: 'system' as const,
-        content: `Histórico da conversa:\n${conversationContext}`,
-      }] : []),
+      ...(conversationContext
+        ? [
+            {
+              role: 'system' as const,
+              content: `Histórico da conversa:\n${conversationContext}`,
+            },
+          ]
+        : []),
       {
         role: 'user',
         content: message,
@@ -182,7 +221,7 @@ Conteúdo: ${chunk.content}`;
     const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${groqApiKey}`,
+        Authorization: `Bearer ${groqApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -260,10 +299,9 @@ Conteúdo: ${chunk.content}`;
         ...corsHeaders,
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
+        Connection: 'keep-alive',
       },
     });
-
   } catch (error) {
     console.error('Error in ask-norma function:', error);
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
@@ -273,7 +311,10 @@ Conteúdo: ${chunk.content}`;
   }
 }
 
-function generateSuggestions(response: string, sources: Array<{ type: string; name: string; content: string }>): string[] {
+function generateSuggestions(
+  response: string,
+  sources: Array<{ type: string; name: string; content: string }>
+): string[] {
   const suggestions: string[] = [];
 
   // Analyze response content to generate relevant suggestions
@@ -289,7 +330,11 @@ function generateSuggestions(response: string, sources: Array<{ type: string; na
     suggestions.push('Verificar direitos e deveres');
   }
 
-  if (lowerResponse.includes('financeiro') || lowerResponse.includes('taxa') || lowerResponse.includes('multa')) {
+  if (
+    lowerResponse.includes('financeiro') ||
+    lowerResponse.includes('taxa') ||
+    lowerResponse.includes('multa')
+  ) {
     suggestions.push('Verificar situação financeira');
     suggestions.push('Pagar taxas pendentes');
   }

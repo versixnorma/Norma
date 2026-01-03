@@ -14,12 +14,23 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
+
+  /* Timeout global por teste (60s) devido a lentidão do ambiente local */
+  timeout: 60000,
+
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'html',
+
+  globalSetup: require.resolve('./tests/global-setup'),
+  globalTeardown: require.resolve('./tests/global-teardown'),
+
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL: process.env.BASE_URL || 'http://localhost:3000',
+
+    // Reutiliza estado de login
+    storageState: 'storageState.json',
 
     launchOptions: {
       args: ['--disable-dev-shm-usage', '--no-sandbox', '--disable-gpu'],
@@ -74,5 +85,6 @@ export default defineConfig({
         command: 'pnpm dev',
         url: 'http://localhost:3000',
         reuseExistingServer: !process.env.CI,
+        timeout: 120 * 1000,
       },
 });

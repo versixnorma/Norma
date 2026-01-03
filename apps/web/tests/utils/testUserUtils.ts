@@ -12,7 +12,35 @@ const supabase = createClient(
 );
 
 // Defina aqui o ID de um condomínio válido já existente no banco para os testes
-const CONDOMINIO_ID = process.env.TEST_CONDOMINIO_ID || 'test-condominio-id';
+const CONDOMINIO_ID = process.env.TEST_CONDOMINIO_ID || '00000000-0000-0000-0000-000000000001';
+
+async function ensureTestCondominio() {
+  const { data } = await supabase.from('condominios').select('id').eq('id', CONDOMINIO_ID).single();
+
+  if (!data) {
+    console.log(`[TestUtils] Criando condomínio de teste ${CONDOMINIO_ID}...`);
+    // Create dummy address if needed by constraints, usually text fields are nullable or simple
+    const { error } = await supabase.from('condominios').insert({
+      id: CONDOMINIO_ID,
+      nome: 'Condomínio de Teste E2E',
+      endereco: 'Rua dos Testes, 123',
+      bairro: 'Centro',
+      cidade: 'São Paulo',
+      estado: 'SP',
+      cep: '01001-000',
+      total_unidades: 10,
+      telefone: '11999999999',
+    });
+
+    if (error) {
+      // Ignore duplicate key error if race condition
+      if (!error.message.includes('duplicate key')) {
+        console.error('[TestUtils] Erro ao criar condomínio:', error);
+        throw error;
+      }
+    }
+  }
+}
 
 export async function createTestUser(): Promise<{
   id: string;
@@ -24,6 +52,9 @@ export async function createTestUser(): Promise<{
   const email = `testuser_${Date.now()}@example.com`;
   const password = 'Test@1234';
   const nome = 'Test User';
+
+  // Garante que o condomínio existe
+  await ensureTestCondominio();
 
   // Cria usuário de autenticação
   const { data: user, error } = await supabase.auth.admin.createUser({
@@ -53,4 +84,6 @@ export async function deleteTestUser(userId: string): Promise<void> {
   await supabase.auth.admin.deleteUser(userId);
   await supabase.from('usuarios').delete().eq('auth_id', userId);
   await supabase.from('usuario_condominios').delete().eq('auth_id', userId);
+  // Opcional: Não deletamos o condomínio para não afetar outros testes rodando em paralelo
+  // await supabase.from('condominios').delete().eq('id', CONDOMINIO_ID);
 }

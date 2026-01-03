@@ -27,7 +27,26 @@ async function extractTextFromPDF(fileUrl: string): Promise<string> {
       throw new Error('Failed to fetch PDF');
     }
 
+    // Harden: Check file size before loading into memory (Limit: 10MB)
+    const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+    const contentLength = response.headers.get('content-length');
+
+    if (contentLength) {
+      const size = parseInt(contentLength, 10);
+      if (size > MAX_SIZE) {
+        throw new Error(`File too large (${(size / 1024 / 1024).toFixed(2)}MB). Limit is 10MB.`);
+      }
+    }
+
     const arrayBuffer = await response.arrayBuffer();
+
+    // Double check size after download if content-length was missing
+    if (arrayBuffer.byteLength > MAX_SIZE) {
+      throw new Error(
+        `File too large (${(arrayBuffer.byteLength / 1024 / 1024).toFixed(2)}MB). Limit is 10MB.`
+      );
+    }
+
     const uint8Array = new Uint8Array(arrayBuffer);
 
     // Parse PDF using pdf-parse
@@ -35,7 +54,8 @@ async function extractTextFromPDF(fileUrl: string): Promise<string> {
     return data.text;
   } catch (error) {
     console.error('Error extracting text from PDF:', error);
-    throw new Error(`Failed to extract text from PDF: ${error.message}`);
+    // Return a structured error message that the handler can catch and return as 413 or 400
+    throw error;
   }
 }
 
@@ -76,7 +96,7 @@ async function generateEmbedding(text: string): Promise<number[]> {
   const response = await fetch('https://api.openai.com/v1/embeddings', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${openaiApiKey}`,
+      Authorization: `Bearer ${openaiApiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -141,10 +161,7 @@ export async function handler(req: Request): Promise<Response> {
     }
 
     // Update document status to processing
-    await supabase
-      .from('documents')
-      .update({ status: 'processing' })
-      .eq('id', documentId);
+    await supabase.from('documents').update({ status: 'processing' }).eq('id', documentId);
 
     try {
       // Extract text from PDF
@@ -193,9 +210,7 @@ export async function handler(req: Request): Promise<Response> {
       for (let i = 0; i < chunksToInsert.length; i += batchSize) {
         const batch = chunksToInsert.slice(i, i + batchSize);
 
-        const { error: insertError } = await supabase
-          .from('document_chunks')
-          .insert(batch);
+        const { error: insertError } = await supabase.from('document_chunks').insert(batch);
 
         if (insertError) {
           console.error('Error inserting chunk batch:', insertError);
@@ -208,36 +223,37 @@ export async function handler(req: Request): Promise<Response> {
         .from('documents')
         .update({
           status: 'completed',
-          processed_at: new Date().toISOString()
+          processed_at: new Date().toISOString(),
         })
         .eq('id', documentId);
 
-      return new Response(JSON.stringify({
-        success: true,
-        chunksProcessed: chunksToInsert.length,
-        message: `Document processed successfully. ${chunksToInsert.length} chunks created.`
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-
+      return new Response(
+        JSON.stringify({
+          success: true,
+          chunksProcessed: chunksToInsert.length,
+          message: `Document processed successfully. ${chunksToInsert.length} chunks created.`,
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     } catch (processingError) {
       console.error('Error processing document:', processingError);
 
       // Update document status to failed
-      await supabase
-        .from('documents')
-        .update({ status: 'failed' })
-        .eq('id', documentId);
+      await supabase.from('documents').update({ status: 'failed' }).eq('id', documentId);
 
-      return new Response(JSON.stringify({
-        error: 'Failed to process document',
-        details: processingError.message
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify({
+          error: 'Failed to process document',
+          details: processingError.message,
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     }
-
   } catch (error) {
     console.error('Error in process-document function:', error);
     return new Response(JSON.stringify({ error: 'Internal server error' }), {

@@ -13,6 +13,7 @@ import {
   type PendingAction,
 } from '@/lib/offline-db';
 import { requestBackgroundSync, useOnlineStatus } from '@/lib/pwa';
+import { captureError } from '@/lib/sentry';
 import { getSupabaseClient } from '@/lib/supabase';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -113,6 +114,7 @@ export function useOfflineSync() {
         return true;
       } catch (error) {
         console.error('Erro ao sincronizar dados críticos:', error);
+        captureError(error as Error, { condominio_id: condominioId, context: 'syncCriticalData' });
         return false;
       } finally {
         setSyncing(false);
@@ -173,6 +175,7 @@ export function useOfflineSync() {
         return true;
       } catch (error) {
         console.error('Erro ao sincronizar perfil:', error);
+        captureError(error as Error, { usuario_id: userId, context: 'syncUserProfile' });
         return false;
       }
     },
@@ -216,7 +219,13 @@ export function useOfflineSync() {
           await incrementActionRetry(action.id);
           failed++;
         }
-      } catch {
+      } catch (error) {
+        console.error('Erro ao processar ação offline:', error);
+        captureError(error as Error, {
+          context: 'processPendingActions',
+          action_id: action.id,
+          action_url: action.url,
+        });
         await incrementActionRetry(action.id);
         failed++;
       }
