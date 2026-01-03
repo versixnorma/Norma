@@ -60,7 +60,6 @@ sw.addEventListener('push', (event) => {
   try {
     const data = event.data.json();
     const title = data.title || 'Nova Notificação';
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const options: any = {
       body: data.body || '',
       icon: '/icons/icon-192x192.png',
