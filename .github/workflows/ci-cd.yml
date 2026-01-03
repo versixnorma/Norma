@@ -237,17 +237,15 @@ jobs:
           fi
 
           WARNING_COUNT=$(echo "$BUILD_OUTPUT" | grep -c "Warning\|warning" || true)
-          ERROR_COUNT=$(echo "$BUILD_OUTPUT" | grep -c "Error\|error" || true)
 
           MAX_WARNINGS=$(jq -r '.build.production.maxWarnings' .warnings-config.json)
-          MAX_ERRORS=$(jq -r '.build.production.maxErrors' .warnings-config.json)
 
           echo "Build Warnings: $WARNING_COUNT (max: $MAX_WARNINGS)"
-          echo "Build Errors: $ERROR_COUNT (max: $MAX_ERRORS)"
 
-          if [ "$ERROR_COUNT" -gt "$MAX_ERRORS" ]; then
-            echo "Build errors found ($ERROR_COUNT > $MAX_ERRORS). Failing production build."
-            exit 1
+          # Check strict exit code first
+          if [ $BUILD_EXIT_CODE -ne 0 ]; then
+            echo "Build failed with exit code $BUILD_EXIT_CODE"
+            exit $BUILD_EXIT_CODE
           fi
 
           if [ "$WARNING_COUNT" -gt "$MAX_WARNINGS" ]; then
