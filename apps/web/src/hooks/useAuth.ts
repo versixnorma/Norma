@@ -9,50 +9,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { logger } from '@/lib/logger';
 
 // ============================================
-// UTILITY FUNCTIONS FOR SECURE CONTEXT MANAGEMENT
+// UTILITY FUNCTIONS
 // ============================================
+// Cookies agora são gerenciados exclusivamente via Server Actions (HttpOnly)
+// para prevenir XSS e garantir integridade da sessão.
 
-// Get active condominio ID from cookies (secure alternative to localStorage)
-const getActiveCondominioId = async (): Promise<string | null> => {
-  if (typeof window === 'undefined') return null;
-
-  try {
-    // Try to get from cookies first (more secure)
-    const cookies = document.cookie.split(';');
-    const condominioCookie = cookies.find((cookie) =>
-      cookie.trim().startsWith('condominio_atual=')
-    );
-
-    if (condominioCookie) {
-      return condominioCookie.split('=')[1].trim();
-    }
-
-    // No fallback - cookies only for security
-    return null;
-  } catch (error) {
-    console.warn('Error reading active condominio:', error);
-    return null;
-  }
-};
-
-// Set active condominio ID in cookies (secure)
-const setActiveCondominioId = (condominioId: string | null): void => {
-  if (typeof window === 'undefined') return;
-
-  try {
-    if (condominioId) {
-      // Set secure cookie (7 days expiration)
-      const expires = new Date();
-      expires.setDate(expires.getDate() + 7);
-      document.cookie = `condominio_atual=${condominioId}; expires=${expires.toUTCString()}; path=/; SameSite=Strict; Secure`;
-    } else {
-      // Clear cookie
-      document.cookie = 'condominio_atual=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure';
-    }
-  } catch (error) {
-    console.warn('Error setting active condominio:', error);
-  }
-};
+import { UsuarioSchema } from '@/lib/schemas/auth';
 
 interface UsuarioCondominioJoin {
   condominio_id: string;
@@ -74,6 +36,7 @@ interface UsuarioWithCondominios {
   status: StatusType;
   created_at: string;
   updated_at: string;
+  condominio_id: string | null; // Added field
   condominio_atual?: { id: string; nome: string; role: string } | null;
   condominios?: {
     condominio_id: string;
@@ -124,11 +87,10 @@ export function useAuth() {
     error: null,
   });
 
-  // Fetch user profile with condominios (simplified)
+  // Fetch user profile with condominios (secure & validated)
   const fetchProfile = useCallback(
     async (userId: string): Promise<UsuarioWithCondominios | null> => {
       try {
-        // Buscar usuário e condomínios em uma única consulta otimizada
         const { data: profileData, error } = await supabase
           .from('usuarios')
           .select(
@@ -158,13 +120,18 @@ export function useAuth() {
 
         const rawUser = profileData[0];
 
-        // Validar que usuario_condominios é array antes de fazer cast
-        if (!rawUser.usuario_condominios || !Array.isArray(rawUser.usuario_condominios)) {
-          console.error('usuario_condominios não é um array válido:', rawUser.usuario_condominios);
+        // VALIDATION WITH ZOD (Runtime Safety)
+        // No more "as unknown as" masking errors
+        const parseResult = UsuarioSchema.safeParse(rawUser);
+
+        if (!parseResult.success) {
+          console.error('Erro de validação de schema do usuário:', parseResult.error);
+          // Em produção, talvez queiramos logar no Sentry mas não bloquear totalmente se for campo não crítico
+          // Por segurança, bloqueamos login se dados core estiverem corrompidos
           return null;
         }
 
-        const usuario = rawUser as unknown as UsuarioWithCondominios;
+        const usuario = parseResult.data as unknown as UsuarioWithCondominios; // Safe now because validated
 
         // Transformar dados dos condomínios
         const userCondominios = usuario.usuario_condominios.map((uc: UsuarioCondominioJoin) => ({
@@ -175,8 +142,16 @@ export function useAuth() {
           unidade_identificador: uc.unidades?.identificador || null,
         }));
 
-        // Obter condomínio ativo de forma segura (cookies em vez de localStorage)
-        const activeCondominioId = await getActiveCondominioId();
+        // Obter condomínio ativo:
+        // 1. Preferência salva no banco (usuario.condominio_id)
+        // 2. Ou o primeiro da lista
+        let activeCondominioId = usuario.condominio_id;
+
+        // Fallback se não tiver setado no banco
+        if (!activeCondominioId && userCondominios.length > 0) {
+          activeCondominioId = userCondominios[0].condominio_id;
+        }
+
         const condominioAtual =
           userCondominios.find((c) => c.condominio_id === activeCondominioId) ||
           userCondominios[0] ||
@@ -411,28 +386,38 @@ export function useAuth() {
     }
   };
 
-  const switchCondominio = (condominioId: string) => {
+  const switchCondominio = async (condominioId: string) => {
     if (!state.profile || !state.profile.condominios) return;
 
     const novoCondominio = state.profile.condominios.find((c) => c.condominio_id === condominioId);
 
     if (novoCondominio) {
-      // Usar abordagem segura para armazenar condomínio ativo
-      setActiveCondominioId(condominioId);
+      try {
+        // Chamar Server Action para persistir no DB e cookie HttpOnly
+        const { switchCondominioAction } = await import('@/app/actions/auth');
+        await switchCondominioAction(condominioId);
 
-      setState((prev) => ({
-        ...prev,
-        profile: prev.profile
-          ? {
-              ...prev.profile,
-              condominio_atual: {
-                id: novoCondominio.condominio_id,
-                nome: novoCondominio.condominio.nome,
-                role: novoCondominio.role,
-              },
-            }
-          : null,
-      }));
+        // Atualizar estado local otimista
+        setState((prev) => ({
+          ...prev,
+          profile: prev.profile
+            ? {
+                ...prev.profile,
+                condominio_id: condominioId, // Atualiza também a ref no perfil
+                condominio_atual: {
+                  id: novoCondominio.condominio_id,
+                  nome: novoCondominio.condominio.nome,
+                  role: novoCondominio.role,
+                },
+              }
+            : null,
+        }));
+
+        router.refresh(); // Opcional: recarregar Server Components se eles dependerem do cookie
+      } catch (error) {
+        console.error('Falha ao trocar condomínio:', error);
+        // Toast error here ideally
+      }
     }
   };
 
