@@ -58,6 +58,7 @@ O Norma Chat é um assistente de IA integrado que responde perguntas sobre o con
 ### Configuração
 
 1. **Com IA Ativa** (recomendado para produção):
+
    ```bash
    # Adicionar ao .env.local
    GROQ_API_KEY=gsk_your_key_here
@@ -162,10 +163,6 @@ supabase/
 - ✅ Sanitização de SQL queries
 - ✅ Validação de inputs com Zod
 
-## 📚 Documentação Adicional
-
-- [Roadmap de Correções](../../VERSIX_NORMA_Roadmap_Correcoes_Developers.md)
-- [Sprints Técnicos](../../VERSIX%20NORMA%20-%20Detalhamento%20Técnico_%20Sprint%200%20(The%20Launchpad).md)
 - [Documentação Supabase](https://supabase.com/docs)
 
 ## 🤝 Contribuindo
