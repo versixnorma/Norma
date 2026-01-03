@@ -58,6 +58,8 @@ jobs:
           if [ "$WARNING_COUNT" -gt "$MAX_WARNINGS" ]; then
             echo "Too many ESLint warnings ($WARNING_COUNT > $MAX_WARNINGS). Failing build."
             echo "Please fix warnings or update the warning limit in .warnings-config.json if necessary."
+            exit 1
+          fi
 
   # ============================================
   # DEPLOY PREVIEW (apenas para PRs)
@@ -160,7 +162,7 @@ jobs:
   deploy-production:
     name: Deploy Production
     runs-on: ubuntu-latest
-    needs: lint  # Changed from build to lint to avoid artifact dependency issues
+    needs: lint # Changed from build to lint to avoid artifact dependency issues
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment:
       name: production
