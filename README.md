@@ -62,13 +62,13 @@ versix-norma/
 
 ### Stack Tecnológico
 
-| Camada | Tecnologia |
-|--------|-----------|
-| **Frontend** | Next.js 14, React 18, TypeScript 5, Tailwind CSS |
-| **Backend** | Supabase (PostgreSQL, Auth, Storage, Edge Functions) |
-| **AI** | Groq API, pgvector, RAG |
-| **Testes** | Playwright (E2E), Vitest (Unit) |
-| **Infra** | Vercel, Supabase Cloud, Sentry |
+| Camada       | Tecnologia                                           |
+| ------------ | ---------------------------------------------------- |
+| **Frontend** | Next.js 14, React 18, TypeScript 5, Tailwind CSS     |
+| **Backend**  | Supabase (PostgreSQL, Auth, Storage, Edge Functions) |
+| **AI**       | Groq API, pgvector, RAG                              |
+| **Testes**   | Playwright (E2E Stabilized), Vitest (Unit)           |
+| **Infra**    | Vercel, Supabase Cloud, Sentry                       |
 
 ---
 
@@ -114,24 +114,29 @@ supabase status
 ## 📚 Módulos Principais
 
 ### 🤖 Norma Chat
+
 Assistente de IA que responde perguntas sobre:
+
 - Documentos (Regimentos, Atas)
 - Assembleias e votações
 - Procedimentos condominiais
 
 ### 💰 Módulo Financeiro
+
 - Dashboard com saldo/receitas/despesas
 - Lançamentos e categorização
 - Prestação de contas
 - Relatórios (PDF/Excel)
 
 ### 🏛️ Assembleias Digitais
+
 - Criação e envio de pautas
 - Votação online
 - Quórum automático
 - Geração de Atas (PDF/assinado)
 
 ### 📢 Comunicação Multicanal
+
 - Push, Email, SMS, WhatsApp
 - Avisos de emergência
 - Histórico de notificações
@@ -199,6 +204,7 @@ pnpm test:unit
 ```
 
 **Cobertura:**
+
 - 38 testes passando
 - Utils, Comunicados, Assembleias, Financeiro
 
@@ -209,8 +215,10 @@ pnpm test:e2e
 ```
 
 Requisitos:
+
 - App rodando em localhost:3000
-- Dados de teste criados
+- **Auto-Seeding**: O ambiente de teste cria automaticamente condomínios e usuários se não existirem.
+- **Global Auth**: Os testes reutilizam estado de autenticação para execução rápida.
 
 ### Cobertura
 
@@ -223,7 +231,9 @@ pnpm test:coverage
 ## 📊 Monitoramento
 
 ### Sentry
+
 Rastreamento de erros e performance:
+
 - Métricas customizadas
 - Breadcrumbs automáticos
 - Alertas em tempo real
@@ -235,6 +245,7 @@ curl https://seu-app.com/functions/v1/health
 ```
 
 Retorna status de:
+
 - PostgreSQL
 - Auth
 - Storage
@@ -278,6 +289,7 @@ supabase functions deploy
 
 - **RLS (Row Level Security)** ativado em todas as tabelas
 - **CSP Headers** configurados
+- **Zod Schema Validation** em todas as Edge Functions e APIs
 - **Input Sanitization** em todos os formulários
 - **HTTPS** obrigatório em produção
 - **JWT** para autenticação
@@ -287,6 +299,7 @@ supabase functions deploy
 ## 🤝 Contribuindo
 
 Leia [CONTRIBUTING.md](./CONTRIBUTING.md) para:
+
 - Padrões de código
 - Fluxo de branches
 - Convenção de commits
@@ -310,15 +323,15 @@ Proprietary © 2024-2025 Versix Solutions. Todos os direitos reservados.
 
 ## 🎯 Status
 
-| Item | Status |
-|------|--------|
-| TypeScript | ✅ Strict Mode |
-| Tests | ✅ 38/38 Passing |
-| Performance | ✅ Code-splitting |
-| Security | ✅ CSP + RLS |
-| Documentation | ✅ Complete |
-| Monitoring | ✅ Sentry Active |
+| Item          | Status            |
+| ------------- | ----------------- |
+| TypeScript    | ✅ Strict Mode    |
+| Tests         | ✅ 38/38 Passing  |
+| Performance   | ✅ Code-splitting |
+| Security      | ✅ CSP + RLS      |
+| Documentation | ✅ Complete       |
+| Monitoring    | ✅ Sentry Active  |
 
-**Versão:** 1.0.1
-**Data:** Dezembro 2025
+**Versão:** 1.0.2
+**Data:** Janeiro 2026
 **Time:** Versix Solutions
