@@ -94,8 +94,17 @@ jobs:
         id: build
         run: |
           cd apps/web
+          # Capture output but prevent immediate exit on error to allow analysis
+          set +e
           BUILD_OUTPUT=$(pnpm build 2>&1)
+          BUILD_EXIT_CODE=$?
+          set -e
+
           echo "$BUILD_OUTPUT"
+
+          if [ $BUILD_EXIT_CODE -ne 0 ]; then
+            echo "Build failed with exit code $BUILD_EXIT_CODE"
+          fi
 
           WARNING_COUNT=$(echo "$BUILD_OUTPUT" | grep -c "Warning\|warning" || true)
           ERROR_COUNT=$(echo "$BUILD_OUTPUT" | grep -c "Error\|error" || true)
@@ -198,8 +207,17 @@ jobs:
 
       - name: Build application
         run: |
+          # Capture output but prevent immediate exit on error to allow analysis
+          set +e
           BUILD_OUTPUT=$(pnpm build 2>&1)
+          BUILD_EXIT_CODE=$?
+          set -e
+
           echo "$BUILD_OUTPUT"
+
+          if [ $BUILD_EXIT_CODE -ne 0 ]; then
+            echo "Build failed with exit code $BUILD_EXIT_CODE"
+          fi
 
           WARNING_COUNT=$(echo "$BUILD_OUTPUT" | grep -c "Warning\|warning" || true)
           ERROR_COUNT=$(echo "$BUILD_OUTPUT" | grep -c "Error\|error" || true)
