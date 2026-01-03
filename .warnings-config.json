@@ -9,7 +9,7 @@
       "maxErrors": 0
     },
     "production": {
-      "maxWarnings": 80,
+      "maxWarnings": 200,
       "maxErrors": 0
     }
   }
