@@ -1,9 +1,13 @@
 import { test as base } from '@playwright/test';
 import { createClient } from '@supabase/supabase-js';
 
+// Load env vars from .env.local if not already loaded (for Playwright)
+require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env.local') });
+
 // Load env vars - assuming they are available in the test process
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey =
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -51,13 +55,6 @@ export const test = base.extend<AuthFixtures>({
     // Actually, @supabase/ssr might look at cookies.
     // Let's set the Cookie which is what our new Secure Auth uses!
 
-    // 3. Set Cookie Access Token (because we moved to Server Actions/Middleware)
-    // The middleware expects cookies.
-    // However, during test, we might still be hitting client-side routes.
-    // Let's try to set both for maximum compatibility.
-
-    // Cookie format: sb-<project-ref>-auth-token... actually middleware uses its own or default.
-    // Best way: Let the Supabase client helper set it? No, we are in node/playwright context.
     // 3. Set Cookie Access Token
     // Format required by @supabase/ssr and auth-helpers:
     // `sb-[PROJECT_REF]-auth-token` = ["access_token", "refresh_token"] (v0)
@@ -84,7 +81,9 @@ export const test = base.extend<AuthFixtures>({
       {
         name: cookieName,
         value: cookieValue,
-        domain: 'localhost', // TODO: Make dynamic based on baseURL
+        // When testing against production, we cannot set domain to 'localhost'.
+        // Omitting domain allows it to apply to the current context or we can use url
+        url: process.env.BASE_URL || 'http://localhost:3000',
         path: '/',
         httpOnly: false, // We can't simulate httpOnly=true easily from client side but for test context it's fine
         secure: false,
@@ -96,7 +95,7 @@ export const test = base.extend<AuthFixtures>({
         // We need a valid ID. For now let's hope the default works or we fetch it.
         // Ideally we fetch the user's condominium from DB but let's skip for basic auth.
         value: '',
-        domain: 'localhost',
+        url: process.env.BASE_URL || 'http://localhost:3000',
         path: '/',
       },
     ]);
