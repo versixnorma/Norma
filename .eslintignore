@@ -1,0 +1,5 @@
+supabase/functions/**
+node_modules/**
+.next/**
+dist/**
+build/**

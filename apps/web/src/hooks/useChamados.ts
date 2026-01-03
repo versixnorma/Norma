@@ -18,6 +18,25 @@ import type {
 import { Database } from '@versix/shared';
 import { useCallback, useEffect, useState } from 'react';
 
+type ChamadoRow = Database['public']['Tables']['chamados']['Row'];
+type ChamadoMensagemRow = Database['public']['Tables']['chamados_mensagens']['Row'];
+
+interface ChamadoQueryResult extends ChamadoRow {
+  solicitante?: { nome: string; avatar_url: string | null; email: string } | null;
+  atendente?: { nome: string; avatar_url: string | null } | null;
+}
+
+interface ChamadoMensagemQueryResult extends ChamadoMensagemRow {
+  autor?: { nome: string; avatar_url: string | null } | null;
+}
+
+const toChamado = (data: ChamadoQueryResult): ChamadoComJoins => ({
+  ...data,
+  anexos: parseAnexos(data.anexos) as any,
+  solicitante: data.solicitante ?? undefined,
+  atendente: data.atendente ?? undefined,
+});
+
 export function useChamados(options?: {
   condominioId?: string | null;
   userId?: string | null;
@@ -34,25 +53,6 @@ export function useChamados(options?: {
     total: 0,
     totalPages: 0,
     hasMore: false,
-  });
-
-  type ChamadoRow = Database['public']['Tables']['chamados']['Row'];
-  type ChamadoMensagemRow = Database['public']['Tables']['chamados_mensagens']['Row'];
-
-  interface ChamadoQueryResult extends ChamadoRow {
-    solicitante?: { nome: string; avatar_url: string | null; email: string } | null;
-    atendente?: { nome: string; avatar_url: string | null } | null;
-  }
-
-  interface ChamadoMensagemQueryResult extends ChamadoMensagemRow {
-    autor?: { nome: string; avatar_url: string | null } | null;
-  }
-
-  const toChamado = (data: ChamadoQueryResult): ChamadoComJoins => ({
-    ...data,
-    anexos: parseAnexos(data.anexos) as any,
-    solicitante: data.solicitante ?? undefined,
-    atendente: data.atendente ?? undefined,
   });
 
   const fetchChamados = useCallback(
