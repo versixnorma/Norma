@@ -142,7 +142,6 @@ export function useAuth() {
           : [];
 
         // Obter condomínio ativo:
-        let activeCondominioId = usuario.condominio_id;
 
         const condominioAtual =
           userCondominios.length > 0
