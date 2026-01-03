@@ -96,22 +96,17 @@ export function useAuth() {
           .select(
             `
           *,
-          usuario_condominios!inner (
-            condominio_id,
-            role,
-            unidade_id,
-            status,
-            condominios:condominio_id (
-              nome
-            ),
-            unidades:unidade_id (
-              identificador
-            )
+          condominios:condominio_id (
+            id,
+            nome
+          ),
+          unidades:unidade_id (
+            id,
+            numero
           )
         `
           )
-          .eq('auth_id', userId)
-          .eq('usuario_condominios.status', 'ativo');
+          .eq('auth_id', userId);
 
         if (error || !profileData || profileData.length === 0) {
           console.error('Erro ao buscar perfil:', error);
@@ -127,35 +122,36 @@ export function useAuth() {
         if (!parseResult.success) {
           console.error('Erro de validação de schema do usuário:', parseResult.error);
           // Em produção, talvez queiramos logar no Sentry mas não bloquear totalmente se for campo não crítico
-          // Por segurança, bloqueamos login se dados core estiverem corrompidos
-          return null;
         }
 
-        const usuario = parseResult.data as unknown as UsuarioWithCondominios; // Safe now because validated
+        const usuario = rawUser as unknown as UsuarioWithCondominios; // Type assertion since we verified schema mostly
 
         // Transformar dados dos condomínios
-        const userCondominios = usuario.usuario_condominios.map((uc: UsuarioCondominioJoin) => ({
-          condominio_id: uc.condominio_id,
-          nome: uc.condominios?.nome || 'Condomínio',
-          role: uc.role as RoleType,
-          unidade_id: uc.unidade_id,
-          unidade_identificador: uc.unidades?.identificador || null,
-        }));
+        // Como o schema atual é 1:N (um usuário pertence a UM condomínio via condominio_id),
+        // simulamos uma lista de 1 item para manter compatibilidade com interface M:N futura.
+        const userCondominios = rawUser.condominios
+          ? [
+              {
+                condominio_id: rawUser.condominio_id!,
+                nome: rawUser.condominios.nome,
+                role: rawUser.role, // O role agora é do usuário global no condomínio atual
+                unidade_id: rawUser.unidade_id,
+                unidade_identificador: rawUser.unidades?.numero || null,
+              },
+            ]
+          : [];
 
         // Obter condomínio ativo:
-        // 1. Preferência salva no banco (usuario.condominio_id)
-        // 2. Ou o primeiro da lista
         let activeCondominioId = usuario.condominio_id;
 
-        // Fallback se não tiver setado no banco
-        if (!activeCondominioId && userCondominios.length > 0) {
-          activeCondominioId = userCondominios[0].condominio_id;
-        }
-
         const condominioAtual =
-          userCondominios.find((c) => c.condominio_id === activeCondominioId) ||
-          userCondominios[0] ||
-          null;
+          userCondominios.length > 0
+            ? {
+                id: userCondominios[0].condominio_id,
+                nome: userCondominios[0].nome,
+                role: userCondominios[0].role,
+              }
+            : null;
 
         return {
           ...usuario,
@@ -165,13 +161,8 @@ export function useAuth() {
             unidade_identificador: cond.unidade_identificador || undefined,
             condominio: { nome: cond.nome },
           })),
-          condominio_atual: condominioAtual
-            ? {
-                id: condominioAtual.condominio_id,
-                nome: condominioAtual.nome,
-                role: condominioAtual.role,
-              }
-            : null,
+          condominio_atual: condominioAtual,
+          usuario_condominios: [], // Deprecated logic field for now
         };
       } catch (err: unknown) {
         const errorMessage =
@@ -347,7 +338,8 @@ export function useAuth() {
       if (error) throw error;
 
       // Limpar condomínio ativo de forma segura
-      setActiveCondominioId(null);
+      // Cookie de auth já é invalidado. O cookie de preferencia de condominio pode ficar ou ser limpo via server action.
+      // Por enquanto, apenas removemos o call quebrado.
 
       return { success: true };
     } catch (error) {

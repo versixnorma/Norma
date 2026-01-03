@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+import { expect } from '@playwright/test';
+import { test } from '../../fixtures/test-user';
 
 test.describe('API Response Time', () => {
   test('Critical API endpoints should respond under 500ms', async ({ request, testUser }) => {

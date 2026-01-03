@@ -1,28 +1,17 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures/auth.fixture';
 
 test.describe('Assembleias Page', () => {
-  // We need to bypass login for protected routes in production tests
-  // Since we don't have a real auth flow in these tests yet, we'll visit the page
-  // and expect to interact with it.
-  // NOTE: If the app redirects to login, this test will fail on the "Assembleias" check
-  // For now, we assume the previous login state or public access (if applicable)
-  // BUT the page uses AuthGuard.
-  // STRATEGY: We will re-use the login pattern or just check if it redirects to login effectively.
+  // Uses the 'activeUserPage' fixture which gives us an authenticated page immediately
+  test.beforeEach(async ({ activeUserPage }) => {
+    await activeUserPage.goto('/assembleias');
+  });
 
-  // However, for this specific test suite against PROD, we might want to check
-  // if we can see the "Assembleias" header. Integrating simple login step here.
+  test('should verify page structure or redirection', async ({ activeUserPage }) => {
+    // Should NOT redirect to login anymore because we are authenticated
+    await expect(activeUserPage).toHaveURL(/.*assembleias/);
 
-  test.beforeEach(async ({ page }) => {
-    // Basic Login Flow for prod tests
-    await page.goto('/login');
-    // We assume the user creates functionality or we just check redirection if not logged in
-    // To make this robust, let's just visit the page and see if AuthGuard kicks in (redirects to login)
-    // OR if we are doing a full E2E, we need credentials.
-    // Given current context (Smoke Tests), we verified /login and /home.
-    // Let's try to verify /assembleias behavior.
-
-    // For now, let's just navigate. If it redirects to login, we assert that behavior.
-    await page.goto('/assembleias');
+    // Check for common elements
+    // await expect(activeUserPage.locator('h1')).toContainText('Assembleias');
   });
 
   test('should verify page structure or redirection', async ({ page }) => {

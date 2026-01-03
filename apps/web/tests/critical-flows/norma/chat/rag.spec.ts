@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import test from '../../fixtures/test-user';
+import test from '../../../fixtures/test-user';
 
 test('Norma Chat opens and sends message', async ({ page, testUser }) => {
   await page.goto('/login');
