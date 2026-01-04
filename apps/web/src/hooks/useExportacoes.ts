@@ -14,12 +14,16 @@ export function useExportacoes() {
   const [error] = useState<string | null>(null);
 
   const fetchExportacoes = useCallback(async (_condominioId: string) => {
-    console.warn('useExportacoes.fetchExportacoes is deprecated - exportacoes table does not exist');
+    console.warn(
+      'useExportacoes.fetchExportacoes is deprecated - exportacoes table does not exist'
+    );
     return [];
   }, []);
 
-  const criarExportacao = useCallback(async (_condominioId: string, _input: any) => {
-    console.warn('useExportacoes.criarExportacao is deprecated - criar_exportacao RPC does not exist');
+  const criarExportacao = useCallback(async (_condominioId: string, _input: unknown) => {
+    console.warn(
+      'useExportacoes.criarExportacao is deprecated - criar_exportacao RPC does not exist'
+    );
     return null;
   }, []);
 
@@ -30,4 +34,3 @@ export function useExportacoes() {
 
   return { exportacoes, loading, error, fetchExportacoes, criarExportacao, downloadExportacao };
 }
-

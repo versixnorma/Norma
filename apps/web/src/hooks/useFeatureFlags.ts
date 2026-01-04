@@ -9,7 +9,7 @@ export interface FeatureFlag {
   nome: string;
   descricao: string | null;
   is_enabled: boolean;
-  config: Record<string, any>;
+  config: Record<string, unknown>;
   ambiente: 'all' | 'development' | 'staging' | 'production';
   condominio_ids: string[] | null;
   created_at: string;
