@@ -128,9 +128,9 @@ export function useFinanceiro() {
         const { data, error: fetchError, count } = await query;
         if (fetchError) throw fetchError;
 
-        setLancamentos((data || []) as LancamentoFinanceiro[]);
+        setLancamentos((data || []) as unknown as LancamentoFinanceiro[]);
         setPagination({ page, pageSize, total: count || 0 });
-        return { data: (data || []) as LancamentoFinanceiro[], total: count || 0 };
+        return { data: (data || []) as unknown as LancamentoFinanceiro[], total: count || 0 };
       } catch (err: unknown) {
         const errorMessage =
           err instanceof Error ? err.message : 'Erro desconhecido ao buscar lançamentos';
@@ -157,8 +157,8 @@ export function useFinanceiro() {
           .select()
           .single();
         if (insertError) throw insertError;
-        setLancamentos((prev) => [data as LancamentoFinanceiro, ...prev]);
-        return data as LancamentoFinanceiro;
+        setLancamentos((prev) => [data as unknown as LancamentoFinanceiro, ...prev]);
+        return data as unknown as LancamentoFinanceiro;
       } catch (err: unknown) {
         const errorMessage =
           err instanceof Error ? err.message : 'Erro desconhecido ao criar lançamento';
@@ -184,9 +184,9 @@ export function useFinanceiro() {
           .single();
         if (updateError) throw updateError;
         setLancamentos((prev) =>
-          prev.map((l) => (l.id === id ? (data as LancamentoFinanceiro) : l))
+          prev.map((l) => (l.id === id ? (data as unknown as LancamentoFinanceiro) : l))
         );
-        return data as LancamentoFinanceiro;
+        return data as unknown as LancamentoFinanceiro;
       } catch (err: unknown) {
         const errorMessage =
           err instanceof Error ? err.message : 'Erro desconhecido ao atualizar lançamento';
@@ -347,7 +347,7 @@ export function useFinanceiro() {
             percentual: totalUnidades ? (inadimplentes.length / totalUnidades) * 100 : 0,
           },
           contas: contas,
-          ultimos_lancamentos: (ultimos || []) as LancamentoFinanceiro[],
+          ultimos_lancamentos: (ultimos || []) as unknown as LancamentoFinanceiro[],
           despesas_por_categoria: Object.entries(despesasPorCategoria).map(
             ([categoria, valor]) => ({
               categoria,
