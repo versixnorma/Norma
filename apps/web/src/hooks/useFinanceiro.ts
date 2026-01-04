@@ -153,7 +153,12 @@ export function useFinanceiro() {
       try {
         const { data, error: insertError } = await supabase
           .from('lancamentos_financeiros')
-          .insert({ condominio_id: condominioId, criado_por: criadoPor, ...input })
+          .insert({
+            condominio_id: condominioId,
+            criado_por: criadoPor,
+            data_lancamento: new Date().toISOString(),
+            ...input,
+          })
           .select()
           .single();
         if (insertError) throw insertError;
