@@ -158,7 +158,7 @@ export function useFinanceiro() {
             criado_por: criadoPor,
             data_lancamento: new Date().toISOString(),
             ...input,
-          })
+          } as any)
           .select()
           .single();
         if (insertError) throw insertError;
@@ -183,7 +183,7 @@ export function useFinanceiro() {
         const { id, ...updates } = input;
         const { data, error: updateError } = await supabase
           .from('lancamentos_financeiros')
-          .update(updates)
+          .update(updates as any)
           .eq('id', id)
           .select()
           .single();
