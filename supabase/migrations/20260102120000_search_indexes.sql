@@ -5,7 +5,7 @@
 -- ============================================
 
 -- 1. Habilitar extensão pg_trgm (Trigram Matching)
-CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- 2. Índices para Busca de Moradores (Nome, Email)
 CREATE INDEX IF NOT EXISTS idx_usuarios_nome_trgm ON public.usuarios USING GIN (nome gin_trgm_ops);

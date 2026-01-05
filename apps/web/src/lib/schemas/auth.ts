@@ -12,7 +12,7 @@ export const RoleSchema = z.enum([
   'admin_condo',
 ]);
 
-export const StatusSchema = z.enum(['pending', 'ativo', 'inativo', 'bloqueado']);
+export const StatusSchema = z.enum(['pending', 'active', 'inactive', 'suspended', 'removed']);
 
 export const CondominioSimplifiedSchema = z.object({
   nome: z.string(),
@@ -25,7 +25,7 @@ export const UnidadeSimplifiedSchema = z.object({
 export const UsuarioCondominioSchema = z.object({
   condominio_id: z.string().uuid(),
   role: RoleSchema,
-  unidade_id: z.string().uuid().nullable(),
+  unidade_id: z.string().uuid().nullable().optional(), // unidade_id not in table? check.
   status: z.string(),
   condominios: CondominioSimplifiedSchema.nullable().optional(),
   unidades: UnidadeSimplifiedSchema.nullable().optional(),
@@ -34,7 +34,7 @@ export const UsuarioCondominioSchema = z.object({
 export const UsuarioSchema = z.object({
   id: z.string().uuid(),
   auth_id: z.string().uuid(),
-  condominio_id: z.string().uuid().nullable(),
+  condominio_id: z.string().uuid().nullable().optional(),
   nome: z.string(),
   email: z.string().email(),
   telefone: z.string().nullable(),

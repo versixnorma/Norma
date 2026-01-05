@@ -134,6 +134,7 @@ FOR ALL USING (
 );
 
 -- Update trigger for documents
+DROP TRIGGER IF EXISTS update_documents_updated_at ON public.documents;
 CREATE TRIGGER update_documents_updated_at
     BEFORE UPDATE ON public.documents
     FOR EACH ROW

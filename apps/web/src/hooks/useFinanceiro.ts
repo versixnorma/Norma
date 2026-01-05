@@ -2,6 +2,7 @@
 
 import { sanitizeSearchQuery } from '@/lib/sanitize';
 import { getSupabaseClient } from '@/lib/supabase';
+import type { Database } from '@/types/database';
 import type {
   CategoriaFinanceira,
   Comprovante,
@@ -151,14 +152,29 @@ export function useFinanceiro() {
     ): Promise<LancamentoFinanceiro | null> => {
       setLoading(true);
       try {
+        const payload: Database['public']['Tables']['lancamentos_financeiros']['Insert'] = {
+          condominio_id: condominioId,
+          criado_por: criadoPor,
+          data_lancamento: new Date().toISOString(),
+          tipo: input.tipo,
+          categoria_id: input.categoria_id,
+          conta_bancaria_id: input.conta_bancaria_id || null,
+          valor: input.valor,
+          data_competencia: input.data_competencia,
+          // data_vencimento not in DB schema
+          data_pagamento: input.data_pagamento || null,
+          descricao: input.descricao,
+          observacoes: input.observacoes || null,
+          fornecedor: input.fornecedor_nome || null, // Mapped from fornecedor_nome
+          // fornecedor_documento not in DB schema
+          numero_documento: input.numero_documento || null,
+          comprovantes: input.comprovantes ? (input.comprovantes as unknown as any) : null,
+          status: input.status || 'pendente',
+        };
+
         const { data, error: insertError } = await supabase
           .from('lancamentos_financeiros')
-          .insert({
-            condominio_id: condominioId,
-            criado_por: criadoPor,
-            data_lancamento: new Date().toISOString(),
-            ...input,
-          } as any)
+          .insert(payload)
           .select()
           .single();
         if (insertError) throw insertError;
@@ -181,9 +197,29 @@ export function useFinanceiro() {
       setLoading(true);
       try {
         const { id, ...updates } = input;
+
+        const payload: Database['public']['Tables']['lancamentos_financeiros']['Update'] = {};
+        if (updates.tipo) payload.tipo = updates.tipo;
+        if (updates.categoria_id) payload.categoria_id = updates.categoria_id;
+        if (updates.conta_bancaria_id !== undefined)
+          payload.conta_bancaria_id = updates.conta_bancaria_id;
+        if (updates.valor) payload.valor = updates.valor;
+        if (updates.data_competencia) payload.data_competencia = updates.data_competencia;
+        // data_vencimento not in DB
+        if (updates.data_pagamento !== undefined) payload.data_pagamento = updates.data_pagamento;
+        if (updates.descricao) payload.descricao = updates.descricao;
+        if (updates.observacoes !== undefined) payload.observacoes = updates.observacoes;
+        if (updates.fornecedor_nome !== undefined) payload.fornecedor = updates.fornecedor_nome; // Map to fornecedor
+        // fornecedor_documento not in DB
+        if (updates.numero_documento !== undefined)
+          payload.numero_documento = updates.numero_documento;
+        if (updates.comprovantes !== undefined)
+          payload.comprovantes = updates.comprovantes as unknown as any;
+        if (updates.status) payload.status = updates.status;
+
         const { data, error: updateError } = await supabase
           .from('lancamentos_financeiros')
-          .update(updates as any)
+          .update(payload)
           .eq('id', id)
           .select()
           .single();

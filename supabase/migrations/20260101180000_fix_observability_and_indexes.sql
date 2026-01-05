@@ -13,9 +13,10 @@ DROP POLICY IF EXISTS "metricas_uso_select" ON metricas_uso;
 CREATE POLICY "metricas_uso_select" ON metricas_uso FOR SELECT
   USING (
     EXISTS (
-      SELECT 1 FROM usuarios u
-      WHERE u.auth_id = auth.uid()
-        AND (u.role = 'superadmin' OR u.condominio_id = metricas_uso.condominio_id)
+      SELECT 1 FROM usuario_condominios uc
+      WHERE uc.usuario_id = auth.uid()
+        AND uc.status = 'active'
+        AND (uc.role = 'superadmin' OR uc.condominio_id = metricas_uso.condominio_id)
     )
   );
 
@@ -24,9 +25,10 @@ DROP POLICY IF EXISTS "alertas_select" ON alertas_sistema;
 CREATE POLICY "alertas_select" ON alertas_sistema FOR SELECT
   USING (
     EXISTS (
-      SELECT 1 FROM usuarios u
-      WHERE u.auth_id = auth.uid()
-        AND u.role IN ('superadmin', 'admin_condo')
+      SELECT 1 FROM usuario_condominios uc
+      WHERE uc.usuario_id = auth.uid()
+        AND uc.status = 'active'
+        AND uc.role IN ('superadmin', 'admin_condo')
     )
   );
 
@@ -34,49 +36,35 @@ DROP POLICY IF EXISTS "alertas_update" ON alertas_sistema;
 CREATE POLICY "alertas_update" ON alertas_sistema FOR UPDATE
   USING (
     EXISTS (
-      SELECT 1 FROM usuarios u
-      WHERE u.auth_id = auth.uid()
-        AND u.role IN ('superadmin', 'admin_condo')
+      SELECT 1 FROM usuario_condominios uc
+      WHERE uc.usuario_id = auth.uid()
+        AND uc.status = 'active'
+        AND uc.role IN ('superadmin', 'admin_condo')
     )
   );
 
 -- metricas_performance
 DROP POLICY IF EXISTS "perf_select_superadmin" ON metricas_performance;
 CREATE POLICY "perf_select_superadmin" ON metricas_performance FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM usuarios u
-      WHERE u.auth_id = auth.uid() AND u.role = 'superadmin'
-    )
-  );
+  USING (public.is_superadmin());
 
 -- uptime_checks
 DROP POLICY IF EXISTS "uptime_select_superadmin" ON uptime_checks;
 CREATE POLICY "uptime_select_superadmin" ON uptime_checks FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM usuarios u
-      WHERE u.auth_id = auth.uid() AND u.role = 'superadmin'
-    )
-  );
+  USING (public.is_superadmin());
 
 -- api_request_logs
 DROP POLICY IF EXISTS "api_logs_select_superadmin" ON api_request_logs;
 CREATE POLICY "api_logs_select_superadmin" ON api_request_logs FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM usuarios u
-      WHERE u.auth_id = auth.uid() AND u.role = 'superadmin'
-    )
-  );
+  USING (public.is_superadmin());
 
 -- 2. PERFORMANCE INDICES
 -- ======================================
 
 -- Optimization for "get_user_condominio_id" and "is_superadmin" frequently used in RLS
 -- Although auth_id is unique, looking up active users is frequent.
-CREATE INDEX IF NOT EXISTS idx_usuarios_auth_active
-ON public.usuarios(auth_id, role)
+CREATE INDEX IF NOT EXISTS idx_usuarios_auth
+ON public.usuarios(auth_id)
 WHERE deleted_at IS NULL;
 
 -- Optimization for dashboard queries filtering by status often
@@ -92,4 +80,3 @@ ON public.assembleia_logs(assembleia_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_pautas_list_optimized
 ON public.assembleia_pautas(assembleia_id, ordem)
 INCLUDE (titulo, status, tipo_votacao);
-

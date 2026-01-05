@@ -1,10 +1,13 @@
 'use client';
 
 import { getSupabaseClient } from '@/lib/supabase';
-import type { RoleType, StatusType } from '@/types/database';
+import type { Database } from '@/types/database';
 import type { AuthError, Session, User } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
+
+type RoleType = Database['public']['Enums']['user_role'];
+type StatusType = Database['public']['Enums']['user_status'];
 
 import { logger } from '@/lib/logger';
 
@@ -17,12 +20,10 @@ import { logger } from '@/lib/logger';
 import { UsuarioSchema } from '@/lib/schemas/auth';
 
 interface UsuarioCondominioJoin {
-  condominio_id: string;
+  condominio: { id: string; nome: string };
   role: RoleType;
-  unidade_id: string | null;
   status: string;
-  condominios: { nome: string } | null;
-  unidades: { identificador: string } | null;
+  // unidade_id: string | null; // Not fetched in current query from pivot
 }
 
 interface UsuarioWithCondominios {
@@ -36,7 +37,7 @@ interface UsuarioWithCondominios {
   status: StatusType;
   created_at: string;
   updated_at: string;
-  condominio_id: string | null; // Added field
+  condominio_id?: string | null; // Made optional as it's deprecated/removed
   condominio_atual?: { id: string; nome: string; role: string } | null;
   condominios?: {
     condominio_id: string;
@@ -44,7 +45,7 @@ interface UsuarioWithCondominios {
     unidade_identificador?: string;
     condominio: { nome: string };
   }[];
-  usuario_condominios: UsuarioCondominioJoin[];
+  usuario_condominios?: UsuarioCondominioJoin[];
 }
 
 interface AuthState {
@@ -96,9 +97,13 @@ export function useAuth() {
           .select(
             `
           *,
-          condominios:condominio_id (
-            id,
-            nome
+          usuario_condominios (
+            condominio:condominio_id (
+              id,
+              nome
+            ),
+            role,
+            status
           ),
           unidades:unidade_id (
             id,
@@ -115,34 +120,27 @@ export function useAuth() {
 
         const rawUser = profileData[0];
 
-        // VALIDATION WITH ZOD (Runtime Safety)
-        // No more "as unknown as" masking errors
+        // VALIDATION WITH ZOD
         const parseResult = UsuarioSchema.safeParse(rawUser);
 
         if (!parseResult.success) {
-          console.error('Erro de validação de schema do usuário:', parseResult.error);
-          // Em produção, talvez queiramos logar no Sentry mas não bloquear totalmente se for campo não crítico
+          // Log only, don't block
+          console.warn('Erro de validação de schema do usuário:', parseResult.error);
         }
 
-        const usuario = rawUser as unknown as UsuarioWithCondominios; // Type assertion since we verified schema mostly
+        // Transformar dados dos condomínios usando a tabela pivot
+        const userCondominios = (rawUser.usuario_condominios || [])
+          // @ts-expect-error - Supabase types join inference can be tricky without deep typing
+          .filter((uc) => uc.status === 'active' || uc.status === 'ativo')
+          .map((uc: any) => ({
+            condominio_id: uc.condominio.id,
+            nome: uc.condominio.nome,
+            role: uc.role,
+            unidade_id: rawUser.unidade_id, // Legacy unit link from user
+            unidade_identificador: rawUser.unidades?.numero || undefined,
+          }));
 
-        // Transformar dados dos condomínios
-        // Como o schema atual é 1:N (um usuário pertence a UM condomínio via condominio_id),
-        // simulamos uma lista de 1 item para manter compatibilidade com interface M:N futura.
-        const userCondominios = rawUser.condominios
-          ? [
-              {
-                condominio_id: rawUser.condominio_id!,
-                nome: rawUser.condominios.nome,
-                role: rawUser.role, // O role agora é do usuário global no condomínio atual
-                unidade_id: rawUser.unidade_id,
-                unidade_identificador: rawUser.unidades?.numero || null,
-              },
-            ]
-          : [];
-
-        // Obter condomínio ativo:
-
+        // Obter condomínio ativo (primeiro da lista se existir)
         const condominioAtual =
           userCondominios.length > 0
             ? {
@@ -152,17 +150,20 @@ export function useAuth() {
               }
             : null;
 
-        return {
-          ...usuario,
-          condominios: userCondominios.map((cond) => ({
+        const usuario: UsuarioWithCondominios = {
+          ...rawUser,
+          condominio_id: undefined, // Removed from table
+          condominios: userCondominios.map((cond: any) => ({
             condominio_id: cond.condominio_id,
             role: cond.role,
-            unidade_identificador: cond.unidade_identificador || undefined,
+            unidade_identificador: cond.unidade_identificador,
             condominio: { nome: cond.nome },
           })),
           condominio_atual: condominioAtual,
-          usuario_condominios: [], // Deprecated logic field for now
-        };
+          usuario_condominios: [],
+        } as unknown as UsuarioWithCondominios; // Still need cast because Row type mismatches UsuarioWithCondominios slightly (joins)
+
+        return usuario;
       } catch (err: unknown) {
         const errorMessage =
           err instanceof Error ? err.message : 'Erro desconhecido ao buscar perfil';

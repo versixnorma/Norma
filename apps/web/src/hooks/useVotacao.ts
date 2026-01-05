@@ -25,11 +25,11 @@ export function useVotacao() {
     ): Promise<string | null> => {
       setLoading(true);
       try {
-        const { data, error: rpcError } = await supabase.rpc('registrar_presenca' as any, {
+        const { data, error: rpcError } = await supabase.rpc('registrar_presenca', {
           p_assembleia_id: assembleiaId,
           p_usuario_id: (await supabase.auth.getUser()).data.user?.id as string,
           p_tipo: tipo,
-          p_representante_id: representanteId || null,
+          p_representante_id: representanteId || undefined,
         });
         if (rpcError) throw rpcError;
         return data;
@@ -50,7 +50,7 @@ export function useVotacao() {
       try {
         const userId = (await supabase.auth.getUser()).data.user?.id;
         const { data, error: fetchError } = await supabase
-          .from('assembleia_presencas' as any)
+          .from('assembleia_presencas')
           .select('*')
           .eq('assembleia_id', assembleiaId)
           .or(`usuario_id.eq.${userId},representante_id.eq.${userId}`)
@@ -70,11 +70,11 @@ export function useVotacao() {
   const iniciarVotacaoPauta = useCallback(
     async (pautaId: string): Promise<boolean> => {
       try {
-        const { data, error: rpcError } = await supabase.rpc('iniciar_votacao_pauta' as any, {
+        const { data, error: rpcError } = await supabase.rpc('abrir_votacao_pauta', {
           p_pauta_id: pautaId,
         });
         if (rpcError) throw rpcError;
-        return data;
+        return data as boolean;
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
         setError(errorMessage);
@@ -89,11 +89,11 @@ export function useVotacao() {
     async (input: VotarInput): Promise<string | null> => {
       setLoading(true);
       try {
-        const { data, error: rpcError } = await supabase.rpc('registrar_voto' as any, {
+        const { data, error: rpcError } = await supabase.rpc('registrar_voto', {
           p_pauta_id: input.pauta_id,
           p_presenca_id: input.presenca_id,
           p_voto: input.voto,
-          p_opcao_id: input.opcao_id || null,
+          p_opcao_id: input.opcao_id || undefined,
         });
         if (rpcError) throw rpcError;
         return data;
@@ -113,7 +113,7 @@ export function useVotacao() {
     async (pautaId: string, presencaId: string): Promise<boolean> => {
       try {
         const { data, error: fetchError } = await supabase
-          .from('assembleia_votos' as any)
+          .from('assembleia_votos')
           .select('id')
           .eq('pauta_id', pautaId)
           .eq('presenca_id', presencaId)
@@ -131,7 +131,7 @@ export function useVotacao() {
   const encerrarPauta = useCallback(
     async (pautaId: string): Promise<unknown> => {
       try {
-        const { data, error: rpcError } = await supabase.rpc('encerrar_pauta' as any, {
+        const { data, error: rpcError } = await supabase.rpc('encerrar_votacao_pauta', {
           p_pauta_id: pautaId,
         });
         if (rpcError) throw rpcError;

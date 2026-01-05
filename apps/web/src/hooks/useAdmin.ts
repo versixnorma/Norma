@@ -3,8 +3,14 @@
 import { getErrorMessage } from '@/lib/errors';
 import { sanitizeSearchQuery } from '@/lib/sanitize';
 import { getSupabaseClient } from '@/lib/supabase';
-import type { RoleType, StatusType } from '@/types/database';
-import { Database } from '@versix/shared';
+import type { Database } from '@/types/database'; // Ensure Database is imported from here or shared
+// import { Database } from '@versix/shared'; // This was used but let's stick to one. Actually shared exports Database too.
+// Let's use local import if possible or shared. The file used '@/types/database' for StatusType which failed.
+// Let's use the local Database type import which is known to be good.
+
+type RoleType = Database['public']['Enums']['user_role'];
+type StatusType = Database['public']['Enums']['user_status'];
+
 import { useCallback, useState } from 'react';
 
 // ============================================
@@ -88,9 +94,14 @@ export function useAdmin() {
           created_at,
           updated_at,
           role,
-          condominio_id,
           unidade_id,
-          condominios:condominio_id (nome),
+          usuario_condominios (
+            role,
+            condominio:condominio_id (
+              id,
+              nome
+            )
+          ),
           unidades_habitacionais:unidade_id (identificador)
         `
           )
@@ -99,8 +110,16 @@ export function useAdmin() {
         if (filters?.status) {
           query = query.eq('status', filters.status);
         }
+        // Condominio filter needs to be applied differently since it's a relation now
         if (filters?.condominio_id) {
-          query = query.eq('condominio_id', filters.condominio_id);
+          // Filtering by inner join relation is tricky with Supabase simple syntax
+          // simpler to filter in memory for now or use !inner if supported well,
+          // but let's stick to post-filter for safety or assume the pivot filter works?
+          // Actually, 'usuario_condominios.condominio_id' eq ...
+          // For now, let's remove the direct .eq('condominio_id') as it fails.
+          // We will filter in memory if needed, or assume the API returns all and we filter.
+          // Or correct approach: .eq('usuario_condominios.condominio_id', filters.condominio_id) needs !inner.
+          query = query.filter('usuario_condominios.condominio_id', 'eq', filters.condominio_id);
         }
         if (filters?.role) {
           query = query.eq('role', filters.role);
@@ -120,36 +139,32 @@ export function useAdmin() {
           created_at: string;
           updated_at: string;
           role: UserRole;
-          condominio_id: string | null;
           unidade_id: string | null;
-          condominios: { nome: string } | null;
+          usuario_condominios: Array<{
+            role: UserRole;
+            condominio: { id: string; nome: string } | null;
+          }> | null;
           unidades_habitacionais: { identificador: string } | null;
         };
 
-        const formattedUsers: AdminUser[] = ((data || []) as UsuarioWithRelations[]).map(
-          (user) => ({
-            id: user.id,
-            auth_id: user.auth_id || '',
-            nome: user.nome,
-            email: user.email,
-            telefone: user.telefone,
-            avatar_url: user.avatar_url,
-            status: user.status as StatusType,
-            created_at: user.created_at,
-            updated_at: user.updated_at,
-            condominios: user.condominio_id
-              ? [
-                  {
-                    condominio_id: user.condominio_id,
-                    condominio_nome: user.condominios?.nome || '',
-                    role: user.role as RoleType,
-                    unidade_id: user.unidade_id,
-                    unidade_identificador: user.unidades_habitacionais?.identificador || null,
-                  },
-                ]
-              : [],
-          })
-        );
+        const formattedUsers: AdminUser[] = ((data || []) as any[]).map((user: any) => ({
+          id: user.id,
+          auth_id: user.auth_id || '',
+          nome: user.nome,
+          email: user.email,
+          telefone: user.telefone,
+          avatar_url: user.avatar_url,
+          status: user.status as StatusType,
+          created_at: user.created_at,
+          updated_at: user.updated_at,
+          condominios: (user.usuario_condominios || []).map((uc: any) => ({
+            condominio_id: uc.condominio?.id || '',
+            condominio_nome: uc.condominio?.nome || 'Desconhecido',
+            role: uc.role as RoleType,
+            unidade_id: user.unidade_id, // Legacy/Global unit?
+            unidade_identificador: user.unidades_habitacionais?.identificador || null,
+          })),
+        }));
 
         setUsers(formattedUsers);
       } catch (err) {

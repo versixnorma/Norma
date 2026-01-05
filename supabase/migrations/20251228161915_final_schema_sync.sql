@@ -6,6 +6,26 @@
 -- ============================================
 
 -- ============================================
+-- ZERO: Create usuario_condominios table (Missing in previous migrations)
+-- ============================================
+CREATE TABLE IF NOT EXISTS public.usuario_condominios (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  usuario_id UUID NOT NULL REFERENCES public.usuarios(id) ON DELETE CASCADE,
+  condominio_id UUID NOT NULL REFERENCES public.condominios(id) ON DELETE CASCADE,
+  role public.user_role NOT NULL,
+  status public.user_status NOT NULL DEFAULT 'active',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(usuario_id, condominio_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_usuario_condominios_user ON public.usuario_condominios(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_usuario_condominios_condo ON public.usuario_condominios(condominio_id);
+CREATE INDEX IF NOT EXISTS idx_usuario_condominios_status ON public.usuario_condominios(status);
+
+COMMENT ON TABLE public.usuario_condominios IS 'Associação entre usuários e condomínios (Multi-tenancy)';
+
+-- ============================================
 -- FIRST: Update ALL RLS policies to use usuario_condominios table
 -- ============================================
 
@@ -256,7 +276,7 @@ BEGIN
     SELECT 1 FROM public.usuario_condominios uc
     WHERE uc.usuario_id = public.get_my_user_id()
       AND uc.role = 'superadmin'
-      AND uc.status = 'ativo'
+      AND uc.status = 'active'
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
@@ -272,7 +292,7 @@ BEGIN
     WHERE uc.usuario_id = public.get_my_user_id()
       AND (p_condominio_id IS NULL OR uc.condominio_id = p_condominio_id)
       AND uc.role IN ('sindico', 'subsindico', 'admin_condo')
-      AND uc.status = 'ativo'
+      AND uc.status = 'active'
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
@@ -288,7 +308,7 @@ BEGIN
     WHERE uc.usuario_id = public.get_my_user_id()
       AND (p_condominio_id IS NULL OR uc.condominio_id = p_condominio_id)
       AND uc.role = 'morador'
-      AND uc.status = 'ativo'
+      AND uc.status = 'active'
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
@@ -314,7 +334,7 @@ BEGIN
     FROM public.usuario_condominios uc
     WHERE uc.usuario_id = public.get_my_user_id()
       AND (p_condominio_id IS NULL OR uc.condominio_id = p_condominio_id)
-      AND uc.status = 'ativo'
+      AND uc.status = 'active'
     ORDER BY uc.created_at DESC
     LIMIT 1
   );
@@ -331,7 +351,7 @@ BEGIN
   SELECT uc.condominio_id, uc.role::TEXT
   FROM public.usuario_condominios uc
   WHERE uc.usuario_id = public.get_my_user_id()
-  AND uc.status = 'ativo'
+  AND uc.status = 'active'
   ORDER BY uc.created_at DESC;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
@@ -346,7 +366,7 @@ BEGIN
     SELECT 1 FROM public.usuario_condominios uc
     WHERE uc.usuario_id = public.get_my_user_id()
       AND uc.condominio_id = p_condominio_id
-      AND uc.status = 'ativo'
+      AND uc.status = 'active'
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
@@ -364,7 +384,7 @@ BEGIN
   SELECT uc.condominio_id INTO active_condominio_id
   FROM public.usuario_condominios uc
   WHERE uc.usuario_id = public.get_my_user_id()
-  AND uc.status = 'ativo'
+  AND uc.status = 'active'
   ORDER BY uc.created_at DESC
   LIMIT 1;
 
