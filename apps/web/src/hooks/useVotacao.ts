@@ -11,6 +11,24 @@ import type {
 } from '@versix/shared';
 import { useCallback, useState } from 'react';
 
+// Type for comentario query result
+interface ComentarioQueryResult {
+  id: string;
+  pauta_id: string;
+  usuario_id: string;
+  conteudo: string;
+  visivel: boolean;
+  moderado_por?: string | null;
+  moderado_em?: string | null;
+  motivo_moderacao?: string | null;
+  created_at: string;
+  usuario?: { nome: string; avatar_url: string | null } | null;
+}
+
+// Helper to get typed table reference for tables not in generated types
+const getUntypedTable = (supabase: ReturnType<typeof getSupabaseClient>, table: string) =>
+  supabase.from(table as 'usuarios');
+
 export function useVotacao() {
   const supabase = getSupabaseClient();
   const [loading, setLoading] = useState(false);
@@ -169,14 +187,13 @@ export function useVotacao() {
   const fetchComentarios = useCallback(
     async (pautaId: string): Promise<Comentario[]> => {
       try {
-        const { data, error: fetchError } = await supabase
-          .from('assembleia_comentarios' as any)
+        const { data, error: fetchError } = await getUntypedTable(supabase, 'assembleia_comentarios')
           .select('*, usuario:usuario_id(nome, avatar_url)')
           .eq('pauta_id', pautaId)
           .eq('visivel', true)
           .order('created_at');
         if (fetchError) throw fetchError;
-        return (data || []) as any;
+        return (data || []) as unknown as Comentario[];
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
         setError(errorMessage);
@@ -190,13 +207,12 @@ export function useVotacao() {
     async (input: CreateComentarioInput): Promise<Comentario | null> => {
       try {
         const userId = (await supabase.auth.getUser()).data.user?.id;
-        const { data, error: insertError } = await supabase
-          .from('assembleia_comentarios' as any)
+        const { data, error: insertError } = await getUntypedTable(supabase, 'assembleia_comentarios')
           .insert({ ...input, usuario_id: userId })
           .select('*, usuario:usuario_id(nome, avatar_url)')
           .single();
         if (insertError) throw insertError;
-        return data as any;
+        return data as unknown as Comentario;
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
         setError(errorMessage);
@@ -210,8 +226,7 @@ export function useVotacao() {
     async (comentarioId: string, visivel: boolean, motivo?: string): Promise<boolean> => {
       try {
         const userId = (await supabase.auth.getUser()).data.user?.id;
-        const { error: updateError } = await supabase
-          .from('assembleia_comentarios' as any)
+        const { error: updateError } = await getUntypedTable(supabase, 'assembleia_comentarios')
           .update({
             visivel,
             moderado_por: userId,
@@ -244,8 +259,7 @@ export function useVotacao() {
             filter: `pauta_id=eq.${pautaId}`,
           },
           async () => {
-            const { data } = await supabase
-              .from('v_pauta_resultado' as any)
+            const { data } = await getUntypedTable(supabase, 'v_pauta_resultado')
               .select('*')
               .eq('pauta_id', pautaId)
               .single();

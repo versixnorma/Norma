@@ -1,5 +1,6 @@
 'use client';
 
+import { logger } from '@/lib/logger';
 import { registerServiceWorker, requestNotificationPermission, subscribeToPush } from '@/lib/pwa';
 import { getSupabaseClient } from '@/lib/supabase';
 import { useCallback, useEffect, useState } from 'react';
@@ -69,7 +70,7 @@ export function usePushNotifications() {
 
       return true;
     } catch (error) {
-      console.error('Erro ao habilitar push:', error);
+      logger.error('Erro ao habilitar push:', error);
       return false;
     } finally {
       setLoading(false);
@@ -94,7 +95,7 @@ export function usePushNotifications() {
       setSubscription(null);
       return true;
     } catch (error) {
-      console.error('Erro ao desabilitar push:', error);
+      logger.error('Erro ao desabilitar push:', error);
       return false;
     } finally {
       setLoading(false);

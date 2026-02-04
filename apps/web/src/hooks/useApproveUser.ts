@@ -1,5 +1,6 @@
 'use client';
 
+import { logger } from '@/lib/logger';
 import { getSupabaseClient } from '@/lib/supabase';
 import { useCallback, useState } from 'react';
 
@@ -81,7 +82,7 @@ export function useApproveUser() {
       }));
       setPendingUsers(formattedUsers);
     } catch (err) {
-      console.error('Erro ao buscar usuários pendentes:', err);
+      logger.error('Erro ao buscar usuários pendentes:', err);
       setError('Erro ao carregar usuários pendentes');
     } finally {
       setLoading(false);

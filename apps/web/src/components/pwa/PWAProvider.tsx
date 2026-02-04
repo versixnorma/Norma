@@ -29,17 +29,32 @@ interface PWAProviderProps {
 
 export function PWAProvider({ children }: PWAProviderProps) {
   useEffect(() => {
-    // Registrar service worker se suportado
-    if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
-      navigator.serviceWorker
-        .register('/sw.js')
-        .then((registration) => {
-          console.log('[PWA] Service Worker registrado:', registration);
-        })
-        .catch((error) => {
-          console.error('[PWA] Erro ao registrar Service Worker:', error);
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
+
+    const isDev = process.env.NODE_ENV === 'development';
+
+    if (isDev) {
+      // Em desenvolvimento: desregistrar qualquer SW antigo para evitar
+      // cache de assets (ex.: main-app.js, layout.css) que causam 404 e MIME text/html
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        registrations.forEach((registration) => {
+          registration.unregister().then(() => {
+            console.log('[PWA] Service Worker desregistrado (modo dev)');
+          });
         });
+      });
+      return;
     }
+
+    // Registrar service worker apenas em produção
+    navigator.serviceWorker
+      .register('/sw.js')
+      .then((registration) => {
+        console.log('[PWA] Service Worker registrado:', registration);
+      })
+      .catch((error) => {
+        console.error('[PWA] Erro ao registrar Service Worker:', error);
+      });
 
     // Detectar se está rodando como PWA
     const navigatorWithStandalone = window.navigator as NavigatorWithStandalone;

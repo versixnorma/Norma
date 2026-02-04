@@ -7,11 +7,49 @@ import { logger } from '@/lib/logger';
 import { useCallback, useEffect, useState } from 'react';
 
 // ============================================
+// TYPE DEFINITIONS FOR EXPERIMENTAL BROWSER APIS
+// ============================================
+
+/** Navigator with iOS-specific standalone property */
+interface NavigatorWithStandalone extends Navigator {
+  standalone?: boolean;
+}
+
+/** Window with IE-specific MSStream property */
+interface WindowWithMSStream extends Window {
+  MSStream?: unknown;
+}
+
+/** ServiceWorkerRegistration with Background Sync API */
+interface ServiceWorkerRegistrationWithSync extends ServiceWorkerRegistration {
+  sync?: {
+    register(tag: string): Promise<void>;
+  };
+  periodicSync?: {
+    register(tag: string, options?: { minInterval: number }): Promise<void>;
+  };
+}
+
+/** Navigator with Network Information API */
+interface NavigatorWithNetworkInfo extends Navigator {
+  connection?: NetworkInformation;
+  mozConnection?: NetworkInformation;
+  webkitConnection?: NetworkInformation;
+}
+
+interface NetworkInformation {
+  effectiveType?: string;
+  downlink?: number;
+  rtt?: number;
+  saveData?: boolean;
+}
+
+// ============================================
 // SERVICE WORKER REGISTRATION
 // ============================================
 export async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
   if (!('serviceWorker' in navigator)) {
-    console.warn('Service Worker não suportado');
+    logger.warn('Service Worker não suportado');
     return null;
   }
 
@@ -35,7 +73,7 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
     // Registrar periodic sync para dados críticos
     if ('periodicSync' in registration) {
       try {
-        const regWithSync = registration as any;
+        const regWithSync = registration as ServiceWorkerRegistrationWithSync;
         await regWithSync.periodicSync?.register('update-critical-data', {
           minInterval: 12 * 60 * 60 * 1000, // 12 horas
         });
@@ -47,7 +85,7 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
     logger.log('Service Worker registrado com sucesso');
     return registration;
   } catch (error) {
-    console.error('Erro ao registrar Service Worker:', error);
+    logger.error('Erro ao registrar Service Worker:', error);
     return null;
   }
 }
@@ -94,15 +132,16 @@ export function useInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(() => {
     if (typeof window === 'undefined') return false;
-    const navigatorWithStandalone = navigator as any;
+    const nav = navigator as NavigatorWithStandalone;
     return (
       window.matchMedia('(display-mode: standalone)').matches ||
-      navigatorWithStandalone.standalone === true
+      nav.standalone === true
     );
   });
   const [isIOS] = useState(() => {
     if (typeof navigator === 'undefined') return false;
-    const isValidMSStream = !(window as any).MSStream;
+    const win = window as WindowWithMSStream;
+    const isValidMSStream = !win.MSStream;
     return /iPad|iPhone|iPod/.test(navigator.userAgent) && isValidMSStream;
   });
 
@@ -184,7 +223,7 @@ export function useServiceWorkerUpdate() {
 // ============================================
 export async function requestNotificationPermission(): Promise<NotificationPermission> {
   if (!('Notification' in window)) {
-    console.warn('Notifications não suportadas');
+    logger.warn('Notifications não suportadas');
     return 'denied';
   }
 
@@ -211,7 +250,7 @@ export async function subscribeToPush(
     });
     return subscription;
   } catch (error) {
-    console.error('Erro ao assinar push:', error);
+    logger.error('Erro ao assinar push:', error);
     return null;
   }
 }
@@ -254,9 +293,8 @@ export function getNetworkInfo(): {
   rtt: number;
   saveData: boolean;
 } {
-  const navigator_ = navigator as any;
-  const connection =
-    navigator_.connection || navigator_.mozConnection || navigator_.webkitConnection;
+  const nav = navigator as NavigatorWithNetworkInfo;
+  const connection = nav.connection || nav.mozConnection || nav.webkitConnection;
 
   if (connection) {
     return {
@@ -277,7 +315,7 @@ export async function requestBackgroundSync(tag: string): Promise<boolean> {
   if ('serviceWorker' in navigator && 'SyncManager' in window) {
     try {
       const registration = await navigator.serviceWorker.ready;
-      const regWithSync = registration as any;
+      const regWithSync = registration as ServiceWorkerRegistrationWithSync;
       await regWithSync.sync?.register(tag);
       return true;
     } catch {

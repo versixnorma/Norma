@@ -1,6 +1,7 @@
 'use client';
 
 import { getErrorMessage } from '@/lib/errors';
+import { logger } from '@/lib/logger';
 import { sanitizeSearchQuery } from '@/lib/sanitize';
 import { getSupabaseClient } from '@/lib/supabase';
 import type { Database } from '@/types/database'; // Ensure Database is imported from here or shared
@@ -207,7 +208,7 @@ export function useAdmin() {
       if (fetchError) throw fetchError;
 
       if (!data || !Array.isArray(data)) {
-        console.error('Invalid data format in fetchCondominios:', data);
+        logger.error('Invalid data format in fetchCondominios:', data);
         throw new Error('Failed to load condomínios');
       }
 

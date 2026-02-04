@@ -4,6 +4,8 @@
 // Permite SuperAdmin "virar" outro usuário para suporte
 // Gera token temporário e registra em audit_log
 // ============================================
+// Security: Rate limited (5 requests/hour), CORS restricted
+// ============================================
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import {
@@ -12,8 +14,10 @@ import {
   unauthorizedResponse,
   forbiddenResponse,
   errorResponse,
+  getCorsHeaders,
 } from '../_shared/cors.ts';
 import { getSupabaseClient, getSupabaseAdmin } from '../_shared/supabase.ts';
+import { withRateLimit } from '../_shared/rate-limit.ts';
 
 interface ImpersonateRequest {
   usuario_alvo_id: string;
@@ -41,13 +45,17 @@ serve(async (req) => {
 
   // Apenas POST
   if (req.method !== 'POST') {
-    return errorResponse('Método não permitido', 405);
+    return errorResponse('Método não permitido', 405, req);
   }
+
+  // Rate limiting - impersonate is highly restricted (5/hour)
+  const rateLimitResponse = await withRateLimit(req, 'impersonate');
+  if (rateLimitResponse) return rateLimitResponse;
 
   try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      return unauthorizedResponse();
+      return unauthorizedResponse('Não autorizado', req);
     }
 
     // Verificar se usuário logado é SuperAdmin
@@ -58,7 +66,7 @@ serve(async (req) => {
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return unauthorizedResponse('Sessão inválida');
+      return unauthorizedResponse('Sessão inválida', req);
     }
 
     const supabaseAdmin = getSupabaseAdmin();
@@ -71,11 +79,11 @@ serve(async (req) => {
       .single();
 
     if (adminError || !adminUser) {
-      return unauthorizedResponse('Usuário não encontrado');
+      return unauthorizedResponse('Usuário não encontrado', req);
     }
 
     if (adminUser.role !== 'superadmin' || adminUser.status !== 'active') {
-      return forbiddenResponse('Apenas SuperAdmin ativo pode usar impersonate');
+      return forbiddenResponse('Apenas SuperAdmin ativo pode usar impersonate', req);
     }
 
     // Parsear request
@@ -84,11 +92,11 @@ serve(async (req) => {
 
     // Validações
     if (!usuario_alvo_id) {
-      return errorResponse('ID do usuário alvo é obrigatório');
+      return errorResponse('ID do usuário alvo é obrigatório', 400, req);
     }
 
     if (!motivo || motivo.length < 10) {
-      return errorResponse('Motivo é obrigatório (mínimo 10 caracteres)');
+      return errorResponse('Motivo é obrigatório (mínimo 10 caracteres)', 400, req);
     }
 
     // Buscar usuário alvo
@@ -99,17 +107,17 @@ serve(async (req) => {
       .single();
 
     if (alvoError || !alvo) {
-      return errorResponse('Usuário alvo não encontrado', 404);
+      return errorResponse('Usuário alvo não encontrado', 404, req);
     }
 
     // Não pode impersonar outro SuperAdmin
     if (alvo.role === 'superadmin') {
-      return forbiddenResponse('Não é possível impersonar outro SuperAdmin');
+      return forbiddenResponse('Não é possível impersonar outro SuperAdmin', req);
     }
 
     // Verificar se usuário alvo está ativo
     if (alvo.status !== 'active') {
-      return errorResponse('Usuário alvo não está ativo');
+      return errorResponse('Usuário alvo não está ativo', 400, req);
     }
 
     // Revogar sessões de impersonate anteriores ativas do mesmo admin
@@ -135,7 +143,7 @@ serve(async (req) => {
 
     if (sessaoError) {
       console.error('Erro ao criar sessão:', sessaoError);
-      return errorResponse('Erro ao criar sessão de impersonate', 500);
+      return errorResponse('Erro ao criar sessão de impersonate', 500, req);
     }
 
     // Registrar no audit_log
@@ -164,9 +172,9 @@ serve(async (req) => {
         condominio_id: alvo.condominio_id,
       },
       error: null,
-    });
+    }, 200, req);
   } catch (error) {
     console.error('Erro no impersonate:', error);
-    return errorResponse('Erro interno', 500);
+    return errorResponse('Erro interno', 500, req);
   }
 });

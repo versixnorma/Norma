@@ -1,5 +1,6 @@
 'use client';
 
+import { logger } from '@/lib/logger';
 import { getSupabaseClient } from '@/lib/supabase';
 import { useCallback, useRef, useState } from 'react';
 
@@ -90,7 +91,7 @@ export function useNormaChat({ condominioId, userId }: UseNormaChatOptions): Use
         setMessages(historyMessages);
       }
     } catch (err) {
-      console.error('Erro ao carregar histórico:', err);
+      logger.error('Erro ao carregar histórico:', err);
     }
   }, [condominioId, userId, supabase]);
 
@@ -275,7 +276,7 @@ export function useNormaChat({ condominioId, userId }: UseNormaChatOptions): Use
           return;
         }
 
-        console.error('Erro ao enviar mensagem:', err);
+        logger.error('Erro ao enviar mensagem:', err);
         setError(err instanceof Error ? err : new Error('Erro desconhecido'));
 
         // Update message with error status

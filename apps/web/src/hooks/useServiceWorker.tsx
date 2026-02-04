@@ -67,7 +67,7 @@ export function useServiceWorker(): UseServiceWorkerReturn {
 
   const registerServiceWorker = async () => {
     if (!('serviceWorker' in navigator)) {
-      console.warn('[SW] Service Workers not supported');
+      logger.warn('[SW] Service Workers not supported');
       return;
     }
 
@@ -105,7 +105,7 @@ export function useServiceWorker(): UseServiceWorkerReturn {
       }, 60 * 60 * 1000);
 
     } catch (error) {
-      console.error('[SW] Registration failed:', error);
+      logger.error('[SW] Registration failed:', error);
       setState((prev) => ({
         ...prev,
         isRegistered: false,
@@ -132,7 +132,7 @@ export function useServiceWorker(): UseServiceWorkerReturn {
         }));
       }
     } catch (error) {
-      console.error('[SW] Unregistration failed:', error);
+      logger.error('[SW] Unregistration failed:', error);
     }
   }, [state.registration]);
 
@@ -143,7 +143,7 @@ export function useServiceWorker(): UseServiceWorkerReturn {
       await state.registration.update();
       logger.log('[SW] Checked for updates');
     } catch (error) {
-      console.error('[SW] Update check failed:', error);
+      logger.error('[SW] Update check failed:', error);
     }
   }, [state.registration]);
 
@@ -167,7 +167,7 @@ export function useServiceWorker(): UseServiceWorkerReturn {
 
   const requestNotificationPermission = useCallback(async (): Promise<NotificationPermission> => {
     if (!('Notification' in window)) {
-      console.warn('[SW] Notifications not supported');
+      logger.warn('[SW] Notifications not supported');
       return 'denied';
     }
 
@@ -178,7 +178,7 @@ export function useServiceWorker(): UseServiceWorkerReturn {
 
   const subscribeToPush = useCallback(async (vapidPublicKey: string): Promise<PushSubscription | null> => {
     if (!state.registration) {
-      console.warn('[SW] No registration available');
+      logger.warn('[SW] No registration available');
       return null;
     }
 
@@ -204,7 +204,7 @@ export function useServiceWorker(): UseServiceWorkerReturn {
       return subscription;
 
     } catch (error) {
-      console.error('[SW] Push subscription failed:', error);
+      logger.error('[SW] Push subscription failed:', error);
       return null;
     }
   }, [state.registration]);

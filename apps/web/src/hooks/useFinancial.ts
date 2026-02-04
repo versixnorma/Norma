@@ -9,6 +9,7 @@
  * - apps/web/src/components/pages/TransparencyPage.tsx
  */
 
+import { logger } from '@/lib/logger';
 import { getSupabaseClient } from '@/lib/supabase';
 import type { LancamentoFinanceiro, LancamentoStatus, LancamentoTipo } from '@versix/shared';
 import { useCallback, useEffect, useState } from 'react';
@@ -150,7 +151,7 @@ export function useFinancial({
         fundo_reserva: 0,
       });
     } catch (err) {
-      console.error('Erro ao buscar dashboard:', err);
+      logger.error('Erro ao buscar dashboard:', err);
     }
   }, [condominioId, supabase, inicioMes, fimMes]);
 
@@ -257,7 +258,7 @@ export function useFinancial({
           return;
         }
       } catch (error) {
-        console.error('Session check failed:', error);
+        logger.error('Session check failed:', error);
         setLoading(false);
         return;
       }

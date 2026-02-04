@@ -1,5 +1,6 @@
 'use client';
 
+import { logger } from '@/lib/logger';
 import { sanitizeSearchQuery } from '@/lib/sanitize';
 import { getSupabaseClient } from '@/lib/supabase';
 import type {
@@ -100,7 +101,7 @@ export function useFAQ() {
           .eq('id', id);
         return data;
       } catch (err) {
-        console.error('Erro ao buscar FAQ:', err);
+        logger.error('Erro ao buscar FAQ:', err);
         return null;
       }
     },

@@ -136,13 +136,13 @@ export function UserTable({ onRefresh }: UserTableProps) {
                           {user.avatar_url ? (
                             <Image
                               src={user.avatar_url}
-                              alt={user.nome}
+                              alt={`Foto de perfil de ${user.nome}`}
                               width={40}
                               height={40}
                               className="h-10 w-10 rounded-full object-cover"
                             />
                           ) : (
-                            <span className="font-bold text-primary">
+                            <span className="font-bold text-primary" aria-label={`Iniciais de ${user.nome}`}>
                               {user.nome.charAt(0).toUpperCase()}
                             </span>
                           )}

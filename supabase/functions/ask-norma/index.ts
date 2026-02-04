@@ -1,7 +1,88 @@
 import * as Sentry from 'https://esm.sh/@sentry/deno@7.80.0';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { z } from 'https://esm.sh/zod@3.22.4';
-import { corsHeaders } from '../_shared/cors.ts';
+import { corsHeaders, getCorsHeaders, handleCors } from '../_shared/cors.ts';
+import { withRateLimit } from '../_shared/rate-limit.ts';
+
+// ============================================
+// P1 Security Fix: Sanitize document content to prevent prompt injection
+// ============================================
+
+/**
+ * Patterns that could indicate prompt injection attempts
+ */
+const INJECTION_PATTERNS = [
+  /ignore\s+(previous|all|above)\s+(instructions?|prompts?)/gi,
+  /disregard\s+(previous|all|above)/gi,
+  /forget\s+(everything|all|previous)/gi,
+  /new\s+instructions?:/gi,
+  /system\s*:\s*/gi,
+  /\[INST\]/gi,
+  /\[\/INST\]/gi,
+  /<\|im_start\|>/gi,
+  /<\|im_end\|>/gi,
+  /assistant\s*:\s*/gi,
+  /human\s*:\s*/gi,
+  /user\s*:\s*/gi,
+  /###\s*(instruction|system|human|assistant)/gi,
+  /you\s+are\s+now/gi,
+  /pretend\s+(to\s+be|you\s+are)/gi,
+  /act\s+as\s+(if|a)/gi,
+  /roleplay\s+as/gi,
+  /jailbreak/gi,
+  /bypass\s+(filter|restriction|safety)/gi,
+];
+
+/**
+ * Sanitize document content to prevent prompt injection attacks
+ * @param content - Raw content from document chunks
+ * @returns Sanitized content safe for LLM prompts
+ */
+function sanitizeDocumentContent(content: string): string {
+  if (!content || typeof content !== 'string') {
+    return '';
+  }
+
+  let sanitized = content;
+
+  // 1. Remove potential injection patterns
+  for (const pattern of INJECTION_PATTERNS) {
+    sanitized = sanitized.replace(pattern, '[REMOVED]');
+  }
+
+  // 2. Escape special characters that could be interpreted as prompt delimiters
+  sanitized = sanitized
+    .replace(/```/g, '\'\'\'') // Replace code blocks
+    .replace(/---/g, '___') // Replace horizontal rules (sometimes used as delimiters)
+    .replace(/\n{3,}/g, '\n\n'); // Normalize excessive newlines
+
+  // 3. Limit content length to prevent context overflow attacks
+  const MAX_CHUNK_LENGTH = 2000;
+  if (sanitized.length > MAX_CHUNK_LENGTH) {
+    sanitized = sanitized.substring(0, MAX_CHUNK_LENGTH) + '... [truncado]';
+  }
+
+  // 4. Add content boundary markers
+  return sanitized.trim();
+}
+
+/**
+ * Check if content appears to contain injection attempts
+ * @param content - Content to check
+ * @returns true if suspicious patterns detected
+ */
+function containsInjectionAttempt(content: string): boolean {
+  if (!content) return false;
+
+  for (const pattern of INJECTION_PATTERNS) {
+    if (pattern.test(content)) {
+      return true;
+    }
+    // Reset lastIndex for global patterns
+    pattern.lastIndex = 0;
+  }
+  return false;
+}
 
 Sentry.init({
   dsn: Deno.env.get('SENTRY_DSN'),
@@ -75,19 +156,24 @@ Formato de citações:
 - Para leis: "De acordo com a Lei 4.591/1964 (art. X)"`;
 
 export async function handler(req: Request): Promise<Response> {
-  // Handle CORS
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
+  // Handle CORS preflight
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
+
+  const headers = getCorsHeaders(req);
 
   try {
     // Validate request method
     if (req.method !== 'POST') {
       return new Response(JSON.stringify({ error: 'Method not allowed' }), {
         status: 405,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...headers, 'Content-Type': 'application/json' },
       });
     }
+
+    // P1 Security: Rate limiting (20 requests/minute for AI endpoint)
+    const rateLimitResponse = await withRateLimit(req, 'ask-norma');
+    if (rateLimitResponse) return rateLimitResponse;
 
     // Parse and validate request body
     const body = await req.json();
@@ -102,7 +188,7 @@ export async function handler(req: Request): Promise<Response> {
         }),
         {
           status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...headers, 'Content-Type': 'application/json' },
         }
       );
     }
@@ -138,7 +224,7 @@ export async function handler(req: Request): Promise<Response> {
           suggestions: ['Verificar regimento interno', 'Agendar assembleia', 'Consultar síndico'],
         }),
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...headers, 'Content-Type': 'application/json' },
         }
       );
     }
@@ -165,7 +251,7 @@ export async function handler(req: Request): Promise<Response> {
       });
       return new Response(JSON.stringify({ error: 'Failed to process message' }), {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...headers, 'Content-Type': 'application/json' },
       });
     }
 
@@ -195,23 +281,54 @@ export async function handler(req: Request): Promise<Response> {
       });
     }
 
-    // Build context from relevant chunks
+    // Build context from relevant chunks with sanitization
     let contextText = '';
     const sources: Array<{ type: string; name: string; content: string }> = [];
+    let injectionAttemptDetected = false;
 
     if (relevantChunks && relevantChunks.length > 0) {
       contextText = relevantChunks
         .map((chunk: DocumentChunk) => {
+          // P1 Security: Check for injection attempts
+          if (containsInjectionAttempt(chunk.content)) {
+            injectionAttemptDetected = true;
+            Sentry.addBreadcrumb({
+              category: 'security',
+              message: 'Potential prompt injection detected in document chunk',
+              data: {
+                document_name: chunk.metadata.document_name,
+                document_type: chunk.metadata.document_type,
+              },
+              level: 'warning',
+            });
+          }
+
+          // P1 Security: Sanitize content before including in prompt
+          const sanitizedContent = sanitizeDocumentContent(chunk.content);
+
           sources.push({
             type: chunk.metadata.document_type,
             name: chunk.metadata.document_name,
-            content: chunk.content,
+            content: sanitizedContent, // Store sanitized version
           });
-          return `Documento: ${chunk.metadata.document_name} (${chunk.metadata.document_type})
+
+          // Use boundary markers to clearly delimit document content
+          return `[DOCUMENTO_INICIO]
+Documento: ${chunk.metadata.document_name} (${chunk.metadata.document_type})
 Página: ${chunk.metadata.page_number || 'N/A'}
-Conteúdo: ${chunk.content}`;
+Conteúdo: ${sanitizedContent}
+[DOCUMENTO_FIM]`;
         })
         .join('\n\n');
+    }
+
+    // Log if injection attempt was detected (for monitoring)
+    if (injectionAttemptDetected) {
+      Sentry.captureMessage('Prompt injection attempt detected in document chunks', {
+        level: 'warning',
+        tags: { security: 'prompt_injection' },
+        extra: { condominio_id: condominioId, user_id: userId },
+      });
     }
 
     // Build conversation history
@@ -269,7 +386,7 @@ Conteúdo: ${chunk.content}`;
       });
       return new Response(JSON.stringify({ error: 'Failed to generate response' }), {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...headers, 'Content-Type': 'application/json' },
       });
     }
 
@@ -278,7 +395,7 @@ Conteúdo: ${chunk.content}`;
     if (!reader) {
       return new Response(JSON.stringify({ error: 'Failed to read response stream' }), {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...headers, 'Content-Type': 'application/json' },
       });
     }
 
@@ -328,7 +445,7 @@ Conteúdo: ${chunk.content}`;
 
     return new Response(stream, {
       headers: {
-        ...corsHeaders,
+        ...headers,
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         Connection: 'keep-alive',
@@ -339,7 +456,7 @@ Conteúdo: ${chunk.content}`;
     Sentry.captureException(error);
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...headers, 'Content-Type': 'application/json' },
     });
   }
 }

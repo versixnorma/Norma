@@ -1,5 +1,6 @@
 'use client';
 
+import { logger } from '@/lib/logger';
 import { getSupabaseClient } from '@/lib/supabase';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -48,7 +49,7 @@ export function useImpersonate() {
         }
       }
     } catch (err) {
-      console.error('Erro ao verificar impersonate:', err);
+      logger.error('Erro ao verificar impersonate:', err);
     }
   }, []);
 

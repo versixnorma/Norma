@@ -12,6 +12,7 @@ import {
   type CachedUserProfile,
   type PendingAction,
 } from '@/lib/offline-db';
+import { logger } from '@/lib/logger';
 import { requestBackgroundSync, useOnlineStatus } from '@/lib/pwa';
 import { captureError } from '@/lib/sentry';
 import { getSupabaseClient } from '@/lib/supabase';
@@ -113,7 +114,7 @@ export function useOfflineSync() {
         setLastSync(new Date());
         return true;
       } catch (error) {
-        console.error('Erro ao sincronizar dados críticos:', error);
+        logger.error('Erro ao sincronizar dados críticos:', error);
         captureError(error as Error, { condominio_id: condominioId, context: 'syncCriticalData' });
         return false;
       } finally {
@@ -174,7 +175,7 @@ export function useOfflineSync() {
 
         return true;
       } catch (error) {
-        console.error('Erro ao sincronizar perfil:', error);
+        logger.error('Erro ao sincronizar perfil:', error);
         captureError(error as Error, { usuario_id: userId, context: 'syncUserProfile' });
         return false;
       }
@@ -199,7 +200,7 @@ export function useOfflineSync() {
 
       // Validar URL para prevenir SSRF
       if (!isAllowedUrl(action.url)) {
-        console.warn('URL não permitida:', action.url);
+        logger.warn('URL não permitida:', action.url);
         await removePendingAction(action.id);
         failed++;
         continue;
@@ -220,7 +221,7 @@ export function useOfflineSync() {
           failed++;
         }
       } catch (error) {
-        console.error('Erro ao processar ação offline:', error);
+        logger.error('Erro ao processar ação offline:', error);
         captureError(error as Error, {
           context: 'processPendingActions',
           action_id: action.id,

@@ -1,5 +1,6 @@
 'use client';
 
+import { logger } from '@/lib/logger';
 import { getSupabaseClient } from '@/lib/supabase';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -33,7 +34,7 @@ export function useFeatureFlags() {
       if (fetchError) throw fetchError;
       setFlags((data as unknown as FeatureFlag[]) || []);
     } catch (err) {
-      console.error('Erro ao buscar feature flags:', err);
+      logger.error('Erro ao buscar feature flags:', err);
       setError('Erro ao carregar feature flags');
     } finally {
       setLoading(false);
@@ -70,7 +71,7 @@ export function useFeatureFlags() {
         setFlags((prev) => prev.map((f) => (f.id === flagId ? { ...f, ...updates } : f)));
         return true;
       } catch (err) {
-        console.error('Erro ao atualizar flag:', err);
+        logger.error('Erro ao atualizar flag:', err);
         setError('Erro ao atualizar feature flag');
         return false;
       } finally {
@@ -95,7 +96,7 @@ export function useFeatureFlags() {
         setFlags((prev) => [...prev, data as unknown as FeatureFlag]);
         return data as unknown as FeatureFlag;
       } catch (err) {
-        console.error('Erro ao criar flag:', err);
+        logger.error('Erro ao criar flag:', err);
         setError('Erro ao criar feature flag');
         return null;
       } finally {
@@ -117,7 +118,7 @@ export function useFeatureFlags() {
         setFlags((prev) => prev.filter((f) => f.id !== flagId));
         return true;
       } catch (err) {
-        console.error('Erro ao deletar flag:', err);
+        logger.error('Erro ao deletar flag:', err);
         setError('Erro ao deletar feature flag');
         return false;
       } finally {

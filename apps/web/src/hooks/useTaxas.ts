@@ -40,6 +40,22 @@ interface UpdateTaxaInput {
   acrescimo?: number;
 }
 
+interface UsuarioUnidadeRow {
+  unidade_id: string;
+}
+
+interface TaxaInadimplenciaRow {
+  id: string;
+  valor_final: number | null;
+  status: string;
+  data_vencimento: string;
+  unidade?: { identificador: string; bloco?: { nome: string } | null } | null;
+}
+
+// Helper to get typed table reference for tables not in generated types
+const getUntypedTable = (supabase: ReturnType<typeof getSupabaseClient>, table: string) =>
+  supabase.from(table as 'usuarios');
+
 export function useTaxas() {
   const supabase = getSupabaseClient();
   const [taxas, setTaxas] = useState<TaxaUnidade[]>([]);
@@ -90,14 +106,13 @@ export function useTaxas() {
   const getMinhasTaxas = useCallback(
     async (userId: string, condominioId: string): Promise<TaxaUnidade[]> => {
       try {
-        const { data: unidadesUser } = await supabase
-          .from('usuarios_unidades' as any)
+        const { data: unidadesUser } = await getUntypedTable(supabase, 'usuarios_unidades')
           .select('unidade_id')
           .eq('usuario_id', userId)
           .eq('ativo', true);
         if (!unidadesUser || unidadesUser.length === 0) return [];
 
-        const unidadeIds = (unidadesUser as any[]).map((u: any) => u.unidade_id);
+        const unidadeIds = (unidadesUser as UsuarioUnidadeRow[]).map((u) => u.unidade_id);
 
         const { data, error: fetchError } = await supabase
           .from('taxas_unidades')
@@ -220,9 +235,10 @@ export function useTaxas() {
 
   const atualizarTaxasAtrasadas = useCallback(async (): Promise<number> => {
     try {
-      const { data, error: rpcError } = await supabase.rpc('atualizar_taxas_atrasadas' as any);
+      // RPC function may not be in generated types
+      const { data, error: rpcError } = await supabase.rpc('atualizar_taxas_atrasadas' as 'gerar_taxas_mes');
       if (rpcError) throw rpcError;
-      return data || 0;
+      return (data as number) || 0;
     } catch {
       return 0;
     }
@@ -240,15 +256,16 @@ export function useTaxas() {
           .in('status', ['pendente', 'atrasado'])
           .order('data_vencimento');
 
-        const atrasadas = (data || []).filter((t: any) => t.status === 'atrasado');
-        const pendentes = (data || []).filter((t: any) => t.status === 'pendente');
+        const taxasData = (data || []) as TaxaInadimplenciaRow[];
+        const atrasadas = taxasData.filter((t) => t.status === 'atrasado');
+        const pendentes = taxasData.filter((t) => t.status === 'pendente');
 
         return {
-          total_em_aberto: (data || []).reduce(
-            (sum: number, t: any) => sum + (t.valor_final ?? 0),
+          total_em_aberto: taxasData.reduce(
+            (sum, t) => sum + (t.valor_final ?? 0),
             0
           ),
-          total_atrasado: atrasadas.reduce((sum: number, t: any) => sum + (t.valor_final ?? 0), 0),
+          total_atrasado: atrasadas.reduce((sum, t) => sum + (t.valor_final ?? 0), 0),
           qtd_atrasadas: atrasadas.length,
           qtd_pendentes: pendentes.length,
           taxas_atrasadas: atrasadas,

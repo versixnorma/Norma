@@ -114,7 +114,7 @@ export function useAuth() {
           .eq('auth_id', userId);
 
         if (error || !profileData || profileData.length === 0) {
-          console.error('Erro ao buscar perfil:', error);
+          logger.error('Erro ao buscar perfil:', error);
           return null;
         }
 
@@ -125,7 +125,7 @@ export function useAuth() {
 
         if (!parseResult.success) {
           // Log only, don't block
-          console.warn('Erro de validação de schema do usuário:', parseResult.error);
+          logger.warn('Erro de validação de schema do usuário:', parseResult.error);
         }
 
         // Transformar dados dos condomínios usando a tabela pivot
@@ -167,7 +167,7 @@ export function useAuth() {
       } catch (err: unknown) {
         const errorMessage =
           err instanceof Error ? err.message : 'Erro desconhecido ao buscar perfil';
-        console.error('Erro ao buscar perfil:', errorMessage);
+        logger.error('Erro ao buscar perfil:', errorMessage);
         return null;
       }
     },
@@ -204,7 +204,7 @@ export function useAuth() {
           });
         }
       } catch (error) {
-        console.error('Auth initialization error:', error);
+        logger.error('Auth initialization error:', error);
         setState((prev) => ({
           ...prev,
           loading: false,
@@ -314,7 +314,7 @@ export function useAuth() {
         });
 
         if (profileError) {
-          console.error('Erro ao criar perfil:', profileError);
+          logger.error('Erro ao criar perfil:', profileError);
           // Não falha, pois o trigger pode ter criado
         }
       }
@@ -407,7 +407,7 @@ export function useAuth() {
 
         router.refresh(); // Opcional: recarregar Server Components se eles dependerem do cookie
       } catch (error) {
-        console.error('Falha ao trocar condomínio:', error);
+        logger.error('Falha ao trocar condomínio:', error);
         // Toast error here ideally
       }
     }

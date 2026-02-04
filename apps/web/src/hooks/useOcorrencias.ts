@@ -37,9 +37,17 @@ interface EstatisticasOcorrencias {
   tempo_medio_resolucao_horas: number | null;
 }
 
+interface OcorrenciaStatsRow {
+  status: string;
+  categoria: string;
+  prioridade: string;
+  created_at: string;
+  resolvido_em: string | null;
+}
+
 const toOcorrencia = (data: OcorrenciaQueryResult): OcorrenciaComJoins => ({
   ...data,
-  anexos: parseAnexos(data.anexos) as any,
+  anexos: parseAnexos(data.anexos),
   reportado_por_info: data.reportado_por_usuario ?? undefined,
   responsavel: data.responsavel ?? undefined,
   unidade_relacionada: data.unidade ? { numero: data.unidade.identificador } : undefined,
@@ -98,7 +106,7 @@ export function useOcorrencias() {
         const { data, error: fetchError, count } = await query;
         if (fetchError) throw fetchError;
 
-        const transformedData = (data || []).map((item: any) => toOcorrencia(item));
+        const transformedData = (data || []).map((item: OcorrenciaQueryResult) => toOcorrencia(item));
 
         const total = count || 0;
         const result: PaginatedResponse<OcorrenciaComJoins> = {
@@ -162,9 +170,11 @@ export function useOcorrencias() {
     ): Promise<OcorrenciaComJoins | null> => {
       setLoading(true);
       try {
+        type OcorrenciaInsert = Database['public']['Tables']['ocorrencias']['Insert'];
+        const insertData: OcorrenciaInsert = { condominio_id: condominioId, reportado_por: reportadoPor, ...input };
         const { data, error: insertError } = await supabase
           .from('ocorrencias')
-          .insert({ condominio_id: condominioId, reportado_por: reportadoPor, ...input } as any)
+          .insert(insertData)
           .select()
           .single();
         if (insertError) throw insertError;
@@ -253,37 +263,29 @@ export function useOcorrencias() {
           .eq('condominio_id', condominioId)
           .is('deleted_at', null);
         if (!data) return null;
-        type EstatisticasOcorrencias = {
-          total: number;
-          abertas: number;
-          em_andamento: number;
-          resolvidas: number;
-          por_categoria: Record<string, number>;
-          por_prioridade: Record<string, number>;
-          tempo_medio_resolucao_horas: number | null;
-        };
+        const ocorrenciasData = data as OcorrenciaStatsRow[];
         const stats: EstatisticasOcorrencias = {
-          total: data.length,
-          abertas: data.filter((o: any) => o.status === 'aberta').length,
-          em_andamento: data.filter((o: any) => ['em_analise', 'em_andamento'].includes(o.status))
+          total: ocorrenciasData.length,
+          abertas: ocorrenciasData.filter((o) => o.status === 'aberta').length,
+          em_andamento: ocorrenciasData.filter((o) => ['em_analise', 'em_andamento'].includes(o.status))
             .length,
-          resolvidas: data.filter((o: any) => o.status === 'resolvida').length,
+          resolvidas: ocorrenciasData.filter((o) => o.status === 'resolvida').length,
           por_categoria: {},
           por_prioridade: {},
           tempo_medio_resolucao_horas: null,
         };
-        data.forEach((o: any) => {
+        ocorrenciasData.forEach((o) => {
           stats.por_categoria[o.categoria] = (stats.por_categoria[o.categoria] || 0) + 1;
           stats.por_prioridade[o.prioridade] = (stats.por_prioridade[o.prioridade] || 0) + 1;
         });
-        const resolvidas = data.filter((o: any) => o.resolvido_em);
+        const resolvidas = ocorrenciasData.filter((o) => o.resolvido_em);
         if (resolvidas.length > 0) {
           const tempos = resolvidas.map(
-            (o: any) =>
+            (o) =>
               (new Date(o.resolvido_em!).getTime() - new Date(o.created_at).getTime()) / 3600000
           );
           stats.tempo_medio_resolucao_horas =
-            tempos.reduce((a: number, b: number) => a + b, 0) / tempos.length;
+            tempos.reduce((a, b) => a + b, 0) / tempos.length;
         }
         return stats;
       } catch {

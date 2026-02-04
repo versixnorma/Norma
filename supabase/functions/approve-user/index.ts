@@ -4,6 +4,8 @@
 // Síndico aprova ou rejeita morador pendente
 // Também permite SuperAdmin aprovar qualquer usuário
 // ============================================
+// Security: Rate limited (30 req/min), CORS restricted
+// ============================================
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import {
@@ -12,8 +14,10 @@ import {
   unauthorizedResponse,
   forbiddenResponse,
   errorResponse,
+  getCorsHeaders,
 } from '../_shared/cors.ts';
 import { getSupabaseClient, getSupabaseAdmin } from '../_shared/supabase.ts';
+import { withRateLimit } from '../_shared/rate-limit.ts';
 
 interface ApproveUserRequest {
   usuario_id: string;
@@ -41,13 +45,17 @@ serve(async (req) => {
 
   // Apenas POST
   if (req.method !== 'POST') {
-    return errorResponse('Método não permitido', 405);
+    return errorResponse('Método não permitido', 405, req);
   }
+
+  // P1 Security: Rate limiting (30 requests/minute)
+  const rateLimitResponse = await withRateLimit(req, 'approve-user');
+  if (rateLimitResponse) return rateLimitResponse;
 
   try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      return unauthorizedResponse();
+      return unauthorizedResponse('Não autorizado', req);
     }
 
     const supabase = getSupabaseClient(authHeader);
@@ -57,7 +65,7 @@ serve(async (req) => {
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return unauthorizedResponse('Sessão inválida');
+      return unauthorizedResponse('Sessão inválida', req);
     }
 
     const supabaseAdmin = getSupabaseAdmin();
@@ -70,7 +78,7 @@ serve(async (req) => {
       .single();
 
     if (!currentUser || currentUser.status !== 'active') {
-      return forbiddenResponse('Usuário não está ativo');
+      return forbiddenResponse('Usuário não está ativo', req);
     }
 
     // Verificar permissão (SuperAdmin ou Síndico)
@@ -78,7 +86,7 @@ serve(async (req) => {
     const isSindico = ['sindico', 'subsindico', 'admin_condo'].includes(currentUser.role);
 
     if (!isSuperAdmin && !isSindico) {
-      return forbiddenResponse('Apenas Síndico ou SuperAdmin podem aprovar usuários');
+      return forbiddenResponse('Apenas Síndico ou SuperAdmin podem aprovar usuários', req);
     }
 
     // Parsear request
@@ -87,15 +95,15 @@ serve(async (req) => {
 
     // Validações
     if (!usuario_id) {
-      return errorResponse('ID do usuário é obrigatório');
+      return errorResponse('ID do usuário é obrigatório', 400, req);
     }
 
     if (!['approve', 'reject'].includes(acao)) {
-      return errorResponse('Ação deve ser "approve" ou "reject"');
+      return errorResponse('Ação deve ser "approve" ou "reject"', 400, req);
     }
 
     if (acao === 'reject' && !motivo_rejeicao) {
-      return errorResponse('Motivo da rejeição é obrigatório');
+      return errorResponse('Motivo da rejeição é obrigatório', 400, req);
     }
 
     // Buscar usuário a ser aprovado
@@ -106,17 +114,17 @@ serve(async (req) => {
       .single();
 
     if (targetError || !targetUser) {
-      return errorResponse('Usuário não encontrado', 404);
+      return errorResponse('Usuário não encontrado', 404, req);
     }
 
     // Verificar se está pendente
     if (targetUser.status !== 'pending') {
-      return errorResponse(`Usuário não está pendente (status: ${targetUser.status})`);
+      return errorResponse(`Usuário não está pendente (status: ${targetUser.status})`, 400, req);
     }
 
     // Se não é SuperAdmin, verificar se é do mesmo condomínio
     if (!isSuperAdmin && targetUser.condominio_id !== currentUser.condominio_id) {
-      return forbiddenResponse('Você só pode aprovar usuários do seu condomínio');
+      return forbiddenResponse('Você só pode aprovar usuários do seu condomínio', req);
     }
 
     if (acao === 'approve') {
@@ -132,11 +140,11 @@ serve(async (req) => {
           .single();
 
         if (!unidade) {
-          return errorResponse('Unidade não encontrada');
+          return errorResponse('Unidade não encontrada', 404, req);
         }
 
         if (unidade.condominio_id !== targetUser.condominio_id) {
-          return errorResponse('Unidade não pertence ao condomínio do usuário');
+          return errorResponse('Unidade não pertence ao condomínio do usuário', 400, req);
         }
       }
 
@@ -154,7 +162,7 @@ serve(async (req) => {
 
       if (updateError) {
         console.error('Erro ao aprovar:', updateError);
-        return errorResponse('Erro ao aprovar usuário', 500);
+        return errorResponse('Erro ao aprovar usuário', 500, req);
       }
 
       // Audit log
@@ -182,7 +190,7 @@ serve(async (req) => {
           unidade_id: updatedUser.unidade_id,
         },
         error: null,
-      });
+      }, 200, req);
     } else {
       // Rejeitar usuário (soft delete)
       await supabaseAdmin
@@ -220,10 +228,10 @@ serve(async (req) => {
           unidade_id: null,
         },
         error: null,
-      });
+      }, 200, req);
     }
   } catch (error) {
     console.error('Erro na aprovação:', error);
-    return errorResponse('Erro interno', 500);
+    return errorResponse('Erro interno', 500, req);
   }
 });

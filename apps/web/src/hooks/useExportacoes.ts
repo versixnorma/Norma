@@ -6,6 +6,7 @@
  * See apps/web/src/app/sindico/integracoes/page.tsx for the updated implementation without export functionality.
  */
 
+import { logger } from '@/lib/logger';
 import { useCallback, useState } from 'react';
 
 export function useExportacoes() {
@@ -14,21 +15,21 @@ export function useExportacoes() {
   const [error] = useState<string | null>(null);
 
   const fetchExportacoes = useCallback(async (_condominioId: string) => {
-    console.warn(
+    logger.warn(
       'useExportacoes.fetchExportacoes is deprecated - exportacoes table does not exist'
     );
     return [];
   }, []);
 
   const criarExportacao = useCallback(async (_condominioId: string, _input: unknown) => {
-    console.warn(
+    logger.warn(
       'useExportacoes.criarExportacao is deprecated - criar_exportacao RPC does not exist'
     );
     return null;
   }, []);
 
   const downloadExportacao = useCallback(async (_id: string) => {
-    console.warn('useExportacoes.downloadExportacao is deprecated');
+    logger.warn('useExportacoes.downloadExportacao is deprecated');
     return null;
   }, []);
 

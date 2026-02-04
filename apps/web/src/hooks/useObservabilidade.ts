@@ -20,6 +20,34 @@ import type {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 // =====================================================
+// INTERNAL TYPES FOR QUERY RESULTS
+// =====================================================
+
+interface MetricasUsoRow {
+  periodo: string;
+  usuarios_ativos: number;
+  sessoes_totais: number;
+  condominio_id?: string;
+  custo_ia_centavos?: number;
+  custo_email_centavos?: number;
+  custo_sms_centavos?: number;
+  custo_total_centavos?: number;
+}
+
+interface MetricasPerformanceRow {
+  endpoint: string;
+  latencia_avg: number;
+  latencia_p99: number;
+  total_requests: number;
+  requests_erro: number;
+  rps_avg: number;
+}
+
+interface UptimeCheckRow {
+  status: string;
+}
+
+// =====================================================
 // QUERIES
 // =====================================================
 
@@ -39,7 +67,7 @@ export function useObservabilidadeDashboard() {
       return {
         status: statusRes.data as unknown as SystemStatus,
         alertas: alertasRes,
-        metricas: metricasRes as any,
+        metricas: metricasRes as MetricasUso | null,
         performance: performanceRes,
         uptime: uptimeRes,
         custos: await fetchCustos(),
@@ -208,7 +236,7 @@ export function useUptimePercentual(endpoint?: string, horas = 24) {
       if (error) throw error;
 
       const total = data.length;
-      const ok = data.filter((c: any) => c.status === 'ok').length;
+      const ok = data.filter((c: UptimeCheckRow) => c.status === 'ok').length;
 
       return total > 0 ? (ok / total) * 100 : 100;
     },
@@ -326,7 +354,7 @@ async function fetchMetricasGlobais() {
 
   // Calcular tendência
   const tendencia = (semanaRes.data || []).reduce(
-    (acc: { data: string; metrica: string; valor: number }[], m: any) => {
+    (acc: { data: string; metrica: string; valor: number }[], m: MetricasUsoRow) => {
       acc.push(
         { data: m.periodo, metrica: 'usuarios', valor: m.usuarios_ativos },
         { data: m.periodo, metrica: 'requests', valor: m.sessoes_totais }
@@ -366,23 +394,23 @@ async function fetchPerformance() {
     .order('latencia_p99', { ascending: false })
     .limit(10);
 
-  const metricas = data || [];
+  const metricas = (data || []) as MetricasPerformanceRow[];
 
-  const latencias = metricas.map((m: any) => m.latencia_avg || 0);
+  const latencias = metricas.map((m) => m.latencia_avg || 0);
   const latenciaAtual =
     latencias.length > 0
-      ? latencias.reduce((a: number, b: number) => a + b, 0) / latencias.length
+      ? latencias.reduce((a, b) => a + b, 0) / latencias.length
       : 0;
 
-  const p99s = metricas.map((m: any) => m.latencia_p99 || 0);
+  const p99s = metricas.map((m) => m.latencia_p99 || 0);
   const latenciaP99 = p99s.length > 0 ? Math.max(...p99s) : 0;
 
-  const totalReqs = metricas.reduce((acc: number, m: any) => acc + (m.total_requests || 0), 0);
-  const totalErros = metricas.reduce((acc: number, m: any) => acc + (m.requests_erro || 0), 0);
+  const totalReqs = metricas.reduce((acc, m) => acc + (m.total_requests || 0), 0);
+  const totalErros = metricas.reduce((acc, m) => acc + (m.requests_erro || 0), 0);
   const taxaErro = totalReqs > 0 ? (totalErros / totalReqs) * 100 : 0;
 
   const rps =
-    metricas.reduce((acc: number, m: any) => acc + (m.rps_avg || 0), 0) /
+    metricas.reduce((acc, m) => acc + (m.rps_avg || 0), 0) /
     Math.max(metricas.length, 1);
 
   return {
@@ -390,7 +418,7 @@ async function fetchPerformance() {
     latencia_p99: Math.round(latenciaP99),
     taxa_erro: parseFloat(taxaErro.toFixed(2)),
     rps: parseFloat(rps.toFixed(2)),
-    endpoints_lentos: metricas.slice(0, 5).map((m: any) => ({
+    endpoints_lentos: metricas.slice(0, 5).map((m) => ({
       endpoint: m.endpoint,
       latencia_p99: m.latencia_p99 || 0,
       requests: m.total_requests,
@@ -408,9 +436,9 @@ async function fetchUptime() {
     .gte('checked_at', vintQuatroHorasAtras.toISOString())
     .order('checked_at', { ascending: false });
 
-  const checks = data || [];
+  const checks = (data || []) as UptimeCheck[];
   const total = checks.length;
-  const ok = checks.filter((c: any) => c.status === 'ok').length;
+  const ok = checks.filter((c) => c.status === 'ok').length;
   const percentual = total > 0 ? (ok / total) * 100 : 100;
 
   return {
@@ -431,21 +459,21 @@ async function fetchCustos() {
     .eq('tipo_periodo', 'dia')
     .gte('periodo', mesAtras.toISOString().split('T')[0]);
 
-  const metricas = data || [];
+  const metricas = (data || []) as MetricasUsoRow[];
 
   const custoHoje = metricas
-    .filter((m: any) => m.condominio_id) // filter para hoje seria baseado em periodo
-    .reduce((acc: number, m: any) => acc + (m.custo_total_centavos || 0), 0);
+    .filter((m) => m.condominio_id) // filter para hoje seria baseado em periodo
+    .reduce((acc, m) => acc + (m.custo_total_centavos || 0), 0);
 
-  const custoMes = metricas.reduce((acc: number, m: any) => acc + (m.custo_total_centavos || 0), 0);
+  const custoMes = metricas.reduce((acc, m) => acc + (m.custo_total_centavos || 0), 0);
 
   // Agregar por categoria
-  const iaTotal = metricas.reduce((acc: number, m: any) => acc + (m.custo_ia_centavos || 0), 0);
+  const iaTotal = metricas.reduce((acc, m) => acc + (m.custo_ia_centavos || 0), 0);
   const emailTotal = metricas.reduce(
-    (acc: number, m: any) => acc + (m.custo_email_centavos || 0),
+    (acc, m) => acc + (m.custo_email_centavos || 0),
     0
   );
-  const smsTotal = metricas.reduce((acc: number, m: any) => acc + (m.custo_sms_centavos || 0), 0);
+  const smsTotal = metricas.reduce((acc, m) => acc + (m.custo_sms_centavos || 0), 0);
 
   const porCategoria = [
     {
@@ -467,7 +495,7 @@ async function fetchCustos() {
 
   // Agregar por condomínio (top 5)
   const porCondominioMap = new Map<string, number>();
-  metricas.forEach((m: any) => {
+  metricas.forEach((m) => {
     if (m.condominio_id) {
       const atual = porCondominioMap.get(m.condominio_id) || 0;
       porCondominioMap.set(m.condominio_id, atual + (m.custo_total_centavos || 0));

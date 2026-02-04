@@ -1,5 +1,6 @@
 'use client';
 
+import { logger } from '@/lib/logger';
 import { getSupabaseClient } from '@/lib/supabase';
 import type {
   CreateNotificacaoInput,
@@ -219,7 +220,7 @@ export function useNotificacoes() {
                 setNaoLidas((prev) => prev + 1);
               }
             } catch (err) {
-              console.error('Erro ao processar nova notificação:', err);
+              logger.error('Erro ao processar nova notificação:', err);
             }
           }
         )

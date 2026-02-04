@@ -1,6 +1,7 @@
 'use client';
 
 import { getErrorMessage } from '@/lib/errors';
+import { logger } from '@/lib/logger';
 import { sanitizeSearchQuery } from '@/lib/sanitize';
 import { getSupabaseClient } from '@/lib/supabase';
 import { parseAnexos, serializeAnexos } from '@/lib/type-helpers';
@@ -30,9 +31,17 @@ interface ChamadoMensagemQueryResult extends ChamadoMensagemRow {
   autor?: { nome: string; avatar_url: string | null } | null;
 }
 
+interface ChamadoStatsRow {
+  status: string;
+  categoria: string;
+  avaliacao_nota: number | null;
+  created_at: string;
+  resolvido_em: string | null;
+}
+
 const toChamado = (data: ChamadoQueryResult): ChamadoComJoins => ({
   ...data,
-  anexos: parseAnexos(data.anexos) as any,
+  anexos: parseAnexos(data.anexos),
   solicitante: data.solicitante ?? undefined,
   atendente: data.atendente ?? undefined,
 });
@@ -160,20 +169,20 @@ export function useChamados(options?: {
 
         const mensagensComAutor = (mensagens || []).map((msg: ChamadoMensagemQueryResult) => ({
           ...msg,
-          anexos: parseAnexos(msg.anexos) as any,
+          anexos: parseAnexos(msg.anexos),
           autor: msg.autor ?? undefined,
         }));
 
         return {
           ...(data as ChamadoRow),
-          anexos: parseAnexos(data.anexos) as any,
+          anexos: parseAnexos(data.anexos),
           solicitante: (data as ChamadoQueryResult).solicitante ?? undefined,
           atendente: (data as ChamadoQueryResult).atendente ?? undefined,
           mensagens: mensagensComAutor,
           total_mensagens: mensagens?.length || 0,
         };
       } catch (err) {
-        console.error('Erro ao buscar chamado:', err);
+        logger.error('Erro ao buscar chamado:', err);
         return null;
       }
     },
@@ -311,6 +320,7 @@ export function useChamados(options?: {
           .eq('condominio_id', condominioId)
           .is('deleted_at', null);
         if (!data) return null;
+        const chamadosData = data as ChamadoStatsRow[];
         type EstatisticasChamados = {
           por_categoria: Record<string, number>;
           avaliacao_media: number | null;
@@ -321,29 +331,29 @@ export function useChamados(options?: {
           resolvidos: number;
         };
         const stats: EstatisticasChamados = {
-          total: data.length,
-          novos: data.filter((c: any) => c.status === 'novo').length,
-          em_atendimento: data.filter((c: any) => c.status === 'em_atendimento').length,
-          resolvidos: data.filter((c: any) => ['resolvido', 'fechado'].includes(c.status)).length,
+          total: chamadosData.length,
+          novos: chamadosData.filter((c) => c.status === 'novo').length,
+          em_atendimento: chamadosData.filter((c) => c.status === 'em_atendimento').length,
+          resolvidos: chamadosData.filter((c) => ['resolvido', 'fechado'].includes(c.status)).length,
           por_categoria: {},
           avaliacao_media: null,
           tempo_medio_resolucao_horas: null,
         };
-        data.forEach((c: any) => {
+        chamadosData.forEach((c) => {
           stats.por_categoria[c.categoria] = (stats.por_categoria[c.categoria] || 0) + 1;
         });
-        const comNota = data.filter((c: any) => c.avaliacao_nota);
+        const comNota = chamadosData.filter((c) => c.avaliacao_nota);
         if (comNota.length > 0)
           stats.avaliacao_media =
-            comNota.reduce((a: number, c: any) => a + c.avaliacao_nota!, 0) / comNota.length;
-        const resolvidos = data.filter((c: any) => c.resolvido_em);
+            comNota.reduce((a, c) => a + c.avaliacao_nota!, 0) / comNota.length;
+        const resolvidos = chamadosData.filter((c) => c.resolvido_em);
         if (resolvidos.length > 0) {
           const tempos = resolvidos.map(
-            (c: any) =>
+            (c) =>
               (new Date(c.resolvido_em!).getTime() - new Date(c.created_at).getTime()) / 3600000
           );
           stats.tempo_medio_resolucao_horas =
-            tempos.reduce((a: number, b: number) => a + b, 0) / tempos.length;
+            tempos.reduce((a, b) => a + b, 0) / tempos.length;
         }
         return stats;
       } catch {
