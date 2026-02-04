@@ -53,9 +53,8 @@ interface TaxaInadimplenciaRow {
 }
 
 // Helper to get table reference for tables not in generated types
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const getUntypedTable = (supabase: ReturnType<typeof getSupabaseClient>, table: string): any =>
-  supabase.from(table as any);
+const getUntypedTable = (supabase: ReturnType<typeof getSupabaseClient>, table: string) =>
+  supabase.from(table as never) as unknown;
 
 export function useTaxas() {
   const supabase = getSupabaseClient();
