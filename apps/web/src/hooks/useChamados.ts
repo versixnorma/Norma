@@ -177,7 +177,7 @@ export function useChamados(options?: {
               ...msg,
               anexos: parseAnexos(msg.anexos),
               autor: msg.autor ?? undefined,
-            }) as ChamadoMensagemComJoins
+            }) as unknown as ChamadoMensagemComJoins
         );
 
         return {
