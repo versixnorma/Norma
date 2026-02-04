@@ -187,7 +187,7 @@ export function useChamados(options?: {
           atendente: (data as ChamadoQueryResult).atendente ?? undefined,
           mensagens: mensagensComAutor,
           total_mensagens: mensagens?.length || 0,
-        } as ChamadoComJoins;
+        } as unknown as ChamadoComJoins;
       } catch (err) {
         logger.error('Erro ao buscar chamado:', err);
         return null;
