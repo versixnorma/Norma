@@ -52,9 +52,10 @@ interface TaxaInadimplenciaRow {
   unidade?: { numero: string; bloco?: { nome: string } | null } | null;
 }
 
-// Helper to get typed table reference for tables not in generated types
-const getUntypedTable = (supabase: ReturnType<typeof getSupabaseClient>, table: string) =>
-  supabase.from(table as 'usuarios');
+// Helper to get table reference for tables not in generated types
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const getUntypedTable = (supabase: ReturnType<typeof getSupabaseClient>, table: string): any =>
+  supabase.from(table as any);
 
 export function useTaxas() {
   const supabase = getSupabaseClient();
