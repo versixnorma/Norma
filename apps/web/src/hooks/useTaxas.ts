@@ -236,7 +236,9 @@ export function useTaxas() {
   const atualizarTaxasAtrasadas = useCallback(async (): Promise<number> => {
     try {
       // RPC function may not be in generated types
-      const { data, error: rpcError } = await supabase.rpc('atualizar_taxas_atrasadas' as 'gerar_taxas_mes');
+      const { data, error: rpcError } = await supabase.rpc(
+        'atualizar_taxas_atrasadas' as 'gerar_taxas_mes'
+      );
       if (rpcError) throw rpcError;
       return (data as number) || 0;
     } catch {
@@ -261,10 +263,7 @@ export function useTaxas() {
         const pendentes = taxasData.filter((t) => t.status === 'pendente');
 
         return {
-          total_em_aberto: taxasData.reduce(
-            (sum, t) => sum + (t.valor_final ?? 0),
-            0
-          ),
+          total_em_aberto: taxasData.reduce((sum, t) => sum + (t.valor_final ?? 0), 0),
           total_atrasado: atrasadas.reduce((sum, t) => sum + (t.valor_final ?? 0), 0),
           qtd_atrasadas: atrasadas.length,
           qtd_pendentes: pendentes.length,

@@ -133,10 +133,7 @@ export function useInstallPrompt() {
   const [isInstalled, setIsInstalled] = useState(() => {
     if (typeof window === 'undefined') return false;
     const nav = navigator as NavigatorWithStandalone;
-    return (
-      window.matchMedia('(display-mode: standalone)').matches ||
-      nav.standalone === true
-    );
+    return window.matchMedia('(display-mode: standalone)').matches || nav.standalone === true;
   });
   const [isIOS] = useState(() => {
     if (typeof navigator === 'undefined') return false;

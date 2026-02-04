@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useCallback, useEffect, useState } from 'react';
 
@@ -100,10 +100,12 @@ export function useServiceWorker(): UseServiceWorkerReturn {
       }));
 
       // Verifica atualizações periodicamente (a cada 1 hora)
-      setInterval(() => {
-        registration.update();
-      }, 60 * 60 * 1000);
-
+      setInterval(
+        () => {
+          registration.update();
+        },
+        60 * 60 * 1000
+      );
     } catch (error) {
       logger.error('[SW] Registration failed:', error);
       setState((prev) => ({
@@ -176,38 +178,40 @@ export function useServiceWorker(): UseServiceWorkerReturn {
     return permission;
   }, []);
 
-  const subscribeToPush = useCallback(async (vapidPublicKey: string): Promise<PushSubscription | null> => {
-    if (!state.registration) {
-      logger.warn('[SW] No registration available');
-      return null;
-    }
+  const subscribeToPush = useCallback(
+    async (vapidPublicKey: string): Promise<PushSubscription | null> => {
+      if (!state.registration) {
+        logger.warn('[SW] No registration available');
+        return null;
+      }
 
-    try {
-      // Converte a chave VAPID para Uint8Array
-      const urlBase64ToUint8Array = (base64String: string) => {
-        const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-        const rawData = window.atob(base64);
-        const outputArray = new Uint8Array(rawData.length);
-        for (let i = 0; i < rawData.length; ++i) {
-          outputArray[i] = rawData.charCodeAt(i);
-        }
-        return outputArray;
-      };
+      try {
+        // Converte a chave VAPID para Uint8Array
+        const urlBase64ToUint8Array = (base64String: string) => {
+          const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+          const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+          const rawData = window.atob(base64);
+          const outputArray = new Uint8Array(rawData.length);
+          for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+          }
+          return outputArray;
+        };
 
-      const subscription = await state.registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
-      });
+        const subscription = await state.registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+        });
 
-      logger.log('[SW] Push subscription:', subscription.endpoint);
-      return subscription;
-
-    } catch (error) {
-      logger.error('[SW] Push subscription failed:', error);
-      return null;
-    }
-  }, [state.registration]);
+        logger.log('[SW] Push subscription:', subscription.endpoint);
+        return subscription;
+      } catch (error) {
+        logger.error('[SW] Push subscription failed:', error);
+        return null;
+      }
+    },
+    [state.registration]
+  );
 
   return {
     ...state,
@@ -231,14 +235,14 @@ export function UpdatePrompt() {
 
   return (
     <div className="fixed bottom-20 left-4 right-4 z-50 animate-slide-up">
-      <div className="bg-white dark:bg-card-dark rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 p-4 flex items-center gap-4">
-        <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center shrink-0">
-          <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-2xl">
+      <div className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-2xl dark:border-gray-700 dark:bg-card-dark">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+          <span className="material-symbols-outlined text-2xl text-blue-600 dark:text-blue-400">
             system_update
           </span>
         </div>
-        <div className="flex-1 min-w-0">
-          <h4 className="font-bold text-gray-800 dark:text-white text-sm">
+        <div className="min-w-0 flex-1">
+          <h4 className="text-sm font-bold text-gray-800 dark:text-white">
             Nova versão disponível!
           </h4>
           <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -247,7 +251,7 @@ export function UpdatePrompt() {
         </div>
         <button
           onClick={skipWaiting}
-          className="px-4 py-2 bg-primary text-white text-sm font-bold rounded-lg hover:bg-primary/90 transition-colors shrink-0"
+          className="shrink-0 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-primary/90"
         >
           Atualizar
         </button>
@@ -265,7 +269,7 @@ export function OfflineIndicator() {
   if (isOnline) return null;
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-yellow-500 text-yellow-900 py-2 px-4 text-center text-sm font-medium flex items-center justify-center gap-2">
+    <div className="fixed left-0 right-0 top-0 z-50 flex items-center justify-center gap-2 bg-yellow-500 px-4 py-2 text-center text-sm font-medium text-yellow-900">
       <span className="material-symbols-outlined text-lg">cloud_off</span>
       Você está offline. Algumas funcionalidades podem estar limitadas.
     </div>

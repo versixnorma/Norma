@@ -10,6 +10,7 @@ import type {
   AvaliarChamadoInput,
   ChamadoComJoins,
   ChamadoFilters,
+  ChamadoMensagemComJoins,
   ChamadoStats,
   CreateChamadoInput,
   CreateMensagemInput,
@@ -39,12 +40,15 @@ interface ChamadoStatsRow {
   resolvido_em: string | null;
 }
 
-const toChamado = (data: ChamadoQueryResult): ChamadoComJoins => ({
-  ...data,
-  anexos: parseAnexos(data.anexos),
-  solicitante: data.solicitante ?? undefined,
-  atendente: data.atendente ?? undefined,
-});
+const toChamado = (data: ChamadoQueryResult): ChamadoComJoins => {
+  const { anexos: anexosJson, ...rest } = data;
+  return {
+    ...rest,
+    anexos: parseAnexos(anexosJson),
+    solicitante: data.solicitante ?? undefined,
+    atendente: data.atendente ?? undefined,
+  } as ChamadoComJoins;
+};
 
 export function useChamados(options?: {
   condominioId?: string | null;
@@ -167,11 +171,14 @@ export function useChamados(options?: {
           .eq('chamado_id', id)
           .order('created_at', { ascending: true });
 
-        const mensagensComAutor = (mensagens || []).map((msg: ChamadoMensagemQueryResult) => ({
-          ...msg,
-          anexos: parseAnexos(msg.anexos),
-          autor: msg.autor ?? undefined,
-        }));
+        const mensagensComAutor: ChamadoMensagemComJoins[] = (mensagens || []).map(
+          (msg: ChamadoMensagemQueryResult) =>
+            ({
+              ...msg,
+              anexos: parseAnexos(msg.anexos),
+              autor: msg.autor ?? undefined,
+            }) as ChamadoMensagemComJoins
+        );
 
         return {
           ...(data as ChamadoRow),
@@ -180,7 +187,7 @@ export function useChamados(options?: {
           atendente: (data as ChamadoQueryResult).atendente ?? undefined,
           mensagens: mensagensComAutor,
           total_mensagens: mensagens?.length || 0,
-        };
+        } as ChamadoComJoins;
       } catch (err) {
         logger.error('Erro ao buscar chamado:', err);
         return null;
@@ -334,7 +341,8 @@ export function useChamados(options?: {
           total: chamadosData.length,
           novos: chamadosData.filter((c) => c.status === 'novo').length,
           em_atendimento: chamadosData.filter((c) => c.status === 'em_atendimento').length,
-          resolvidos: chamadosData.filter((c) => ['resolvido', 'fechado'].includes(c.status)).length,
+          resolvidos: chamadosData.filter((c) => ['resolvido', 'fechado'].includes(c.status))
+            .length,
           por_categoria: {},
           avaliacao_media: null,
           tempo_medio_resolucao_horas: null,
@@ -352,8 +360,7 @@ export function useChamados(options?: {
             (c) =>
               (new Date(c.resolvido_em!).getTime() - new Date(c.created_at).getTime()) / 3600000
           );
-          stats.tempo_medio_resolucao_horas =
-            tempos.reduce((a, b) => a + b, 0) / tempos.length;
+          stats.tempo_medio_resolucao_horas = tempos.reduce((a, b) => a + b, 0) / tempos.length;
         }
         return stats;
       } catch {

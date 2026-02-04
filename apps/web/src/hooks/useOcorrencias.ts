@@ -106,7 +106,9 @@ export function useOcorrencias() {
         const { data, error: fetchError, count } = await query;
         if (fetchError) throw fetchError;
 
-        const transformedData = (data || []).map((item: OcorrenciaQueryResult) => toOcorrencia(item));
+        const transformedData = (data || []).map((item: OcorrenciaQueryResult) =>
+          toOcorrencia(item)
+        );
 
         const total = count || 0;
         const result: PaginatedResponse<OcorrenciaComJoins> = {
@@ -171,7 +173,11 @@ export function useOcorrencias() {
       setLoading(true);
       try {
         type OcorrenciaInsert = Database['public']['Tables']['ocorrencias']['Insert'];
-        const insertData: OcorrenciaInsert = { condominio_id: condominioId, reportado_por: reportadoPor, ...input };
+        const insertData: OcorrenciaInsert = {
+          condominio_id: condominioId,
+          reportado_por: reportadoPor,
+          ...input,
+        };
         const { data, error: insertError } = await supabase
           .from('ocorrencias')
           .insert(insertData)
@@ -267,8 +273,9 @@ export function useOcorrencias() {
         const stats: EstatisticasOcorrencias = {
           total: ocorrenciasData.length,
           abertas: ocorrenciasData.filter((o) => o.status === 'aberta').length,
-          em_andamento: ocorrenciasData.filter((o) => ['em_analise', 'em_andamento'].includes(o.status))
-            .length,
+          em_andamento: ocorrenciasData.filter((o) =>
+            ['em_analise', 'em_andamento'].includes(o.status)
+          ).length,
           resolvidas: ocorrenciasData.filter((o) => o.status === 'resolvida').length,
           por_categoria: {},
           por_prioridade: {},
@@ -284,8 +291,7 @@ export function useOcorrencias() {
             (o) =>
               (new Date(o.resolvido_em!).getTime() - new Date(o.created_at).getTime()) / 3600000
           );
-          stats.tempo_medio_resolucao_horas =
-            tempos.reduce((a, b) => a + b, 0) / tempos.length;
+          stats.tempo_medio_resolucao_horas = tempos.reduce((a, b) => a + b, 0) / tempos.length;
         }
         return stats;
       } catch {

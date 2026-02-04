@@ -398,9 +398,7 @@ async function fetchPerformance() {
 
   const latencias = metricas.map((m) => m.latencia_avg || 0);
   const latenciaAtual =
-    latencias.length > 0
-      ? latencias.reduce((a, b) => a + b, 0) / latencias.length
-      : 0;
+    latencias.length > 0 ? latencias.reduce((a, b) => a + b, 0) / latencias.length : 0;
 
   const p99s = metricas.map((m) => m.latencia_p99 || 0);
   const latenciaP99 = p99s.length > 0 ? Math.max(...p99s) : 0;
@@ -409,9 +407,7 @@ async function fetchPerformance() {
   const totalErros = metricas.reduce((acc, m) => acc + (m.requests_erro || 0), 0);
   const taxaErro = totalReqs > 0 ? (totalErros / totalReqs) * 100 : 0;
 
-  const rps =
-    metricas.reduce((acc, m) => acc + (m.rps_avg || 0), 0) /
-    Math.max(metricas.length, 1);
+  const rps = metricas.reduce((acc, m) => acc + (m.rps_avg || 0), 0) / Math.max(metricas.length, 1);
 
   return {
     latencia_atual: Math.round(latenciaAtual),
@@ -469,10 +465,7 @@ async function fetchCustos() {
 
   // Agregar por categoria
   const iaTotal = metricas.reduce((acc, m) => acc + (m.custo_ia_centavos || 0), 0);
-  const emailTotal = metricas.reduce(
-    (acc, m) => acc + (m.custo_email_centavos || 0),
-    0
-  );
+  const emailTotal = metricas.reduce((acc, m) => acc + (m.custo_email_centavos || 0), 0);
   const smsTotal = metricas.reduce((acc, m) => acc + (m.custo_sms_centavos || 0), 0);
 
   const porCategoria = [

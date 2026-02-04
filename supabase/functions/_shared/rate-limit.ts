@@ -99,10 +99,7 @@ export function getRateLimitHeaders(
 /**
  * Create rate limit exceeded response
  */
-export function rateLimitExceededResponse(
-  result: RateLimitResult,
-  req?: Request
-): Response {
+export function rateLimitExceededResponse(result: RateLimitResult, req?: Request): Response {
   const headers = getRateLimitHeaders(result);
 
   // Import CORS helpers dynamically to avoid circular dependency

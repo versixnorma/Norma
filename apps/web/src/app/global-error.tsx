@@ -83,7 +83,8 @@ export default function GlobalError({
                 lineHeight: '1.5',
               }}
             >
-              Ocorreu um erro inesperado. Nossa equipe foi notificada e está trabalhando para resolver.
+              Ocorreu um erro inesperado. Nossa equipe foi notificada e está trabalhando para
+              resolver.
             </p>
             <button
               onClick={reset}

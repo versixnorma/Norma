@@ -187,7 +187,10 @@ export function useVotacao() {
   const fetchComentarios = useCallback(
     async (pautaId: string): Promise<Comentario[]> => {
       try {
-        const { data, error: fetchError } = await getUntypedTable(supabase, 'assembleia_comentarios')
+        const { data, error: fetchError } = await getUntypedTable(
+          supabase,
+          'assembleia_comentarios'
+        )
           .select('*, usuario:usuario_id(nome, avatar_url)')
           .eq('pauta_id', pautaId)
           .eq('visivel', true)
@@ -207,7 +210,10 @@ export function useVotacao() {
     async (input: CreateComentarioInput): Promise<Comentario | null> => {
       try {
         const userId = (await supabase.auth.getUser()).data.user?.id;
-        const { data, error: insertError } = await getUntypedTable(supabase, 'assembleia_comentarios')
+        const { data, error: insertError } = await getUntypedTable(
+          supabase,
+          'assembleia_comentarios'
+        )
           .insert({ ...input, usuario_id: userId })
           .select('*, usuario:usuario_id(nome, avatar_url)')
           .single();

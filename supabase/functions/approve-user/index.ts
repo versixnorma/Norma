@@ -180,17 +180,21 @@ serve(async (req) => {
         },
       });
 
-      return jsonResponse<ApproveUserResponse>({
-        success: true,
-        usuario: {
-          id: updatedUser.id,
-          nome: updatedUser.nome,
-          email: updatedUser.email,
-          status: updatedUser.status,
-          unidade_id: updatedUser.unidade_id,
+      return jsonResponse<ApproveUserResponse>(
+        {
+          success: true,
+          usuario: {
+            id: updatedUser.id,
+            nome: updatedUser.nome,
+            email: updatedUser.email,
+            status: updatedUser.status,
+            unidade_id: updatedUser.unidade_id,
+          },
+          error: null,
         },
-        error: null,
-      }, 200, req);
+        200,
+        req
+      );
     } else {
       // Rejeitar usuário (soft delete)
       await supabaseAdmin
@@ -218,17 +222,21 @@ serve(async (req) => {
         },
       });
 
-      return jsonResponse<ApproveUserResponse>({
-        success: true,
-        usuario: {
-          id: targetUser.id,
-          nome: targetUser.nome,
-          email: targetUser.email,
-          status: 'removed',
-          unidade_id: null,
+      return jsonResponse<ApproveUserResponse>(
+        {
+          success: true,
+          usuario: {
+            id: targetUser.id,
+            nome: targetUser.nome,
+            email: targetUser.email,
+            status: 'removed',
+            unidade_id: null,
+          },
+          error: null,
         },
-        error: null,
-      }, 200, req);
+        200,
+        req
+      );
     }
   } catch (error) {
     console.error('Erro na aprovação:', error);

@@ -142,7 +142,10 @@ export function UserTable({ onRefresh }: UserTableProps) {
                               className="h-10 w-10 rounded-full object-cover"
                             />
                           ) : (
-                            <span className="font-bold text-primary" aria-label={`Iniciais de ${user.nome}`}>
+                            <span
+                              className="font-bold text-primary"
+                              aria-label={`Iniciais de ${user.nome}`}
+                            >
                               {user.nome.charAt(0).toUpperCase()}
                             </span>
                           )}

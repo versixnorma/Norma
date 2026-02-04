@@ -15,9 +15,7 @@ export function useExportacoes() {
   const [error] = useState<string | null>(null);
 
   const fetchExportacoes = useCallback(async (_condominioId: string) => {
-    logger.warn(
-      'useExportacoes.fetchExportacoes is deprecated - exportacoes table does not exist'
-    );
+    logger.warn('useExportacoes.fetchExportacoes is deprecated - exportacoes table does not exist');
     return [];
   }, []);
 

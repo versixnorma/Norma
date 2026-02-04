@@ -52,7 +52,7 @@ function sanitizeDocumentContent(content: string): string {
 
   // 2. Escape special characters that could be interpreted as prompt delimiters
   sanitized = sanitized
-    .replace(/```/g, '\'\'\'') // Replace code blocks
+    .replace(/```/g, "'''") // Replace code blocks
     .replace(/---/g, '___') // Replace horizontal rules (sometimes used as delimiters)
     .replace(/\n{3,}/g, '\n\n'); // Normalize excessive newlines
 

@@ -160,19 +160,23 @@ serve(async (req) => {
       },
     });
 
-    return jsonResponse<ImpersonateResponse>({
-      success: true,
-      sessao_id: sessao.id,
-      expires_at: expiresAt.toISOString(),
-      usuario_alvo: {
-        id: alvo.id,
-        nome: alvo.nome,
-        email: alvo.email,
-        role: alvo.role,
-        condominio_id: alvo.condominio_id,
+    return jsonResponse<ImpersonateResponse>(
+      {
+        success: true,
+        sessao_id: sessao.id,
+        expires_at: expiresAt.toISOString(),
+        usuario_alvo: {
+          id: alvo.id,
+          nome: alvo.nome,
+          email: alvo.email,
+          role: alvo.role,
+          condominio_id: alvo.condominio_id,
+        },
+        error: null,
       },
-      error: null,
-    }, 200, req);
+      200,
+      req
+    );
   } catch (error) {
     console.error('Erro no impersonate:', error);
     return errorResponse('Erro interno', 500, req);
