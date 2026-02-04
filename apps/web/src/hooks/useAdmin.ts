@@ -103,7 +103,7 @@ export function useAdmin() {
               nome
             )
           ),
-          unidades_habitacionais:unidade_id (identificador)
+          unidades_habitacionais:unidade_id (numero)
         `
           )
           .order('created_at', { ascending: false });
@@ -145,7 +145,7 @@ export function useAdmin() {
             role: UserRole;
             condominio: { id: string; nome: string } | null;
           }> | null;
-          unidades_habitacionais: { identificador: string } | null;
+          unidades_habitacionais: { numero: string } | null;
         };
 
         const formattedUsers: AdminUser[] = ((data || []) as any[]).map((user: any) => ({
@@ -163,7 +163,7 @@ export function useAdmin() {
             condominio_nome: uc.condominio?.nome || 'Desconhecido',
             role: uc.role as RoleType,
             unidade_id: user.unidade_id, // Legacy/Global unit?
-            unidade_identificador: user.unidades_habitacionais?.identificador || null,
+            unidade_identificador: user.unidades_habitacionais?.numero || null,
           })),
         }));
 

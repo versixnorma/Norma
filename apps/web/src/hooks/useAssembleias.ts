@@ -82,7 +82,7 @@ export function useAssembleias() {
         const { data, error: fetchError } = await supabase
           .from('assembleias')
           .select(
-            `*, convocador:usuarios!assembleias_convocador_id_fkey(nome), secretario:usuarios!assembleias_secretario_id_fkey(nome), pautas:assembleia_pautas(*, opcoes:assembleia_pauta_opcoes(*)), presencas:assembleia_presencas(*, usuario:usuarios!assembleia_presencas_usuario_id_fkey(nome, avatar_url), unidades_habitacionais:unidades_habitacionais!assembleia_presencas_unidade_id_fkey(identificador, bloco:blocos!unidades_habitacionais_bloco_id_fkey(nome)))`
+            `*, convocador:usuarios!assembleias_convocador_id_fkey(nome), secretario:usuarios!assembleias_secretario_id_fkey(nome), pautas:assembleia_pautas(*, opcoes:assembleia_pauta_opcoes(*)), presencas:assembleia_presencas(*, usuario:usuarios!assembleia_presencas_usuario_id_fkey(nome, avatar_url), unidades_habitacionais:unidades_habitacionais!assembleia_presencas_unidade_id_fkey(numero, bloco:blocos!unidades_habitacionais_bloco_id_fkey(nome)))`
           )
           .eq('id', id)
           .single();
