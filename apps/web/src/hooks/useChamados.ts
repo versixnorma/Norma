@@ -47,7 +47,7 @@ const toChamado = (data: ChamadoQueryResult): ChamadoComJoins => {
     anexos: parseAnexos(anexosJson),
     solicitante: data.solicitante ?? undefined,
     atendente: data.atendente ?? undefined,
-  } as ChamadoComJoins;
+  } as unknown as ChamadoComJoins;
 };
 
 export function useChamados(options?: {
