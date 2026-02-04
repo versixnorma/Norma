@@ -49,7 +49,7 @@ interface TaxaInadimplenciaRow {
   valor_final: number | null;
   status: string;
   data_vencimento: string;
-  unidade?: { identificador: string; bloco?: { nome: string } | null } | null;
+  unidade?: { numero: string; bloco?: { nome: string } | null } | null;
 }
 
 // Helper to get typed table reference for tables not in generated types
@@ -74,7 +74,7 @@ export function useTaxas() {
 
         let query = supabase
           .from('taxas_unidades')
-          .select(`*, unidade:unidade_id (identificador, bloco:bloco_id (nome))`, {
+          .select(`*, unidade:unidade_id (numero, bloco:bloco_id (nome))`, {
             count: 'exact',
           })
           .eq('condominio_id', condominioId)
@@ -116,7 +116,7 @@ export function useTaxas() {
 
         const { data, error: fetchError } = await supabase
           .from('taxas_unidades')
-          .select(`*, unidade:unidade_id (identificador, bloco:bloco_id (nome))`)
+          .select(`*, unidade:unidade_id (numero, bloco:bloco_id (nome))`)
           .eq('condominio_id', condominioId)
           .in('unidade_id', unidadeIds)
           .order('mes_referencia', { ascending: false })
@@ -252,7 +252,7 @@ export function useTaxas() {
         const { data } = await supabase
           .from('taxas_unidades')
           .select(
-            `id, valor_final, status, data_vencimento, unidade:unidade_id (identificador, bloco:bloco_id (nome))`
+            `id, valor_final, status, data_vencimento, unidade:unidade_id (numero, bloco:bloco_id (nome))`
           )
           .eq('condominio_id', condominioId)
           .in('status', ['pendente', 'atrasado'])
