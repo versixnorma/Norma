@@ -214,7 +214,7 @@ export function useVotacao() {
           supabase,
           'assembleia_comentarios'
         )
-          .insert({ ...input, usuario_id: userId })
+          .insert({ ...input, usuario_id: userId } as never)
           .select('*, usuario:usuario_id(nome, avatar_url)')
           .single();
         if (insertError) throw insertError;
@@ -238,7 +238,7 @@ export function useVotacao() {
             moderado_por: userId,
             moderado_em: new Date().toISOString(),
             motivo_moderacao: motivo,
-          })
+          } as never)
           .eq('id', comentarioId);
         if (updateError) throw updateError;
         return true;
