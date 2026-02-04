@@ -212,14 +212,11 @@ export function useOcorrencias() {
           }
         }
 
-        const { id, anexos, ...updates } = input;
+        const { id, ...updates } = input;
         // Se resolvendo, definir campos de resolução
         if (updates.status === 'resolvida' && !updates.resolucao) updates.resolucao = 'Resolvida';
         type OcorrenciaUpdate = Database['public']['Tables']['ocorrencias']['Update'];
-        const updateData: Partial<OcorrenciaUpdate> = {
-          ...updates,
-          ...(anexos !== undefined && { anexos: serializeAnexos(anexos) }),
-        };
+        const updateData: Partial<OcorrenciaUpdate> = { ...updates };
         if (updates.status === 'resolvida') {
           updateData.resolvido_em = new Date().toISOString();
           updateData.resolvido_por = userId;
