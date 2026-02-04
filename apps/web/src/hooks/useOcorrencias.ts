@@ -20,7 +20,7 @@ type OcorrenciaHistoricoRow = Database['public']['Tables']['ocorrencias_historic
 interface OcorrenciaQueryResult extends OcorrenciaRow {
   reportado_por_usuario?: { nome: string; avatar_url: string | null } | null;
   responsavel?: { nome: string; avatar_url: string | null } | null;
-  unidade?: { identificador: string; bloco?: { nome: string } | null } | null;
+  unidade?: { numero: string; bloco?: { nome: string } | null } | null;
 }
 
 interface OcorrenciaHistoricoQueryResult extends OcorrenciaHistoricoRow {
@@ -51,7 +51,7 @@ const toOcorrencia = (data: OcorrenciaQueryResult): OcorrenciaComJoins =>
     anexos: parseAnexos(data.anexos),
     reportado_por_info: data.reportado_por_usuario ?? undefined,
     responsavel: data.responsavel ?? undefined,
-    unidade_relacionada: data.unidade ? { numero: data.unidade.identificador } : undefined,
+    unidade_relacionada: data.unidade ? { numero: data.unidade.numero } : undefined,
   }) as unknown as OcorrenciaComJoins;
 
 export function useOcorrencias() {
@@ -83,7 +83,7 @@ export function useOcorrencias() {
         let query = supabase
           .from('ocorrencias')
           .select(
-            `*, reportado_por_usuario:usuarios!ocorrencias_reportado_por_fkey (nome, avatar_url), responsavel:usuarios!ocorrencias_responsavel_id_fkey (nome, avatar_url), unidade:unidades_habitacionais!ocorrencias_unidade_relacionada_id_fkey (identificador, bloco:blocos!unidades_habitacionais_bloco_id_fkey (nome))`,
+            `*, reportado_por_usuario:usuarios!ocorrencias_reportado_por_fkey (nome, avatar_url), responsavel:usuarios!ocorrencias_responsavel_id_fkey (nome, avatar_url), unidade:unidades_habitacionais!ocorrencias_unidade_relacionada_id_fkey (numero, bloco:blocos!unidades_habitacionais_bloco_id_fkey (nome))`,
             { count: 'exact' }
           )
           .eq('condominio_id', condominioId)
@@ -144,7 +144,7 @@ export function useOcorrencias() {
         const { data, error: fetchError } = await supabase
           .from('ocorrencias')
           .select(
-            `*, reportado_por_usuario:usuarios!ocorrencias_reportado_por_fkey (nome, avatar_url), responsavel:usuarios!ocorrencias_responsavel_id_fkey (nome, avatar_url), unidade:unidades_habitacionais!ocorrencias_unidade_relacionada_id_fkey (identificador, bloco:blocos!unidades_habitacionais_bloco_id_fkey (nome))`
+            `*, reportado_por_usuario:usuarios!ocorrencias_reportado_por_fkey (nome, avatar_url), responsavel:usuarios!ocorrencias_responsavel_id_fkey (nome, avatar_url), unidade:unidades_habitacionais!ocorrencias_unidade_relacionada_id_fkey (numero, bloco:blocos!unidades_habitacionais_bloco_id_fkey (nome))`
           )
           .eq('id', id)
           .single();
