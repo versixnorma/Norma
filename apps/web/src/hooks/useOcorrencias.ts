@@ -45,13 +45,14 @@ interface OcorrenciaStatsRow {
   resolvido_em: string | null;
 }
 
-const toOcorrencia = (data: OcorrenciaQueryResult): OcorrenciaComJoins => ({
-  ...data,
-  anexos: parseAnexos(data.anexos),
-  reportado_por_info: data.reportado_por_usuario ?? undefined,
-  responsavel: data.responsavel ?? undefined,
-  unidade_relacionada: data.unidade ? { numero: data.unidade.identificador } : undefined,
-});
+const toOcorrencia = (data: OcorrenciaQueryResult): OcorrenciaComJoins =>
+  ({
+    ...data,
+    anexos: parseAnexos(data.anexos),
+    reportado_por_info: data.reportado_por_usuario ?? undefined,
+    responsavel: data.responsavel ?? undefined,
+    unidade_relacionada: data.unidade ? { numero: data.unidade.identificador } : undefined,
+  }) as unknown as OcorrenciaComJoins;
 
 export function useOcorrencias() {
   const supabase = getSupabaseClient();
