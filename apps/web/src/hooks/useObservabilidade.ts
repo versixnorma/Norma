@@ -67,7 +67,7 @@ export function useObservabilidadeDashboard() {
       return {
         status: statusRes.data as unknown as SystemStatus,
         alertas: alertasRes,
-        metricas: metricasRes as MetricasUso | null,
+        metricas: metricasRes,
         performance: performanceRes,
         uptime: uptimeRes,
         custos: await fetchCustos(),
