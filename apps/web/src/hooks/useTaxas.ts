@@ -112,7 +112,9 @@ export function useTaxas() {
           .eq('ativo', true);
         if (!unidadesUser || unidadesUser.length === 0) return [];
 
-        const unidadeIds = (unidadesUser as UsuarioUnidadeRow[]).map((u) => u.unidade_id);
+        const unidadeIds = (unidadesUser as unknown as UsuarioUnidadeRow[]).map(
+          (u) => u.unidade_id
+        );
 
         const { data, error: fetchError } = await supabase
           .from('taxas_unidades')
