@@ -9,6 +9,7 @@ import type {
   AlertasResumo,
   DashboardObservabilidade,
   FiltroAlertas,
+  MetricasGlobais,
   MetricasPerformance,
   MetricasUso,
   ResolverAlertaInput,
@@ -333,7 +334,7 @@ async function fetchAlertas() {
   };
 }
 
-async function fetchMetricasGlobais() {
+async function fetchMetricasGlobais(): Promise<DashboardObservabilidade['metricas']> {
   const hoje = new Date().toISOString().split('T')[0];
   const semanaAtras = new Date();
   semanaAtras.setDate(semanaAtras.getDate() - 7);
@@ -364,21 +365,17 @@ async function fetchMetricasGlobais() {
     [] as { data: string; metrica: string; valor: number }[]
   );
 
+  const defaultMetricas: MetricasGlobais = {
+    total_condominios_ativos: 0,
+    total_usuarios_ativos: 0,
+    total_requisicoes: 0,
+    total_erros: 0,
+    custo_total_centavos: 0,
+  };
+
   return {
-    hoje: hojeRes.data || {
-      total_condominios_ativos: 0,
-      total_usuarios_ativos: 0,
-      total_requisicoes: 0,
-      total_erros: 0,
-      custo_total_centavos: 0,
-    },
-    semana: {
-      total_condominios_ativos: 0,
-      total_usuarios_ativos: 0,
-      total_requisicoes: 0,
-      total_erros: 0,
-      custo_total_centavos: 0,
-    },
+    hoje: (hojeRes.data as unknown as MetricasGlobais) || defaultMetricas,
+    semana: defaultMetricas,
     tendencia,
   };
 }
