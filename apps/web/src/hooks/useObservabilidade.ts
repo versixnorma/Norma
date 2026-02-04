@@ -26,13 +26,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface MetricasUsoRow {
   periodo: string;
-  usuarios_ativos: number;
-  sessoes_totais: number;
+  usuarios_ativos: number | null;
+  sessoes_totais: number | null;
   condominio_id?: string;
-  custo_ia_centavos?: number;
-  custo_email_centavos?: number;
-  custo_sms_centavos?: number;
-  custo_total_centavos?: number;
+  custo_ia_centavos?: number | null;
+  custo_email_centavos?: number | null;
+  custo_sms_centavos?: number | null;
+  custo_total_centavos?: number | null;
 }
 
 interface MetricasPerformanceRow {
@@ -357,8 +357,8 @@ async function fetchMetricasGlobais(): Promise<DashboardObservabilidade['metrica
   const tendencia = (semanaRes.data || []).reduce(
     (acc: { data: string; metrica: string; valor: number }[], m: MetricasUsoRow) => {
       acc.push(
-        { data: m.periodo, metrica: 'usuarios', valor: m.usuarios_ativos },
-        { data: m.periodo, metrica: 'requests', valor: m.sessoes_totais }
+        { data: m.periodo, metrica: 'usuarios', valor: m.usuarios_ativos ?? 0 },
+        { data: m.periodo, metrica: 'requests', valor: m.sessoes_totais ?? 0 }
       );
       return acc;
     },
