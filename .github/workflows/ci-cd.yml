@@ -157,7 +157,7 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: ./apps/web
+          # Deploy from root so Vercel reads packageManager from root package.json
 
       - name: Comment PR with preview URL
         uses: actions/github-script@v7
@@ -289,7 +289,7 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-args: '--prod'
-          working-directory: ./apps/web
+          # Deploy from root so Vercel reads packageManager from root package.json
 
       - name: Notify deployment success
         run: |
