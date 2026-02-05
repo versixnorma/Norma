@@ -110,7 +110,6 @@ const nextConfig = {
   reactStrictMode: true,
 
   // Otimizações de performance para Lighthouse
-  swcMinify: true,
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },

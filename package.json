@@ -3,7 +3,7 @@
   "version": "1.0.5",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@8.15.0",
+  "packageManager": "pnpm@9.15.4",
   "engines": {
     "node": ">=20.0.0",
     "pnpm": ">=8.0.0"
@@ -26,21 +26,24 @@
     "supabase:setup-cron": "psql -f scripts/setup-pg-cron.sql",
     "create-test-users": "node scripts/create-test-users.js",
     "sentry:upload-sourcemaps": "cd apps/web && npx @sentry/cli sourcemaps upload .next/server/chunks --release versix-norma@latest",
-    "prepare": "husky install || true"
+    "prepare": "husky || true"
   },
   "devDependencies": {
     "@playwright/test": "^1.57.0",
-    "@typescript-eslint/eslint-plugin": "^6.21.0",
-    "@typescript-eslint/parser": "^6.21.0",
-    "eslint": "^8.57.1",
-    "eslint-config-next": "14.2.5",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "16.1.6",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
+    "globals": "^17.3.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.5.2",
+    "next": "16.1.6",
     "prettier": "^3.7.4",
     "prettier-plugin-tailwindcss": "^0.7.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.54.0"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
