@@ -2,6 +2,9 @@
   "name": "@versix/web",
   "version": "1.0.5",
   "private": true,
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
