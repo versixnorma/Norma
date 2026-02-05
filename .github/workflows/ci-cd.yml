@@ -9,6 +9,8 @@ on:
 env:
   NODE_VERSION: '20.x'
   PNPM_VERSION: '9'
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
 jobs:
   # ============================================
@@ -76,7 +78,7 @@ jobs:
     if: github.event_name == 'pull_request'
     environment:
       name: preview
-      url: ${{ steps.deploy.outputs.deployment-url }}
+      url: ${{ steps.deploy.outputs.deployment_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -95,69 +97,30 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build application
-        id: build
-        run: |
-          cd apps/web
-          # Capture output but prevent immediate exit on error to allow analysis
-          set +e
-          BUILD_OUTPUT=$(pnpm build 2>&1)
-          BUILD_EXIT_CODE=$?
-          set -e
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
 
-          echo "$BUILD_OUTPUT"
-
-          if [ $BUILD_EXIT_CODE -ne 0 ]; then
-            echo "Build failed with exit code $BUILD_EXIT_CODE"
-          fi
-
-          WARNING_COUNT=$(echo "$BUILD_OUTPUT" | grep -c "Warning\|warning" || true)
-          ERROR_COUNT=$(echo "$BUILD_OUTPUT" | grep -c "Error\|error" || true)
-
-          MAX_WARNINGS=$(jq -r '.build.preview.maxWarnings' ../../../.warnings-config.json)
-          MAX_ERRORS=$(jq -r '.build.preview.maxErrors' ../../../.warnings-config.json)
-
-          echo "Build Warnings: $WARNING_COUNT (max: $MAX_WARNINGS)"
-          echo "Build Errors: $ERROR_COUNT (max: $MAX_ERRORS)"
-
-          if [ "$ERROR_COUNT" -gt "$MAX_ERRORS" ]; then
-            echo "Build errors found ($ERROR_COUNT > $MAX_ERRORS). Failing build."
-            exit 1
-          fi
-
-          if [ "$WARNING_COUNT" -gt "$MAX_WARNINGS" ]; then
-            echo "Too many build warnings ($WARNING_COUNT > $MAX_WARNINGS). Failing build."
-            echo "Please fix warnings or update the warning limit in .warnings-config.json if necessary."
-            exit 1
-          fi
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
         env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
-          NEXT_PUBLIC_APP_NAME: ${{ secrets.NEXT_PUBLIC_APP_NAME }}
-          NEXT_PUBLIC_DEMO_CONDOMINIO_ID: ${{ secrets.NEXT_PUBLIC_DEMO_CONDOMINIO_ID }}
-          NEXT_PUBLIC_DEMO_CODIGO_CONVITE: ${{ secrets.NEXT_PUBLIC_DEMO_CODIGO_CONVITE }}
-          NEXT_PUBLIC_ENABLE_PWA: ${{ secrets.NEXT_PUBLIC_ENABLE_PWA || 'true' }}
-          NEXT_PUBLIC_ENABLE_NORMA_AI: ${{ secrets.NEXT_PUBLIC_ENABLE_NORMA_AI || 'true' }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
-      - name: Create environment file for preview
-        run: |
-          cd apps/web
-          cat > .env.production << EOF
-          NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          NEXT_PUBLIC_APP_URL=${{ secrets.NEXT_PUBLIC_APP_URL || 'https://norma-preview.vercel.app' }}
-          NEXT_PUBLIC_APP_NAME=${{ secrets.NEXT_PUBLIC_APP_NAME || 'Versix Norma (Preview)' }}
-          EOF
+      - name: Build Project Artifacts
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Deploy to Vercel (Preview)
         id: deploy
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          # Deploy from root so Vercel reads packageManager from root package.json
+        run: |
+          DEPLOY_URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          echo "deployment_url=$DEPLOY_URL" >> $GITHUB_OUTPUT
+          echo "🚀 Preview deployed to: $DEPLOY_URL"
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Comment PR with preview URL
         uses: actions/github-script@v7
@@ -167,7 +130,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `🚀 **Preview Deploy**\n\nAplicativo disponível em: ${{ steps.deploy.outputs.deployment-url }}\n\n**Credenciais de teste:**\n- Email: demo@versix.com.br\n- Senha: demo123`
+              body: `🚀 **Preview Deploy**\n\nAplicativo disponível em: ${{ steps.deploy.outputs.deployment_url }}\n\n**Credenciais de teste:**\n- Email: demo@versix.com.br\n- Senha: demo123`
             })
 
   # ============================================
@@ -176,22 +139,11 @@ jobs:
   deploy-production:
     name: Deploy Production
     runs-on: ubuntu-latest
-    needs: lint # Changed from build to lint to avoid artifact dependency issues
+    needs: lint
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment:
       name: production
       url: https://app.versixnorma.com.br
-    env:
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-      NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
-      NEXT_PUBLIC_APP_NAME: ${{ secrets.NEXT_PUBLIC_APP_NAME }}
-      NEXT_PUBLIC_DEMO_CONDOMINIO_ID: ${{ secrets.NEXT_PUBLIC_DEMO_CONDOMINIO_ID }}
-      NEXT_PUBLIC_DEMO_CODIGO_CONVITE: ${{ secrets.NEXT_PUBLIC_DEMO_CODIGO_CONVITE }}
-      NEXT_PUBLIC_ENABLE_PWA: ${{ secrets.NEXT_PUBLIC_ENABLE_PWA || 'true' }}
-      NEXT_PUBLIC_ENABLE_NORMA_AI: ${{ secrets.NEXT_PUBLIC_ENABLE_NORMA_AI || 'true' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -210,54 +162,20 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Debug Environment
-        run: |
-          echo "Checking variables..."
-          if [ -n "$NEXT_PUBLIC_SUPABASE_URL" ]; then
-            echo "NEXT_PUBLIC_SUPABASE_URL is set (Length: ${#NEXT_PUBLIC_SUPABASE_URL})"
-          else
-            echo "❌ NEXT_PUBLIC_SUPABASE_URL is NOT set or empty"
-          fi
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
 
-          cd apps/web
-          if [ -f .env.production ]; then
-            echo ".env.production exists"
-            grep "NEXT_PUBLIC_SUPABASE_URL" .env.production || echo "Variable not found in .env.production"
-          else
-            echo "❌ .env.production file NOT found"
-          fi
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
-      - name: Build application
-        run: |
-          # Capture output but prevent immediate exit on error to allow analysis
-          set +e
-          BUILD_OUTPUT=$(pnpm build 2>&1)
-          BUILD_EXIT_CODE=$?
-          set -e
-
-          echo "$BUILD_OUTPUT"
-
-          if [ $BUILD_EXIT_CODE -ne 0 ]; then
-            echo "Build failed with exit code $BUILD_EXIT_CODE"
-          fi
-
-          WARNING_COUNT=$(echo "$BUILD_OUTPUT" | grep -c "Warning\|warning" || true)
-
-          MAX_WARNINGS=$(jq -r '.build.production.maxWarnings' .warnings-config.json)
-
-          echo "Build Warnings: $WARNING_COUNT (max: $MAX_WARNINGS)"
-
-          # Check strict exit code first
-          if [ $BUILD_EXIT_CODE -ne 0 ]; then
-            echo "Build failed with exit code $BUILD_EXIT_CODE"
-            exit $BUILD_EXIT_CODE
-          fi
-
-          if [ "$WARNING_COUNT" -gt "$MAX_WARNINGS" ]; then
-            echo "Too many build warnings ($WARNING_COUNT > $MAX_WARNINGS). Failing production build."
-            echo "Please fix warnings before deploying to production."
-            exit 1
-          fi
+      - name: Build Project Artifacts
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Upload sourcemaps to Sentry
         continue-on-error: true
@@ -269,27 +187,11 @@ jobs:
           SENTRY_ORG: versix-solutions
           SENTRY_PROJECT: versix-norma
 
-      - name: Install Vercel CLI
-        run: npm install --global vercel@latest
-
-      - name: Create environment file
-        run: |
-          cd apps/web
-          cat > .env.production << EOF
-          NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          NEXT_PUBLIC_APP_URL=${{ secrets.NEXT_PUBLIC_APP_URL || 'https://app.versixnorma.com.br' }}
-          NEXT_PUBLIC_APP_NAME=${{ secrets.NEXT_PUBLIC_APP_NAME || 'Versix Norma' }}
-          EOF
-
-      - name: Deploy to Vercel (Production)
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'
-          # Deploy from root so Vercel reads packageManager from root package.json
+      - name: Deploy Project Artifacts to Vercel
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Notify deployment success
         run: |
