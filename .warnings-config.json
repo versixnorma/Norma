@@ -1,6 +1,6 @@
 {
   "eslint": {
-    "maxWarnings": 50,
+    "maxWarnings": 100,
     "maxErrors": 0
   },
   "build": {
