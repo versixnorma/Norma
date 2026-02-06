@@ -41,13 +41,11 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  // Generate Nonce for CSP
-  const nonce = crypto.randomUUID();
-
-  // CSP Policy with Nonce
+  // CSP Policy - Relaxed for Next.js compatibility
+  // Note: 'unsafe-eval' is required for Next.js in production
   const cspHeader = `
     default-src 'self';
-    script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https: 'unsafe-inline';
+    script-src 'self' 'unsafe-inline' 'unsafe-eval' https:;
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     img-src 'self' data: blob: https: https://*.supabase.co https://images.unsplash.com;
     font-src 'self' data: https://fonts.gstatic.com;
@@ -61,10 +59,6 @@ export async function middleware(request: NextRequest) {
   `
     .replace(/\s{2,}/g, ' ')
     .trim();
-
-  // Set Nonce Request Header (for Next.js to pickup)
-  request.headers.set('x-nonce', nonce);
-  request.headers.set('Content-Security-Policy', cspHeader);
 
   // Set Response Header
   response.headers.set('Content-Security-Policy', cspHeader);
