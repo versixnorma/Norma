@@ -1,3 +1,7 @@
+// Layout components
+export { AdminLayout, AdminSidebar, AdminHeader } from './layout';
+
+// Feature components
 export { ApprovalList } from './ApprovalList';
 export { AuditLogViewer } from './AuditLogViewer';
 export { CondominiosList } from './CondominiosList';
