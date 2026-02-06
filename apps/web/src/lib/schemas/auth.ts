@@ -1,15 +1,16 @@
 import { z } from 'zod';
 
+// Role hierarchy: superadmin (system-level) > admin_condo (condominium-level) > others
+// Note: admin_master was consolidated into superadmin on 2026-02-06
 export const RoleSchema = z.enum([
   'superadmin',
-  'admin_master',
+  'admin_condo',
   'sindico',
   'subsindico',
   'conselheiro',
   'morador',
   'funcionario',
   'porteiro',
-  'admin_condo',
 ]);
 
 export const StatusSchema = z.enum(['pending', 'active', 'inactive', 'suspended', 'removed']);

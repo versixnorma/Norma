@@ -38,7 +38,7 @@ function AdminUsuariosContent() {
   const statusLabel = statusFilter ? STATUS_LABELS[statusFilter] : 'Todos os usuários';
 
   return (
-    <AuthGuard requiredRoles={['superadmin', 'admin_master']}>
+    <AuthGuard requiredRoles={['superadmin']}>
       <div className="min-h-screen bg-bg-light dark:bg-bg-dark">
         <header className="border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-card-dark">
           <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">

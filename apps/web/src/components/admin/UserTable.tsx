@@ -15,13 +15,16 @@ interface UserTableProps {
 
 const ROLE_LABELS: Record<string, string> = {
   superadmin: 'Super Admin',
-  admin_master: 'Admin Master',
+  admin_condo: 'Admin Condomínio',
   sindico: 'Síndico',
   subsindico: 'Sub-síndico',
   conselheiro: 'Conselheiro',
   morador: 'Morador',
   porteiro: 'Porteiro',
   zelador: 'Zelador',
+  funcionario: 'Funcionário',
+  proprietario: 'Proprietário',
+  inquilino: 'Inquilino',
 };
 const STATUS_CONFIG: Record<StatusType, { label: string; color: string }> = {
   active: { label: 'Ativo', color: 'bg-green-100 text-green-700' },
