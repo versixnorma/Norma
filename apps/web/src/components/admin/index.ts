@@ -1,6 +1,12 @@
 // Layout components
 export { AdminLayout, AdminSidebar, AdminHeader } from './layout';
 
+// Dashboard components
+export { DashboardKPIs, CondominiosHealth } from './dashboard';
+
+// Chart components
+export { ActivityChart } from './charts';
+
 // Feature components
 export { ApprovalList } from './ApprovalList';
 export { AuditLogViewer } from './AuditLogViewer';
