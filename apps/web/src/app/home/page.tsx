@@ -45,7 +45,7 @@ const MuralDigital = dynamic(
 
 function HomeContent() {
   const router = useRouter();
-  const { profile, isAuthenticated, loading: authLoading } = useAuthContext();
+  const { profile, isAuthenticated, loading: authLoading, isSuperAdmin } = useAuthContext();
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeNav, setActiveNav] = useState('home');
@@ -57,6 +57,13 @@ function HomeContent() {
   // Hooks de dados - só carregar se perfil estiver disponível
   const condominioId = profile?.condominio_atual?.id || null;
   const userId = profile?.id || null;
+
+  // SuperAdmin sem condomínio - redirecionar para admin dashboard
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && isSuperAdmin && !condominioId) {
+      router.push('/admin/dashboard');
+    }
+  }, [authLoading, isAuthenticated, isSuperAdmin, condominioId, router]);
 
   const { dashboard, loading: financialLoading } = useFinancial({
     condominioId,

@@ -35,6 +35,7 @@ interface UsuarioWithCondominios {
   avatar_url: string | null;
   documento?: string | null;
   status: StatusType;
+  role: RoleType; // Role direto do usuário (superadmin, etc.)
   created_at: string;
   updated_at: string;
   condominio_id?: string | null; // Made optional as it's deprecated/removed
@@ -424,8 +425,11 @@ export function useAuth() {
   // COMPUTED VALUES
   // ============================================
   const isAuthenticated = !!state.user && !!state.session;
+  // SuperAdmin é verificado pelo role direto do usuário (não precisa de condomínio)
+  const isSuperAdmin = state.profile?.role === 'superadmin';
   const isAdmin =
-    state.profile?.condominio_atual?.role === 'admin_master' ||
+    isSuperAdmin ||
+    state.profile?.condominio_atual?.role === 'admin_condo' ||
     state.profile?.condominio_atual?.role === 'superadmin';
   const isSindico =
     state.profile?.condominio_atual?.role === 'sindico' ||
@@ -442,6 +446,7 @@ export function useAuth() {
 
     // Computed
     isAuthenticated,
+    isSuperAdmin,
     isAdmin,
     isSindico,
     hasMultipleCondominios,
