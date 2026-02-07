@@ -7,13 +7,15 @@ import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 export default function EditarCondominioPage() {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams<{ id: string }>();
+  const id = params?.id;
   const [initialValues, setInitialValues] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const supabase = getSupabaseClient();
 
   useEffect(() => {
     const load = async () => {
+      if (!id) return;
       setLoading(true);
       const { data } = await supabase.from('condominios').select('*').eq('id', id).single();
       if (data) {
