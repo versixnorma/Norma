@@ -1,9 +1,13 @@
 import { createAdminClient } from '@/lib/supabase';
 import { createClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function POST(_request: Request, { params }: { params: { id: string } }) {
+async function resolveParams(params: any) {
+  return await Promise.resolve(params);
+}
+
+export async function POST(_request: NextRequest, context: { params: any }) {
   const authClient = createClient(await cookies());
   const {
     data: { user },
@@ -38,10 +42,13 @@ export async function POST(_request: Request, { params }: { params: { id: string
       (uc: UserCondominio) => uc.status === 'active' || uc.status === 'ativo'
     )?.condominio_id || profile.condominio_id;
 
+  const params = await resolveParams(context.params);
+  const discountId = params?.id;
+
   const { data: discount, error: discountError } = await admin
     .from('marketplace_discounts')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', discountId)
     .single();
 
   if (discountError || !discount) {
