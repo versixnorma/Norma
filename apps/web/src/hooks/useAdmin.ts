@@ -148,24 +148,26 @@ export function useAdmin() {
           unidades_habitacionais: { numero: string } | null;
         };
 
-        const formattedUsers: AdminUser[] = ((data || []) as any[]).map((user: any) => ({
-          id: user.id,
-          auth_id: user.auth_id || '',
-          nome: user.nome,
-          email: user.email,
-          telefone: user.telefone,
-          avatar_url: user.avatar_url,
-          status: user.status as StatusType,
-          created_at: user.created_at,
-          updated_at: user.updated_at,
-          condominios: (user.usuario_condominios || []).map((uc: any) => ({
-            condominio_id: uc.condominio?.id || '',
-            condominio_nome: uc.condominio?.nome || 'Desconhecido',
-            role: uc.role as RoleType,
-            unidade_id: user.unidade_id, // Legacy/Global unit?
-            unidade_identificador: user.unidades_habitacionais?.numero || null,
-          })),
-        }));
+        const formattedUsers: AdminUser[] = ((data || []) as UsuarioWithRelations[]).map(
+          (user) => ({
+            id: user.id,
+            auth_id: user.auth_id || '',
+            nome: user.nome,
+            email: user.email,
+            telefone: user.telefone,
+            avatar_url: user.avatar_url,
+            status: user.status as StatusType,
+            created_at: user.created_at,
+            updated_at: user.updated_at,
+            condominios: (user.usuario_condominios || []).map((uc) => ({
+              condominio_id: uc.condominio?.id || '',
+              condominio_nome: uc.condominio?.nome || 'Desconhecido',
+              role: uc.role as RoleType,
+              unidade_id: user.unidade_id, // Legacy/Global unit?
+              unidade_identificador: user.unidades_habitacionais?.numero || null,
+            })),
+          })
+        );
 
         setUsers(formattedUsers);
       } catch (err) {

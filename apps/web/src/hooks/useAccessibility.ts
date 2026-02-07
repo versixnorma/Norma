@@ -16,7 +16,7 @@ const DEFAULT_SETTINGS: AccessibilitySettings = {
   fontSize: 'normal',
   highContrast: false,
   reducedMotion: false,
-  screenReaderMode: false
+  screenReaderMode: false,
 };
 
 const STORAGE_KEY = 'versix-accessibility';
@@ -24,7 +24,7 @@ const STORAGE_KEY = 'versix-accessibility';
 const FONT_SIZE_MAP = {
   normal: '16px',
   large: '18px',
-  xlarge: '20px'
+  xlarge: '20px',
 };
 
 export function useAccessibility() {
@@ -38,13 +38,13 @@ export function useAccessibility() {
       return {
         ...base,
         reducedMotion: base.reducedMotion || prefersReducedMotion,
-        highContrast: base.highContrast || prefersHighContrast
+        highContrast: base.highContrast || prefersHighContrast,
       };
     } catch {
       return DEFAULT_SETTINGS;
     }
   });
-  const [loaded, setLoaded] = useState(() => typeof window !== 'undefined');
+  const loaded = typeof window !== 'undefined';
 
   // Aplicar configurações ao DOM
   useEffect(() => {
@@ -85,37 +85,39 @@ export function useAccessibility() {
   }, [settings, loaded]);
 
   // Atualizar configuração
-  const updateSetting = useCallback(<K extends keyof AccessibilitySettings>(
-    key: K,
-    value: AccessibilitySettings[K]
-  ) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
-  }, []);
+  const updateSetting = useCallback(
+    <K extends keyof AccessibilitySettings>(key: K, value: AccessibilitySettings[K]) => {
+      setSettings((prev) => ({ ...prev, [key]: value }));
+    },
+    []
+  );
 
   // Aumentar fonte
   const increaseFontSize = useCallback(() => {
-    setSettings(prev => ({
+    setSettings((prev) => ({
       ...prev,
-      fontSize: prev.fontSize === 'normal' ? 'large' : prev.fontSize === 'large' ? 'xlarge' : 'xlarge'
+      fontSize:
+        prev.fontSize === 'normal' ? 'large' : prev.fontSize === 'large' ? 'xlarge' : 'xlarge',
     }));
   }, []);
 
   // Diminuir fonte
   const decreaseFontSize = useCallback(() => {
-    setSettings(prev => ({
+    setSettings((prev) => ({
       ...prev,
-      fontSize: prev.fontSize === 'xlarge' ? 'large' : prev.fontSize === 'large' ? 'normal' : 'normal'
+      fontSize:
+        prev.fontSize === 'xlarge' ? 'large' : prev.fontSize === 'large' ? 'normal' : 'normal',
     }));
   }, []);
 
   // Toggle high contrast
   const toggleHighContrast = useCallback(() => {
-    setSettings(prev => ({ ...prev, highContrast: !prev.highContrast }));
+    setSettings((prev) => ({ ...prev, highContrast: !prev.highContrast }));
   }, []);
 
   // Toggle reduced motion
   const toggleReducedMotion = useCallback(() => {
-    setSettings(prev => ({ ...prev, reducedMotion: !prev.reducedMotion }));
+    setSettings((prev) => ({ ...prev, reducedMotion: !prev.reducedMotion }));
   }, []);
 
   // Reset
@@ -131,7 +133,7 @@ export function useAccessibility() {
     decreaseFontSize,
     toggleHighContrast,
     toggleReducedMotion,
-    resetSettings
+    resetSettings,
   };
 }
 
