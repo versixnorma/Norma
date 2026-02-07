@@ -20,7 +20,13 @@ export async function POST(_request: NextRequest, context: { params: any }) {
 
   const admin = createAdminClient();
 
-  const { data: profile } = await admin
+  type UsuarioProfile = {
+    id: string;
+    condominio_id?: string | null;
+    usuario_condominios?: { condominio_id: string; status?: string }[];
+  };
+
+  const { data: profile } = (await admin
     .from('usuarios')
     .select(
       `
@@ -30,7 +36,7 @@ export async function POST(_request: NextRequest, context: { params: any }) {
     `
     )
     .eq('auth_id', user.id)
-    .single();
+    .single()) as { data: UsuarioProfile | null; error: any };
 
   if (!profile) {
     return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
