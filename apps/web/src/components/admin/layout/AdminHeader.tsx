@@ -3,6 +3,7 @@
 import { useAdminNavigation } from '@/hooks/useAdminNavigation';
 import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState } from 'react';
 
 interface AdminHeaderProps {
@@ -11,7 +12,7 @@ interface AdminHeaderProps {
 }
 
 export function AdminHeader({ sidebarCollapsed, onToggleSidebar }: AdminHeaderProps) {
-  const { breadcrumbs, activeItem } = useAdminNavigation();
+  const { breadcrumbs } = useAdminNavigation();
   const { profile, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
 
@@ -80,9 +81,11 @@ export function AdminHeader({ sidebarCollapsed, onToggleSidebar }: AdminHeaderPr
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
               {profile?.avatar_url ? (
-                <img
+                <Image
                   src={profile.avatar_url}
                   alt={profile.nome}
+                  width={32}
+                  height={32}
                   className="h-8 w-8 rounded-full object-cover"
                 />
               ) : (

@@ -9,7 +9,7 @@ type MarketplacePartnerRow = Database['public']['Tables']['marketplace_partners'
 type MarketplaceDiscountRow = Database['public']['Tables']['marketplace_discounts']['Row'];
 type MarketplaceTransactionRow = Database['public']['Tables']['marketplace_transactions']['Row'];
 
-export interface MarketplacePartner extends MarketplacePartnerRow {}
+export type MarketplacePartner = MarketplacePartnerRow;
 export interface MarketplaceDiscount extends MarketplaceDiscountRow {
   partner_name?: string | null;
   partner_category?: string | null;
@@ -208,7 +208,10 @@ export function useMarketplace() {
   );
 
   const updateDiscount = useCallback(
-    async (id: string, payload: Database['public']['Tables']['marketplace_discounts']['Update']) => {
+    async (
+      id: string,
+      payload: Database['public']['Tables']['marketplace_discounts']['Update']
+    ) => {
       setLoading(true);
       setError(null);
       try {
@@ -351,14 +354,12 @@ export function useMarketplace() {
           .from('marketplace_transactions')
           .select('transaction_date, final_amount')
           .gte('transaction_date', lastSixMonths),
-        supabase
-          .from('marketplace_discounts')
-          .select(
-            `
+        supabase.from('marketplace_discounts').select(
+          `
             id,
             partner:partner_id (category)
           `
-          ),
+        ),
       ]);
 
       const recentTransactions: MarketplaceTransaction[] = (recentTransactionsData || []).map(
