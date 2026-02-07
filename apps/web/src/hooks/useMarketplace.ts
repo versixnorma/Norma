@@ -152,11 +152,16 @@ export function useMarketplace() {
 
       if (fetchError) throw fetchError;
 
-      const formatted = (data || []).map((row: any) => ({
-        ...(row as MarketplaceDiscountRow),
-        partner_name: row.partner?.name || null,
-        partner_category: row.partner?.category || null,
-      }));
+      const formatted = (data || []).map((row) => {
+        const r = row as MarketplaceDiscountRow & {
+          partner?: { name?: string; category?: string };
+        };
+        return {
+          ...r,
+          partner_name: r.partner?.name || null,
+          partner_category: r.partner?.category || null,
+        };
+      });
 
       setDiscounts(formatted);
     } catch (err) {
@@ -294,13 +299,21 @@ export function useMarketplace() {
         .limit(50);
 
       if (fetchError) throw fetchError;
-      const formatted = (data || []).map((row: any) => ({
-        ...(row as MarketplaceTransactionRow),
-        partner_name: row.partner?.name || null,
-        discount_title: row.discount?.title || null,
-        condominio_nome: row.condominio?.nome || null,
-        usuario_nome: row.usuario?.nome || null,
-      }));
+      const formatted = (data || []).map((row) => {
+        const r = row as MarketplaceTransactionRow & {
+          partner?: { name?: string };
+          discount?: { title?: string };
+          condominio?: { nome?: string };
+          usuario?: { nome?: string };
+        };
+        return {
+          ...r,
+          partner_name: r.partner?.name || null,
+          discount_title: r.discount?.title || null,
+          condominio_nome: r.condominio?.nome || null,
+          usuario_nome: r.usuario?.nome || null,
+        };
+      });
 
       setTransactions(formatted);
       return formatted;
@@ -363,13 +376,21 @@ export function useMarketplace() {
       ]);
 
       const recentTransactions: MarketplaceTransaction[] = (recentTransactionsData || []).map(
-        (row: any) => ({
-          ...(row as MarketplaceTransactionRow),
-          partner_name: row.partner?.name || null,
-          discount_title: row.discount?.title || null,
-          condominio_nome: row.condominio?.nome || null,
-          usuario_nome: row.usuario?.nome || null,
-        })
+        (row) => {
+          const r = row as MarketplaceTransactionRow & {
+            partner?: { name?: string };
+            discount?: { title?: string };
+            condominio?: { nome?: string };
+            usuario?: { nome?: string };
+          };
+          return {
+            ...r,
+            partner_name: r.partner?.name || null,
+            discount_title: r.discount?.title || null,
+            condominio_nome: r.condominio?.nome || null,
+            usuario_nome: r.usuario?.nome || null,
+          };
+        }
       );
 
       const totalRevenue = (transactionsData || []).reduce(
@@ -378,8 +399,13 @@ export function useMarketplace() {
       );
 
       const monthlyTrendMap = new Map<string, { transactions: number; revenue: number }>();
-      (transactionsData || []).forEach((item: any) => {
-        const date = new Date(item.transaction_date);
+      (
+        (transactionsData || []) as (MarketplaceTransactionRow & {
+          transaction_date?: string;
+          final_amount?: string | number;
+        })[]
+      ).forEach((item) => {
+        const date = new Date(item.transaction_date || '');
         const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         const current = monthlyTrendMap.get(key) || { transactions: 0, revenue: 0 };
         current.transactions += 1;
@@ -396,7 +422,7 @@ export function useMarketplace() {
         }));
 
       const categoryCount: Record<string, number> = {};
-      (discountCategories || []).forEach((row: any) => {
+      ((discountCategories || []) as { partner?: { category?: string } }[]).forEach((row) => {
         const category = row.partner?.category || 'Outros';
         categoryCount[category] = (categoryCount[category] || 0) + 1;
       });

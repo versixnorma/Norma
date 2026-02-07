@@ -28,24 +28,25 @@ export async function GET() {
       .from('marketplace_transactions')
       .select('transaction_date, final_amount')
       .gte('transaction_date', lastSixMonths),
-    supabase
-      .from('marketplace_discounts')
-      .select(
-        `
+    supabase.from('marketplace_discounts').select(
+      `
         id,
         partner:partner_id (category)
       `
-      ),
+    ),
   ]);
 
   const totalRevenue = (transactionsData || []).reduce(
-    (acc: number, item: any) => acc + (Number(item.final_amount) || 0),
+    (acc: number, item: { transaction_date?: string; final_amount?: string | number }) =>
+      acc + (Number(item.final_amount) || 0),
     0
   );
 
   const monthlyTrendMap = new Map<string, { transactions: number; revenue: number }>();
-  (transactionsData || []).forEach((item: any) => {
-    const date = new Date(item.transaction_date);
+  (
+    (transactionsData || []) as { transaction_date?: string; final_amount?: string | number }[]
+  ).forEach((item) => {
+    const date = new Date(item.transaction_date || '');
     const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
     const current = monthlyTrendMap.get(key) || { transactions: 0, revenue: 0 };
     current.transactions += 1;
@@ -62,7 +63,7 @@ export async function GET() {
     }));
 
   const categoryCount: Record<string, number> = {};
-  (discountCategories || []).forEach((row: any) => {
+  ((discountCategories || []) as { partner?: { category?: string } }[]).forEach((row) => {
     const category = row.partner?.category || 'Outros';
     categoryCount[category] = (categoryCount[category] || 0) + 1;
   });

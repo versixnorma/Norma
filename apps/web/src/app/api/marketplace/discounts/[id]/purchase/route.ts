@@ -32,9 +32,11 @@ export async function POST(_request: Request, { params }: { params: { id: string
     return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
   }
 
+  type UserCondominio = { condominio_id: string; status?: string };
   const activeCondo =
-    profile.usuario_condominios?.find((uc: any) => uc.status === 'active' || uc.status === 'ativo')
-      ?.condominio_id || profile.condominio_id;
+    profile.usuario_condominios?.find(
+      (uc: UserCondominio) => uc.status === 'active' || uc.status === 'ativo'
+    )?.condominio_id || profile.condominio_id;
 
   const { data: discount, error: discountError } = await admin
     .from('marketplace_discounts')
