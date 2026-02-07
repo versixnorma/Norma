@@ -72,7 +72,7 @@ export async function POST(_request: NextRequest, context: { params: any }) {
   if (discount.valid_until && new Date(discount.valid_until) < now) {
     return NextResponse.json({ error: 'Desconto expirado' }, { status: 400 });
   }
-  if (discount.usage_limit && discount.usage_count >= discount.usage_limit) {
+  if (discount.usage_limit && (discount.usage_count ?? 0) >= discount.usage_limit) {
     return NextResponse.json({ error: 'Limite de uso atingido' }, { status: 400 });
   }
 
@@ -126,7 +126,7 @@ export async function POST(_request: NextRequest, context: { params: any }) {
 
   await admin
     .from('marketplace_discounts')
-    .update({ usage_count: (discount.usage_count || 0) + 1 })
+    .update({ usage_count: (discount.usage_count ?? 0) + 1 })
     .eq('id', discount.id);
 
   return NextResponse.json({ data: transaction });
