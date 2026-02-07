@@ -27,7 +27,7 @@ export function useIntegracoes() {
           .from('v_integracoes_resumo')
           .select('*')
           .eq('condominio_id', condominioId);
-        if (filters?.tipo) query = query.eq('tipo', filters.tipo as any);
+        if (filters?.tipo) query = query.eq('tipo', filters.tipo as string);
         if (filters?.status) query = query.eq('status', filters.status);
 
         const { data, error: fetchError } = await query.order('created_at', { ascending: false });
@@ -66,7 +66,7 @@ export function useIntegracoes() {
 
   // Criar integração API
   const criarIntegracaoApi = useCallback(
-    async (condominioId: string, input: CreateIntegracaoApiInput): Promise<any> => {
+    async (condominioId: string, input: CreateIntegracaoApiInput): Promise<Integracao | null> => {
       setLoading(true);
       try {
         const { data, error: rpcError } = await supabase.rpc('criar_integracao_api', {
@@ -76,7 +76,7 @@ export function useIntegracoes() {
           p_scopes: input.scopes || [],
         });
         if (rpcError) throw rpcError;
-        return data?.[0] || null;
+        return (data?.[0] as Integracao) || null;
       } catch (err) {
         setError(getErrorMessage(err));
         return null;
@@ -89,7 +89,7 @@ export function useIntegracoes() {
 
   // Criar webhook
   const criarWebhook = useCallback(
-    async (condominioId: string, input: CreateWebhookInput): Promise<any> => {
+    async (condominioId: string, input: CreateWebhookInput): Promise<Integracao | null> => {
       setLoading(true);
       try {
         const { data, error: rpcError } = await supabase.rpc('criar_webhook', {
@@ -100,7 +100,7 @@ export function useIntegracoes() {
           p_headers_custom: input.headers_custom || {},
         });
         if (rpcError) throw rpcError;
-        return data?.[0] || null;
+        return (data?.[0] as Integracao) || null;
       } catch (err) {
         setError(getErrorMessage(err));
         return null;

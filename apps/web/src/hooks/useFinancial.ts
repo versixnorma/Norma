@@ -166,8 +166,9 @@ export function useFinancial({
       .order('principal', { ascending: false });
 
     if (!error && data) {
+      const rows = data as Database['public']['Tables']['contas_bancarias']['Row'][];
       setContas(
-        data.map((c: any) => ({
+        rows.map((c) => ({
           id: c.id,
           nome: c.nome_exibicao,
           banco: c.banco_nome,
@@ -203,13 +204,21 @@ export function useFinancial({
             categoria?: { nome?: string };
             conta?: { nome_exibicao?: string };
           })[]
-        ).map((l) => ({
-          ...l,
-          categoria_nome: l.categoria?.nome,
-          conta_nome: l.conta?.nome_exibicao,
-          unidade_identificador: undefined,
-          data_exibicao: l.data_competencia || (l as any).data_lancamento,
-        }))
+        ).map(
+          (
+            l: LancamentoFinanceiro & {
+              categoria?: { nome?: string };
+              conta?: { nome_exibicao?: string };
+              data_lancamento?: string;
+            }
+          ) => ({
+            ...l,
+            categoria_nome: l.categoria?.nome,
+            conta_nome: l.conta?.nome_exibicao,
+            unidade_identificador: undefined,
+            data_exibicao: l.data_competencia || l.data_lancamento,
+          })
+        )
       );
     }
   }, [condominioId, supabase, inicioMes, fimMes]);

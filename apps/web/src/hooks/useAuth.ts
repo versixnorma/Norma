@@ -131,9 +131,8 @@ export function useAuth() {
 
         // Transformar dados dos condomínios usando a tabela pivot
         const userCondominios = (rawUser.usuario_condominios || [])
-          // @ts-expect-error - Supabase types join inference can be tricky without deep typing
-          .filter((uc) => uc.status === 'active' || uc.status === 'ativo')
-          .map((uc: any) => ({
+          .filter((uc: UsuarioCondominioJoin) => uc.status === 'active' || uc.status === 'ativo')
+          .map((uc: UsuarioCondominioJoin) => ({
             condominio_id: uc.condominio.id,
             nome: uc.condominio.nome,
             role: uc.role,
@@ -154,7 +153,7 @@ export function useAuth() {
         const usuario: UsuarioWithCondominios = {
           ...rawUser,
           condominio_id: undefined, // Removed from table
-          condominios: userCondominios.map((cond: any) => ({
+          condominios: userCondominios.map((cond: UsuarioCondominioJoin) => ({
             condominio_id: cond.condominio_id,
             role: cond.role,
             unidade_identificador: cond.unidade_identificador,
