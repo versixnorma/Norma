@@ -36,21 +36,19 @@ export async function GET() {
     ),
   ]);
 
-  const totalRevenue = (transactionsData || []).reduce(
-    (acc: number, item: { transaction_date?: string; final_amount?: string | number }) =>
-      acc + (Number(item.final_amount) || 0),
-    0
-  );
+  type TransactionRow = { transaction_date: string | null; final_amount: string | number | null };
+
+  const rows = (transactionsData || []) as TransactionRow[];
+
+  const totalRevenue = rows.reduce((acc, item) => acc + Number(item.final_amount ?? 0), 0);
 
   const monthlyTrendMap = new Map<string, { transactions: number; revenue: number }>();
-  (
-    (transactionsData || []) as { transaction_date?: string; final_amount?: string | number }[]
-  ).forEach((item) => {
+  rows.forEach((item) => {
     const date = new Date(item.transaction_date || '');
     const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
     const current = monthlyTrendMap.get(key) || { transactions: 0, revenue: 0 };
     current.transactions += 1;
-    current.revenue += Number(item.final_amount) || 0;
+    current.revenue += Number(item.final_amount ?? 0);
     monthlyTrendMap.set(key, current);
   });
 
