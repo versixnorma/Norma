@@ -28,19 +28,17 @@ interface CondominioDetails {
 }
 
 export default function CondominioDetailsPage() {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams<{ id: string }>();
+  const id = params?.id;
   const [condominio, setCondominio] = useState<CondominioDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const supabase = getSupabaseClient();
 
   useEffect(() => {
     const load = async () => {
+      if (!id) return;
       setLoading(true);
-      const { data } = await supabase
-        .from('condominios')
-        .select('*')
-        .eq('id', id)
-        .single();
+      const { data } = await supabase.from('condominios').select('*').eq('id', id).single();
       setCondominio((data as CondominioDetails) || null);
       setLoading(false);
     };
@@ -93,19 +91,33 @@ export default function CondominioDetailsPage() {
           <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
             <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Informações</h2>
             <div className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-300">
-              <p><strong>Tier:</strong> {condominio.tier}</p>
-              <p><strong>Total de unidades:</strong> {condominio.total_unidades}</p>
-              <p><strong>Status:</strong> {condominio.ativo ? 'Ativo' : 'Inativo'}</p>
-              <p><strong>CNPJ:</strong> {condominio.cnpj || '—'}</p>
+              <p>
+                <strong>Tier:</strong> {condominio.tier}
+              </p>
+              <p>
+                <strong>Total de unidades:</strong> {condominio.total_unidades}
+              </p>
+              <p>
+                <strong>Status:</strong> {condominio.ativo ? 'Ativo' : 'Inativo'}
+              </p>
+              <p>
+                <strong>CNPJ:</strong> {condominio.cnpj || '—'}
+              </p>
             </div>
           </div>
 
           <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
             <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Contato</h2>
             <div className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-300">
-              <p><strong>Email:</strong> {condominio.email || '—'}</p>
-              <p><strong>Telefone:</strong> {condominio.telefone || '—'}</p>
-              <p><strong>Cor primária:</strong> {condominio.cor_primaria || '—'}</p>
+              <p>
+                <strong>Email:</strong> {condominio.email || '—'}
+              </p>
+              <p>
+                <strong>Telefone:</strong> {condominio.telefone || '—'}
+              </p>
+              <p>
+                <strong>Cor primária:</strong> {condominio.cor_primaria || '—'}
+              </p>
             </div>
           </div>
         </div>
