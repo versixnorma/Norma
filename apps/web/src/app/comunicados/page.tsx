@@ -147,22 +147,24 @@ export default function ComunicadosPage() {
                     <div className="mt-6 border-t border-gray-200 pt-6 dark:border-gray-700">
                       <h4 className="mb-3 font-medium text-gray-800 dark:text-white">Anexos</h4>
                       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                        {selectedComunicado.anexos.map((anexo: Anexo, i: number) => (
-                          <a
-                            key={i}
-                            href={anexo.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 rounded-xl bg-gray-100 p-3 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"
-                          >
-                            <span className="material-symbols-outlined text-primary">
-                              {anexo.tipo.includes('pdf') ? 'picture_as_pdf' : 'image'}
-                            </span>
-                            <span className="truncate text-sm text-gray-700 dark:text-gray-300">
-                              {anexo.nome}
-                            </span>
-                          </a>
-                        ))}
+                        {((selectedComunicado.anexos as Anexo[]) || []).map(
+                          (anexo: Anexo, i: number) => (
+                            <a
+                              key={i}
+                              href={anexo.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 rounded-xl bg-gray-100 p-3 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"
+                            >
+                              <span className="material-symbols-outlined text-primary">
+                                {anexo.tipo.includes('pdf') ? 'picture_as_pdf' : 'image'}
+                              </span>
+                              <span className="truncate text-sm text-gray-700 dark:text-gray-300">
+                                {anexo.nome}
+                              </span>
+                            </a>
+                          )
+                        )}
                       </div>
                     </div>
                   )}
