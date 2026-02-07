@@ -51,13 +51,15 @@ function validateCategoria(categoria?: ComunicadoCategoria): ComunicadoCategoria
   return validCategorias.includes(categoria) ? categoria : 'geral';
 }
 
-const toComunicado = (data: ComunicadoQueryResult): ComunicadoComJoins => ({
-  ...data,
-  anexos: parseAnexos(data.anexos) as any,
-  autor: data.autor ?? undefined,
-  lido: data.lido,
-  total_leituras: data.total_leituras,
-});
+const toComunicado = (data: ComunicadoQueryResult): ComunicadoComJoins => {
+  return {
+    ...data,
+    anexos: parseAnexos(data.anexos),
+    autor: data.autor ?? undefined,
+    lido: data.lido,
+    total_leituras: data.total_leituras,
+  } as ComunicadoComJoins;
+};
 
 export function useComunicados(_options?: {
   condominioId?: string | null;
@@ -189,8 +191,9 @@ export function useComunicados(_options?: {
           .select()
           .single();
         if (insertError) throw insertError;
-        setComunicados((prev) => [data, ...prev]);
-        return data;
+        const created = toComunicado(data as ComunicadoQueryResult);
+        setComunicados((prev) => [created, ...prev]);
+        return created;
       } catch (err) {
         setError(getErrorMessage(err) || 'Erro ao criar comunicado');
         return null;
@@ -206,7 +209,9 @@ export function useComunicados(_options?: {
       setLoading(true);
       try {
         const { id, ...updates } = input;
-        const updatePayload: Record<string, any> = { ...updates };
+        const updatePayload: Partial<Database['public']['Tables']['comunicados']['Update']> = {
+          ...updates,
+        };
 
         // Normalizar categoria
         if (updates.categoria) {
@@ -228,7 +233,7 @@ export function useComunicados(_options?: {
 
         const { data, error: updateError } = await supabase
           .from('comunicados')
-          .update(updatePayload)
+          .update(updatePayload as any)
           .eq('id', id)
           .select()
           .single();
@@ -252,7 +257,7 @@ export function useComunicados(_options?: {
       try {
         const { error: deleteError } = await supabase
           .from('comunicados')
-          .update({ deleted_at: new Date().toISOString() } as any)
+          .update({ deleted_at: new Date().toISOString() })
           .eq('id', id);
         if (deleteError) throw deleteError;
         setComunicados((prev) => prev.filter((c) => c.id !== id));

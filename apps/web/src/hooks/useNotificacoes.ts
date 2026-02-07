@@ -56,7 +56,7 @@ export function useNotificacoes() {
 
       if (!userId) return 0;
 
-      const { data, error: rpcError } = (await supabase.rpc('get_contagem_nao_lidas' as any, {
+      const { data, error: rpcError } = (await supabase.rpc('get_contagem_nao_lidas', {
         p_usuario_id: userId,
       })) as { data: number | null; error: SupabaseError | null };
 
@@ -79,7 +79,7 @@ export function useNotificacoes() {
 
         if (!userId) return false;
 
-        const { data, error: rpcError } = (await supabase.rpc('confirmar_leitura' as any, {
+        const { data, error: rpcError } = (await supabase.rpc('confirmar_leitura', {
           p_notificacao_id: notificacaoId,
           p_usuario_id: userId,
         })) as { data: boolean; error: SupabaseError | null };
@@ -205,7 +205,7 @@ export function useNotificacoes() {
             table: 'notificacoes_entregas',
             filter: `usuario_id=eq.${userId}`,
           },
-          async (payload: any) => {
+          async (payload: { new: { id: string } }) => {
             try {
               const { data } = await supabase
                 .from('v_usuario_notificacoes')
@@ -214,7 +214,7 @@ export function useNotificacoes() {
                 .single();
 
               if (data) {
-                const newData = data as any;
+                const newData = data as NotificacaoUsuario;
                 onNew(newData);
                 setNotificacoes((prev) => [newData, ...prev]);
                 setNaoLidas((prev) => prev + 1);

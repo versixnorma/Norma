@@ -2,6 +2,7 @@
 
 import { logger } from '@/lib/logger';
 import { getSupabaseClient } from '@/lib/supabase';
+import type { Database } from '@/types/database';
 import { useCallback, useRef, useState } from 'react';
 
 // ============================================
@@ -67,26 +68,33 @@ export function useNormaChat({ condominioId, userId }: UseNormaChatOptions): Use
       if (data && data.length > 0) {
         const historyMessages: Message[] = [];
 
-        data.reverse().forEach((log: any, index: number) => {
-          // Add user message
-          historyMessages.push({
-            id: `hist-user-${index}`,
-            text: log.message,
-            sender: 'user',
-            timestamp: new Date(log.created_at),
-            status: 'sent',
-          });
+        data
+          .reverse()
+          .forEach((log: Database['public']['Tables']['norma_chat_logs']['Row'], index: number) => {
+            // Add user message
+            historyMessages.push({
+              id: `hist-user-${index}`,
+              text: log.message,
+              sender: 'user',
+              timestamp: new Date(log.created_at),
+              status: 'sent',
+            });
 
-          // Add bot response
-          historyMessages.push({
-            id: `hist-bot-${index}`,
-            text: log.response,
-            sender: 'bot',
-            sources: log.sources || [],
-            timestamp: new Date(log.created_at),
-            status: 'sent',
+            // Add bot response
+            historyMessages.push({
+              id: `hist-bot-${index}`,
+              text: log.response,
+              sender: 'bot',
+              sources:
+                (log.sources as unknown as Array<{
+                  type: string;
+                  name: string;
+                  content: string;
+                }>) || [],
+              timestamp: new Date(log.created_at),
+              status: 'sent',
+            });
           });
-        });
 
         setMessages(historyMessages);
       }
@@ -194,7 +202,6 @@ export function useNormaChat({ condominioId, userId }: UseNormaChatOptions): Use
         let suggestions: string[] = [];
 
         try {
-          // eslint-disable-next-line no-constant-condition
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
@@ -210,12 +217,13 @@ export function useNormaChat({ condominioId, userId }: UseNormaChatOptions): Use
                   suggestions = generateSuggestions(fullResponse, sources);
 
                   // Log the interaction
-                  await supabase.from('norma_chat_logs' as any).insert({
+                  await supabase.from('norma_chat_logs').insert({
                     condominio_id: condominioId,
                     user_id: userId,
                     message: text.trim(),
                     response: fullResponse,
-                    sources,
+                    sources:
+                      sources as unknown as Database['public']['Tables']['norma_chat_logs']['Insert']['sources'],
                     created_at: new Date().toISOString(),
                   });
 
