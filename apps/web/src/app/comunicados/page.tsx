@@ -147,7 +147,7 @@ export default function ComunicadosPage() {
                     <div className="mt-6 border-t border-gray-200 pt-6 dark:border-gray-700">
                       <h4 className="mb-3 font-medium text-gray-800 dark:text-white">Anexos</h4>
                       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                        {((selectedComunicado.anexos as Anexo[]) || []).map(
+                        {((selectedComunicado.anexos as unknown as Anexo[]) || []).map(
                           (anexo: Anexo, i: number) => (
                             <a
                               key={i}
