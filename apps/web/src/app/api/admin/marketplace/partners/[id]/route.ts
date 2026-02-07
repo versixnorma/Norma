@@ -1,14 +1,22 @@
 import { createClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+// Helper to resolve params that might be a Promise (Next types vary)
+async function resolveParams(params: any) {
+  return await Promise.resolve(params);
+}
+
+export async function PUT(request: NextRequest, context: { params: any }) {
   const supabase = createClient(await cookies());
   const payload = await request.json();
+  const params = await resolveParams(context.params);
+  const id = params?.id;
+
   const { data, error } = await supabase
     .from('marketplace_partners')
     .update(payload)
-    .eq('id', params.id)
+    .eq('id', id)
     .select('*')
     .single();
 
@@ -18,9 +26,12 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   return NextResponse.json({ data });
 }
 
-export async function DELETE(_request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_request: NextRequest, context: { params: any }) {
   const supabase = createClient(await cookies());
-  const { error } = await supabase.from('marketplace_partners').delete().eq('id', params.id);
+  const params = await resolveParams(context.params);
+  const id = params?.id;
+
+  const { error } = await supabase.from('marketplace_partners').delete().eq('id', id);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
