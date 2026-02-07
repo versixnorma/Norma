@@ -211,6 +211,60 @@ export interface RateLimit {
   window_start: string;
 }
 
+// ===== MARKETPLACE =====
+export interface MarketplacePartner {
+  id: string;
+  name: string;
+  category: string;
+  description: string | null;
+  logo_url: string | null;
+  website_url: string | null;
+  contact_email: string | null;
+  phone: string | null;
+  address: string | null;
+  commission_rate: number | null;
+  status: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MarketplaceDiscount {
+  id: string;
+  partner_id: string;
+  title: string;
+  description: string | null;
+  discount_type: string;
+  discount_value: number;
+  original_price: number | null;
+  discounted_price: number | null;
+  valid_from: string | null;
+  valid_until: string | null;
+  usage_limit: number | null;
+  usage_count: number | null;
+  terms: string | null;
+  image_url: string | null;
+  featured: boolean | null;
+  status: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MarketplaceTransaction {
+  id: string;
+  discount_id: string | null;
+  usuario_id: string | null;
+  condominio_id: string | null;
+  partner_id: string | null;
+  transaction_amount: number;
+  discount_amount: number | null;
+  final_amount: number;
+  commission_amount: number | null;
+  status: string | null;
+  payment_method: string | null;
+  transaction_date: string | null;
+  created_at: string;
+}
+
 // ===== MÓDULOS OPERACIONAIS =====
 
 export type OcorrenciaStatus = 'aberta' | 'em_analise' | 'em_andamento' | 'resolvida' | 'arquivada';
@@ -395,6 +449,21 @@ export interface Database {
         Row: RateLimit;
         Insert: Omit<RateLimit, 'id'>;
         Update: Partial<Omit<RateLimit, 'id'>>;
+      };
+      marketplace_partners: {
+        Row: MarketplacePartner;
+        Insert: Omit<MarketplacePartner, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<MarketplacePartner, 'id' | 'created_at'>>;
+      };
+      marketplace_discounts: {
+        Row: MarketplaceDiscount;
+        Insert: Omit<MarketplaceDiscount, 'id' | 'created_at' | 'updated_at' | 'usage_count'>;
+        Update: Partial<Omit<MarketplaceDiscount, 'id' | 'created_at'>>;
+      };
+      marketplace_transactions: {
+        Row: MarketplaceTransaction;
+        Insert: Omit<MarketplaceTransaction, 'id' | 'created_at' | 'transaction_date'>;
+        Update: Partial<Omit<MarketplaceTransaction, 'id' | 'created_at'>>;
       };
     };
     Views: Record<string, never>;

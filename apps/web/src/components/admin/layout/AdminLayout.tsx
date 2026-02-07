@@ -10,7 +10,7 @@ interface AdminLayoutProps {
   requiredRoles?: string[];
 }
 
-export function AdminLayout({ children, requiredRoles = ['superadmin'] }: AdminLayoutProps) {
+export function AdminLayout({ children, requiredRoles = ['superadmin', 'admin_condo'] }: AdminLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

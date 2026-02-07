@@ -4452,6 +4452,202 @@ export type Database = {
           },
         ];
       };
+      marketplace_partners: {
+        Row: {
+          address: string | null;
+          category: string;
+          commission_rate: number | null;
+          contact_email: string | null;
+          created_at: string | null;
+          description: string | null;
+          id: string;
+          logo_url: string | null;
+          name: string;
+          phone: string | null;
+          status: string | null;
+          updated_at: string | null;
+          website_url: string | null;
+        };
+        Insert: {
+          address?: string | null;
+          category: string;
+          commission_rate?: number | null;
+          contact_email?: string | null;
+          created_at?: string | null;
+          description?: string | null;
+          id?: string;
+          logo_url?: string | null;
+          name: string;
+          phone?: string | null;
+          status?: string | null;
+          updated_at?: string | null;
+          website_url?: string | null;
+        };
+        Update: {
+          address?: string | null;
+          category?: string;
+          commission_rate?: number | null;
+          contact_email?: string | null;
+          created_at?: string | null;
+          description?: string | null;
+          id?: string;
+          logo_url?: string | null;
+          name?: string;
+          phone?: string | null;
+          status?: string | null;
+          updated_at?: string | null;
+          website_url?: string | null;
+        };
+        Relationships: [];
+      };
+      marketplace_discounts: {
+        Row: {
+          created_at: string | null;
+          description: string | null;
+          discount_type: string;
+          discount_value: number;
+          discounted_price: number | null;
+          featured: boolean | null;
+          id: string;
+          image_url: string | null;
+          original_price: number | null;
+          partner_id: string;
+          status: string | null;
+          terms: string | null;
+          title: string;
+          updated_at: string | null;
+          usage_count: number | null;
+          usage_limit: number | null;
+          valid_from: string | null;
+          valid_until: string | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          description?: string | null;
+          discount_type: string;
+          discount_value: number;
+          discounted_price?: number | null;
+          featured?: boolean | null;
+          id?: string;
+          image_url?: string | null;
+          original_price?: number | null;
+          partner_id: string;
+          status?: string | null;
+          terms?: string | null;
+          title: string;
+          updated_at?: string | null;
+          usage_count?: number | null;
+          usage_limit?: number | null;
+          valid_from?: string | null;
+          valid_until?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          description?: string | null;
+          discount_type?: string;
+          discount_value?: number;
+          discounted_price?: number | null;
+          featured?: boolean | null;
+          id?: string;
+          image_url?: string | null;
+          original_price?: number | null;
+          partner_id?: string;
+          status?: string | null;
+          terms?: string | null;
+          title?: string;
+          updated_at?: string | null;
+          usage_count?: number | null;
+          usage_limit?: number | null;
+          valid_from?: string | null;
+          valid_until?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'marketplace_discounts_partner_id_fkey';
+            columns: ['partner_id'];
+            isOneToOne: false;
+            referencedRelation: 'marketplace_partners';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      marketplace_transactions: {
+        Row: {
+          commission_amount: number | null;
+          condominio_id: string | null;
+          created_at: string | null;
+          discount_amount: number | null;
+          discount_id: string | null;
+          final_amount: number;
+          id: string;
+          partner_id: string | null;
+          payment_method: string | null;
+          status: string | null;
+          transaction_amount: number;
+          transaction_date: string | null;
+          usuario_id: string | null;
+        };
+        Insert: {
+          commission_amount?: number | null;
+          condominio_id?: string | null;
+          created_at?: string | null;
+          discount_amount?: number | null;
+          discount_id?: string | null;
+          final_amount: number;
+          id?: string;
+          partner_id?: string | null;
+          payment_method?: string | null;
+          status?: string | null;
+          transaction_amount: number;
+          transaction_date?: string | null;
+          usuario_id?: string | null;
+        };
+        Update: {
+          commission_amount?: number | null;
+          condominio_id?: string | null;
+          created_at?: string | null;
+          discount_amount?: number | null;
+          discount_id?: string | null;
+          final_amount?: number;
+          id?: string;
+          partner_id?: string | null;
+          payment_method?: string | null;
+          status?: string | null;
+          transaction_amount?: number;
+          transaction_date?: string | null;
+          usuario_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'marketplace_transactions_condominio_id_fkey';
+            columns: ['condominio_id'];
+            isOneToOne: false;
+            referencedRelation: 'condominios';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'marketplace_transactions_discount_id_fkey';
+            columns: ['discount_id'];
+            isOneToOne: false;
+            referencedRelation: 'marketplace_discounts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'marketplace_transactions_partner_id_fkey';
+            columns: ['partner_id'];
+            isOneToOne: false;
+            referencedRelation: 'marketplace_partners';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'marketplace_transactions_usuario_id_fkey';
+            columns: ['usuario_id'];
+            isOneToOne: false;
+            referencedRelation: 'usuarios';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: {
       v_alertas_resumo: {

@@ -8,6 +8,7 @@
 export const dynamic = 'force-dynamic';
 
 import { AlertasPanel } from '@/components/observabilidade/AlertasPanel';
+import { AuthGuard } from '@/contexts/AuthContext';
 import { MetricasCards } from '@/components/observabilidade/MetricasCards';
 import { HealthSummary, StatusBadge, UptimeBar } from '@/components/observabilidade/SystemStatus';
 import { useSystemHealthStatus } from '@/hooks/useHealthCheck';
@@ -42,12 +43,17 @@ export default function ObservabilidadePage() {
   const healthStatus = useSystemHealthStatus();
 
   if (isLoading || !data) {
-    return <LoadingState />;
+    return (
+      <AuthGuard requiredRoles={['superadmin']}>
+        <LoadingState />
+      </AuthGuard>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <AuthGuard requiredRoles={['superadmin']}>
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-7xl mx-auto space-y-6">
 
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -275,8 +281,9 @@ export default function ObservabilidadePage() {
             ))}
           </div>
         </div>
+        </div>
       </div>
-    </div>
+    </AuthGuard>
   );
 }
 

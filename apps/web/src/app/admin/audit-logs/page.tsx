@@ -1,10 +1,12 @@
 'use client';
 
+import { AuthGuard } from '@/contexts/AuthContext';
 import { AuditLogViewer } from '@/components/admin/AuditLogViewer';
 
 export default function AuditLogsPage() {
   return (
-    <div className="space-y-6">
+    <AuthGuard requiredRoles={['superadmin']}>
+      <div className="space-y-6">
       {/* Page Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Audit Logs</h1>
@@ -13,6 +15,7 @@ export default function AuditLogsPage() {
 
       {/* Audit Log Viewer */}
       <AuditLogViewer />
-    </div>
+      </div>
+    </AuthGuard>
   );
 }

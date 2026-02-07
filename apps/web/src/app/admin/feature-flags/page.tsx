@@ -1,5 +1,6 @@
 'use client';
 
+import { AuthGuard } from '@/contexts/AuthContext';
 import { useFeatureFlags, type FeatureFlag } from '@/hooks/useFeatureFlags';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -54,7 +55,8 @@ export default function FeatureFlagsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <AuthGuard requiredRoles={['superadmin']}>
+      <div className="space-y-6">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -216,6 +218,7 @@ export default function FeatureFlagsPage() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </AuthGuard>
   );
 }
