@@ -76,7 +76,7 @@ export function useIntegracoes() {
           p_scopes: input.scopes || [],
         });
         if (rpcError) throw rpcError;
-        return (data?.[0] as Integracao) || null;
+        return (data?.[0] as unknown as Integracao) || null;
       } catch (err) {
         setError(getErrorMessage(err));
         return null;
@@ -100,7 +100,7 @@ export function useIntegracoes() {
           p_headers_custom: input.headers_custom || {},
         });
         if (rpcError) throw rpcError;
-        return (data?.[0] as Integracao) || null;
+        return (data?.[0] as unknown as Integracao) || null;
       } catch (err) {
         setError(getErrorMessage(err));
         return null;
