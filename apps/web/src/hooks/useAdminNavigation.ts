@@ -98,7 +98,7 @@ const ADMIN_NAVIGATION: NavSection[] = [
         label: 'Norma AI',
         href: '/admin/norma-ai',
         icon: 'smart_toy',
-        isComingSoon: true,
+        isNew: true,
         children: [
           {
             id: 'norma-ai-monitoring',
