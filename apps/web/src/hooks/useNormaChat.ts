@@ -67,34 +67,33 @@ export function useNormaChat({ condominioId, userId }: UseNormaChatOptions): Use
 
       if (data && data.length > 0) {
         const historyMessages: Message[] = [];
+        const rows = data as Database['public']['Tables']['norma_chat_logs']['Row'][];
 
-        data
-          .reverse()
-          .forEach((log: Database['public']['Tables']['norma_chat_logs']['Row'], index: number) => {
-            // Add user message
-            historyMessages.push({
-              id: `hist-user-${index}`,
-              text: log.message,
-              sender: 'user',
-              timestamp: new Date(log.created_at),
-              status: 'sent',
-            });
-
-            // Add bot response
-            historyMessages.push({
-              id: `hist-bot-${index}`,
-              text: log.response,
-              sender: 'bot',
-              sources:
-                (log.sources as unknown as Array<{
-                  type: string;
-                  name: string;
-                  content: string;
-                }>) || [],
-              timestamp: new Date(log.created_at),
-              status: 'sent',
-            });
+        rows.reverse().forEach((log, index: number) => {
+          // Add user message
+          historyMessages.push({
+            id: `hist-user-${index}`,
+            text: log.message,
+            sender: 'user',
+            timestamp: new Date(log.created_at),
+            status: 'sent',
           });
+
+          // Add bot response
+          historyMessages.push({
+            id: `hist-bot-${index}`,
+            text: log.response,
+            sender: 'bot',
+            sources:
+              (log.sources as unknown as Array<{
+                type: string;
+                name: string;
+                content: string;
+              }>) || [],
+            timestamp: new Date(log.created_at),
+            status: 'sent',
+          });
+        });
 
         setMessages(historyMessages);
       }
