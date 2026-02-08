@@ -261,7 +261,7 @@ export function useComunicados(_options?: {
       try {
         const { error: deleteError } = await supabase
           .from('comunicados')
-          .update({ deleted_at: new Date().toISOString() })
+          .update({ deleted_at: new Date().toISOString() } as any)
           .eq('id', id);
         if (deleteError) throw deleteError;
         setComunicados((prev) => prev.filter((c) => c.id !== id));
