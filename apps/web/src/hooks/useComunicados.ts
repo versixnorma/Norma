@@ -209,9 +209,13 @@ export function useComunicados(_options?: {
       setLoading(true);
       try {
         const { id, ...updates } = input;
-        const updatePayload: Partial<Database['public']['Tables']['comunicados']['Update']> = {
-          ...updates,
-        };
+        const updatePayload: Partial<Database['public']['Tables']['comunicados']['Update']> =
+          {} as Partial<Database['public']['Tables']['comunicados']['Update']>;
+        // Spread updates with a safe cast to avoid TS errors when `anexos` is Anexo[]
+        Object.assign(
+          updatePayload,
+          updates as unknown as Partial<Database['public']['Tables']['comunicados']['Update']>
+        );
 
         // Normalizar categoria
         if (updates.categoria) {
