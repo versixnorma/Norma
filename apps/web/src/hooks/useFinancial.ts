@@ -11,7 +11,12 @@
 
 import { logger } from '@/lib/logger';
 import { getSupabaseClient } from '@/lib/supabase';
-import type { LancamentoFinanceiro, LancamentoStatus, LancamentoTipo } from '@versix/shared';
+import type {
+  LancamentoFinanceiro,
+  LancamentoStatus,
+  LancamentoTipo,
+  Database,
+} from '@versix/shared';
 import { useCallback, useEffect, useState } from 'react';
 
 // ============================================
