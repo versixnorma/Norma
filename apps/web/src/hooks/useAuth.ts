@@ -153,7 +153,7 @@ export function useAuth() {
         const usuario: UsuarioWithCondominios = {
           ...rawUser,
           condominio_id: undefined, // Removed from table
-          condominios: userCondominios.map((cond: UsuarioCondominioJoin) => ({
+          condominios: userCondominios.map((cond) => ({
             condominio_id: cond.condominio_id,
             role: cond.role,
             unidade_identificador: cond.unidade_identificador,
