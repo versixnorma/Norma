@@ -58,7 +58,7 @@ const toComunicado = (data: ComunicadoQueryResult): ComunicadoComJoins => {
     autor: data.autor ?? undefined,
     lido: data.lido,
     total_leituras: data.total_leituras,
-  } as ComunicadoComJoins;
+  } as unknown as ComunicadoComJoins;
 };
 
 export function useComunicados(_options?: {
