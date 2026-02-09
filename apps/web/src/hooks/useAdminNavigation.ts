@@ -129,6 +129,40 @@ const ADMIN_NAVIGATION: NavSection[] = [
     ],
   },
   {
+    id: 'analytics',
+    title: 'Analytics & Relatórios',
+    items: [
+      {
+        id: 'analytics',
+        label: 'Analytics',
+        href: '/admin/analytics',
+        icon: 'analytics',
+        isNew: true,
+        children: [
+          {
+            id: 'analytics-executive',
+            label: 'Dashboard Executivo',
+            href: '/admin/analytics',
+            icon: 'dashboard',
+          },
+          {
+            id: 'analytics-advanced',
+            label: 'Analytics Avançado',
+            href: '/admin/analytics/advanced',
+            icon: 'insights',
+          },
+        ],
+      },
+      {
+        id: 'reports',
+        label: 'Relatórios',
+        href: '/admin/reports',
+        icon: 'description',
+        isNew: true,
+      },
+    ],
+  },
+  {
     id: 'system',
     title: 'Sistema',
     items: [
