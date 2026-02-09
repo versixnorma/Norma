@@ -37,15 +37,13 @@ export async function DELETE(
   const params = await resolveParams(context.params);
   const id = params?.id;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- table not in generated types
   await supabase
-    .from('document_chunks' as any)
+    .from('document_chunks' as any) // eslint-disable-line @typescript-eslint/no-explicit-any
     .delete()
     .eq('document_id', id);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- table not in generated types
   const { error } = await supabase
-    .from('documents' as any)
+    .from('documents' as any) // eslint-disable-line @typescript-eslint/no-explicit-any
     .delete()
     .eq('id', id);
 

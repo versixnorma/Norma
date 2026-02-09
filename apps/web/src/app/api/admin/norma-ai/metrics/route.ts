@@ -31,12 +31,11 @@ export async function GET() {
     supabase.from('document_chunks' as any).select('id', { count: 'exact' }),
 
     supabase
-      .from('norma_chat_logs' as any)
+      .from('norma_chat_logs' as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       .select('id, created_at', { count: 'exact' })
       .gte('created_at', thirtyDaysAgoISO),
-
     supabase
-      .from('norma_training_logs' as any)
+      .from('norma_training_logs' as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       .select('user_feedback, response_time_ms, created_at')
       .not('user_feedback', 'is', null),
   ]);
