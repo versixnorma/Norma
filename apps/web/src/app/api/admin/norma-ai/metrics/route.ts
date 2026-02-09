@@ -2,6 +2,21 @@ import { createClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
+interface DocRow {
+  source_type: string;
+}
+
+interface FeedbackRow {
+  user_feedback: number | null;
+  response_time_ms: number | null;
+  created_at: string;
+}
+
+interface ConversationRow {
+  id: string;
+  created_at: string;
+}
+
 export async function GET() {
   const supabase = createClient(await cookies());
 
@@ -10,16 +25,16 @@ export async function GET() {
   const thirtyDaysAgoISO = thirtyDaysAgo.toISOString();
 
   const [documentsRes, chunksRes, conversationsRes, trainingRes] = await Promise.all([
-    // Total documents by source_type
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- table not in generated types
     supabase.from('documents' as any).select('source_type, id', { count: 'exact' }),
-    // Total chunks
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- table not in generated types
     supabase.from('document_chunks' as any).select('id', { count: 'exact' }),
-    // Conversations in last 30 days
+
     supabase
       .from('norma_chat_logs' as any)
       .select('id, created_at', { count: 'exact' })
       .gte('created_at', thirtyDaysAgoISO),
-    // Training logs with feedback
+
     supabase
       .from('norma_training_logs' as any)
       .select('user_feedback, response_time_ms, created_at')
@@ -28,22 +43,21 @@ export async function GET() {
 
   // Aggregate documents by source_type
   const documentsByType: Record<string, number> = {};
-  (documentsRes.data || []).forEach((doc: any) => {
+  ((documentsRes.data || []) as unknown as DocRow[]).forEach((doc) => {
     const st = doc.source_type || 'upload';
     documentsByType[st] = (documentsByType[st] || 0) + 1;
   });
 
   // Calculate feedback metrics
-  const feedbackEntries = trainingRes.data || [];
+  const feedbackEntries = (trainingRes.data || []) as unknown as FeedbackRow[];
   const avgSatisfaction =
     feedbackEntries.length > 0
-      ? feedbackEntries.reduce((sum: number, e: any) => sum + (e.user_feedback || 0), 0) /
-        feedbackEntries.length
+      ? feedbackEntries.reduce((sum, e) => sum + (e.user_feedback || 0), 0) / feedbackEntries.length
       : 0;
 
   // Calculate daily trend from conversations
   const conversationsByDay: Record<string, number> = {};
-  (conversationsRes.data || []).forEach((c: any) => {
+  ((conversationsRes.data || []) as unknown as ConversationRow[]).forEach((c) => {
     const day = c.created_at?.split('T')[0];
     if (day) conversationsByDay[day] = (conversationsByDay[day] || 0) + 1;
   });

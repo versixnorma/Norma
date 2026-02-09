@@ -2,6 +2,18 @@ import { createClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
+interface ChatLogRow {
+  id: string;
+  condominio_id: string;
+  user_id: string;
+  message: string;
+  response: string;
+  sources: unknown;
+  created_at: string;
+  usuarios?: { nome: string };
+  condominios?: { nome: string };
+}
+
 export async function GET(request: Request) {
   const supabase = createClient(await cookies());
   const { searchParams } = new URL(request.url);
@@ -10,6 +22,7 @@ export async function GET(request: Request) {
   const limit = parseInt(searchParams.get('limit') || '50');
 
   let query = supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- table not in generated types
     .from('norma_chat_logs' as any)
     .select(
       '*, usuarios!norma_chat_logs_user_id_fkey(nome), condominios!norma_chat_logs_condominio_id_fkey(nome)'
@@ -27,7 +40,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  const conversations = (data || []).map((row: any) => ({
+  const conversations = ((data || []) as unknown as ChatLogRow[]).map((row) => ({
     id: row.id,
     condominio_id: row.condominio_id,
     condominio_nome: row.condominios?.nome || '',

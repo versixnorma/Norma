@@ -2,6 +2,21 @@ import { createClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
+interface DocumentRow {
+  id: string;
+  name: string;
+  type: string;
+  source_type: string;
+  category: string | null;
+  tags: string[] | null;
+  status: string;
+  file_url: string | null;
+  created_by: string;
+  created_at: string;
+  processed_at: string | null;
+  document_chunks?: { count: number }[];
+}
+
 export async function GET(request: Request) {
   const supabase = createClient(await cookies());
   const { searchParams } = new URL(request.url);
@@ -11,6 +26,7 @@ export async function GET(request: Request) {
   const status = searchParams.get('status');
 
   let query = supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- table not in generated types
     .from('documents' as any)
     .select('*, document_chunks(count)')
     .order('created_at', { ascending: false });
@@ -26,7 +42,7 @@ export async function GET(request: Request) {
   }
 
   // Map chunk count from nested relation
-  const documents = (data || []).map((doc: any) => ({
+  const documents = ((data || []) as unknown as DocumentRow[]).map((doc) => ({
     ...doc,
     chunk_count: doc.document_chunks?.[0]?.count ?? 0,
     document_chunks: undefined,

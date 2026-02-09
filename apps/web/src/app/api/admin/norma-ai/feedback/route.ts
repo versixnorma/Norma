@@ -11,6 +11,7 @@ export async function POST(request: Request) {
   }
 
   const { data, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- table not in generated types
     .from('norma_training_logs' as any)
     .insert({
       session_id: conversationId || crypto.randomUUID(),
