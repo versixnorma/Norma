@@ -9,7 +9,26 @@ import { useEffect, useState } from 'react';
 export default function EditarCondominioPage() {
   const params = useParams<{ id: string }>();
   const id = params?.id;
-  const [initialValues, setInitialValues] = useState<any>(null);
+  type Condominio = {
+    nome?: string;
+    cnpj?: string;
+    endereco?: string;
+    numero?: string;
+    complemento?: string;
+    bairro?: string;
+    cidade?: string;
+    estado?: string;
+    cep?: string;
+    tier?: string;
+    total_unidades?: string;
+    telefone?: string;
+    email?: string;
+    logo_url?: string;
+    cor_primaria?: string;
+    ativo?: boolean;
+  };
+
+  const [initialValues, setInitialValues] = useState<Condominio | null>(null);
   const [loading, setLoading] = useState(true);
   const supabase = getSupabaseClient();
 

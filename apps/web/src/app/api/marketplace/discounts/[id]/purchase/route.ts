@@ -3,11 +3,11 @@ import { createClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
-async function resolveParams(params: any) {
-  return await Promise.resolve(params);
+async function resolveParams(params: unknown): Promise<{ id?: string } | undefined> {
+  return await Promise.resolve(params as { id?: string } | undefined);
 }
 
-export async function POST(_request: NextRequest, context: { params: any }) {
+export async function POST(_request: NextRequest, context: { params: unknown }) {
   const authClient = createClient(await cookies());
   const {
     data: { user },
@@ -36,7 +36,7 @@ export async function POST(_request: NextRequest, context: { params: any }) {
     `
     )
     .eq('auth_id', user.id)
-    .single()) as { data: UsuarioProfile | null; error: any };
+    .single()) as { data: UsuarioProfile | null; error: unknown };
 
   if (!profile) {
     return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });

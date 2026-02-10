@@ -3,13 +3,13 @@ import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
 // Support both synchronous and promise-based context.params (Next types may vary)
-async function resolveParams(params: any) {
-  return await Promise.resolve(params);
+async function resolveParams(params: unknown): Promise<{ id?: string } | undefined> {
+  return await Promise.resolve(params as { id?: string } | undefined);
 }
 
-export async function PUT(request: NextRequest, context: { params: any }) {
+export async function PUT(request: NextRequest, context: { params: unknown }) {
   const supabase = createClient(await cookies());
-  const payload = await request.json();
+  const payload = (await request.json()) as Record<string, unknown>;
   const params = await resolveParams(context.params);
   const id = params?.id;
 
@@ -31,7 +31,7 @@ export async function PUT(request: NextRequest, context: { params: any }) {
   return NextResponse.json({ data });
 }
 
-export async function DELETE(_request: NextRequest, context: { params: any }) {
+export async function DELETE(_request: NextRequest, context: { params: unknown }) {
   const supabase = createClient(await cookies());
   const params = await resolveParams(context.params);
   const id = params?.id;
