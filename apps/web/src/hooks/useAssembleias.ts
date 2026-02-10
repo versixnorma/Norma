@@ -28,8 +28,8 @@ const toAssembleia = (data: AssembleiaQueryResult): AssembleiaComJoins =>
     ...data,
     convocador: data.convocador,
     secretario: data.secretario,
-    pautas: (data.pautas as any) || [],
-    presencas: data.presencas || [],
+    pautas: (data.pautas as PautaRow[]) || [],
+    presencas: (data.presencas as PresencaRow[]) || [],
   }) as unknown as AssembleiaComJoins;
 
 /**
@@ -60,7 +60,7 @@ export function useAssembleias() {
 
         const { data, error: fetchError } = await query;
         if (fetchError) throw fetchError;
-        const transformedData = (data || []).map((item: any) =>
+        const transformedData = (data || []).map((item: unknown) =>
           toAssembleia(item as AssembleiaQueryResult)
         );
         setAssembleias(transformedData);
@@ -182,7 +182,7 @@ export function useAssembleias() {
   const convocarAssembleia = useCallback(
     async (id: string): Promise<boolean> => {
       try {
-        const { data, error: rpcError } = await supabase.rpc('convocar_assembleia' as any, {
+        const { data, error: rpcError } = await supabase.rpc('convocar_assembleia', {
           p_assembleia_id: id,
         });
         if (rpcError) throw rpcError;
@@ -201,7 +201,7 @@ export function useAssembleias() {
   const iniciarAssembleia = useCallback(
     async (id: string): Promise<boolean> => {
       try {
-        const { data, error: rpcError } = await supabase.rpc('iniciar_assembleia' as any, {
+        const { data, error: rpcError } = await supabase.rpc('iniciar_assembleia', {
           p_assembleia_id: id,
         });
         if (rpcError) throw rpcError;

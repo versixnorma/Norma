@@ -180,7 +180,20 @@ export function useAdminDashboard() {
       if (!condominios) return;
 
       const healthData: CondominioHealth[] = await Promise.all(
-        condominios.map(async (condo: any) => {
+        (
+          condominios as unknown as Array<{
+            id: string;
+            nome: string;
+            blocos?: Array<{ unidades_habitacionais?: unknown[] }>;
+            usuarios?: Array<{ id: string; nome: string; role: string }>;
+          }>
+        ).map(async (condoRaw) => {
+          const condo = condoRaw as {
+            id: string;
+            nome: string;
+            blocos?: Array<{ unidades_habitacionais?: unknown[] }>;
+            usuarios?: Array<{ id: string; nome: string; role: string }>;
+          };
           const { count: usuariosAtivos } = await supabase
             .from('usuario_condominios')
             .select('*', { count: 'exact', head: true })
@@ -194,7 +207,8 @@ export function useAdminDashboard() {
 
           const totalUnidades =
             condo.blocos?.reduce(
-              (acc: number, bloco: any) => acc + (bloco.unidades_habitacionais?.length || 0),
+              (acc: number, bloco: { unidades_habitacionais?: unknown[] }) =>
+                acc + (bloco.unidades_habitacionais?.length || 0),
               0
             ) || 0;
 

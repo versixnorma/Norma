@@ -393,7 +393,21 @@ export function useAdmin() {
           .or(`nome.ilike.%${buscaSanitizada}%,email.ilike.%${buscaSanitizada}%`)
           .limit(20);
 
-        return (data || []).map((user: any) => ({
+        const usersData = (data || []) as unknown as Array<{
+          id: string;
+          auth_id?: string | null;
+          nome: string;
+          email: string;
+          telefone?: string | null;
+          avatar_url?: string | null;
+          status: UserStatus;
+          created_at: string;
+          updated_at: string;
+          role?: UserRole;
+          condominio_id?: string | null;
+        }>;
+
+        return usersData.map((user) => ({
           id: user.id,
           auth_id: user.auth_id || '',
           nome: user.nome,

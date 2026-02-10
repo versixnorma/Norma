@@ -21,10 +21,24 @@ export function LancamentoCard({
   onConfirmar,
   showActions,
 }: LancamentoCardProps) {
+  const ext = lancamento as unknown as {
+    categoria?: { nome?: string } | null;
+    fornecedor_nome?: string | null;
+    comprovantes?: unknown[] | null;
+    data_pagamento?: string | null;
+    data_competencia: string;
+    valor: number;
+    descricao: string;
+    tipo: 'receita' | 'despesa';
+    status: string;
+  };
   const formatCurrency = (value: number) =>
     value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   const formatDate = (date: string) => new Date(date).toLocaleDateString('pt-BR');
-  const status = STATUS_CONFIG[lancamento.status];
+  const status = STATUS_CONFIG[ext.status] || {
+    label: 'Desconhecido',
+    color: 'bg-gray-100 text-gray-600',
+  };
 
   return (
     <div
@@ -42,13 +56,11 @@ export function LancamentoCard({
           </div>
           <div>
             <p className="line-clamp-1 font-medium text-gray-800 dark:text-white">
-              {lancamento.descricao}
+              {ext.descricao}
             </p>
-            <p className="text-xs text-gray-500">
-              {(lancamento as any).categoria?.nome || 'Sem categoria'}
-            </p>
-            {(lancamento as any).fornecedor_nome && (
-              <p className="mt-1 text-xs text-gray-400">{(lancamento as any).fornecedor_nome}</p>
+            <p className="text-xs text-gray-500">{ext.categoria?.nome || 'Sem categoria'}</p>
+            {ext.fornecedor_nome && (
+              <p className="mt-1 text-xs text-gray-400">{ext.fornecedor_nome}</p>
             )}
           </div>
         </div>
@@ -56,8 +68,8 @@ export function LancamentoCard({
           <p
             className={`font-bold ${lancamento.tipo === 'receita' ? 'text-green-600' : 'text-red-600'}`}
           >
-            {lancamento.tipo === 'receita' ? '+' : '-'}
-            {formatCurrency(lancamento.valor)}
+            {ext.tipo === 'receita' ? '+' : '-'}
+            {formatCurrency(ext.valor)}
           </p>
           <span className={`rounded-full px-2 py-0.5 text-xs ${status.color}`}>{status.label}</span>
         </div>
@@ -81,7 +93,7 @@ export function LancamentoCard({
             </span>
           )}
         </div>
-        {showActions && lancamento.status === 'pendente' && onConfirmar && (
+        {showActions && ext.status === 'pendente' && onConfirmar && (
           <button
             onClick={(e) => {
               e.stopPropagation();

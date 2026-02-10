@@ -102,8 +102,9 @@ export function CondominioForm({ mode, initialValues, condominioId }: Condominio
         toast.success('Condomínio atualizado');
         router.push(`/admin/condominios/${condominioId}`);
       }
-    } catch (err: any) {
-      toast.error(err?.message || 'Erro ao salvar condomínio');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      toast.error(message || 'Erro ao salvar condomínio');
     } finally {
       setSaving(false);
     }
@@ -112,9 +113,7 @@ export function CondominioForm({ mode, initialValues, condominioId }: Condominio
   return (
     <div className="space-y-6">
       <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
-        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-          Identificação
-        </h2>
+        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Identificação</h2>
         <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <label className="text-xs font-medium text-gray-500">Nome *</label>
@@ -199,9 +198,7 @@ export function CondominioForm({ mode, initialValues, condominioId }: Condominio
       </div>
 
       <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
-        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-          Configurações
-        </h2>
+        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Configurações</h2>
         <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
           <div>
             <label className="text-xs font-medium text-gray-500">Tier</label>
