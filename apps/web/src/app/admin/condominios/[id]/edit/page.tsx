@@ -19,7 +19,7 @@ export default function EditarCondominioPage() {
     cidade?: string;
     estado?: string;
     cep?: string;
-    tier?: string;
+    tier?: 'starter' | 'professional' | 'enterprise';
     total_unidades?: string;
     telefone?: string;
     email?: string;
