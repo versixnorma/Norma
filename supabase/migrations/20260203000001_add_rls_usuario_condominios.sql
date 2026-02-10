@@ -41,6 +41,7 @@ ALTER TABLE public.usuario_condominios ENABLE ROW LEVEL SECURITY;
 -- STEP 2: Policy for users to view their own relationships
 -- Users can see which condominios they belong to
 -- ============================================
+DROP POLICY IF EXISTS "users_view_own_relationships" ON public.usuario_condominios;
 CREATE POLICY "users_view_own_relationships" ON public.usuario_condominios
   FOR SELECT TO authenticated
   USING (
@@ -52,6 +53,7 @@ CREATE POLICY "users_view_own_relationships" ON public.usuario_condominios
 -- STEP 3: Policy for sindicos to view users in their condominio
 -- Sindicos can see who belongs to their condominio
 -- ============================================
+DROP POLICY IF EXISTS "sindico_view_condominio_relationships" ON public.usuario_condominios;
 CREATE POLICY "sindico_view_condominio_relationships" ON public.usuario_condominios
   FOR SELECT TO authenticated
   USING (
@@ -69,6 +71,7 @@ CREATE POLICY "sindico_view_condominio_relationships" ON public.usuario_condomin
 -- STEP 4: Policy for sindicos to manage users in their condominio
 -- Sindicos can add/update/remove users from their condominio
 -- ============================================
+DROP POLICY IF EXISTS "sindico_manage_condominio_relationships" ON public.usuario_condominios;
 CREATE POLICY "sindico_manage_condominio_relationships" ON public.usuario_condominios
   FOR ALL TO authenticated
   USING (
@@ -98,6 +101,7 @@ CREATE POLICY "sindico_manage_condominio_relationships" ON public.usuario_condom
 -- STEP 5: Policy for superadmin full access
 -- Superadmins can manage all relationships
 -- ============================================
+DROP POLICY IF EXISTS "superadmin_full_access_relationships" ON public.usuario_condominios;
 CREATE POLICY "superadmin_full_access_relationships" ON public.usuario_condominios
   FOR ALL TO authenticated
   USING (
@@ -112,6 +116,7 @@ CREATE POLICY "superadmin_full_access_relationships" ON public.usuario_condomini
 -- Users can update limited fields on their own relationships
 -- (e.g., accepting invitation)
 -- ============================================
+DROP POLICY IF EXISTS "users_update_own_relationship" ON public.usuario_condominios;
 CREATE POLICY "users_update_own_relationship" ON public.usuario_condominios
   FOR UPDATE TO authenticated
   USING (

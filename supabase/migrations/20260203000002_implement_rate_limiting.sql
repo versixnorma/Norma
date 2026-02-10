@@ -15,6 +15,7 @@
 ALTER TABLE public.rate_limits ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Only service role can access rate_limits directly
+DROP POLICY IF EXISTS "service_role_only" ON public.rate_limits;
 CREATE POLICY "service_role_only" ON public.rate_limits
   FOR ALL TO service_role
   USING (true)

@@ -207,12 +207,14 @@ ALTER TABLE public.report_configurations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.generated_reports ENABLE ROW LEVEL SECURITY;
 
 -- Superadmin: full access to report_configurations
+DROP POLICY IF EXISTS "superadmin_manage_report_configs" ON public.report_configurations;
 CREATE POLICY "superadmin_manage_report_configs" ON public.report_configurations
   FOR ALL TO authenticated
   USING (public.is_superadmin())
   WITH CHECK (public.is_superadmin());
 
 -- Admin condo: own condominio reports
+DROP POLICY IF EXISTS "admin_condo_manage_report_configs" ON public.report_configurations;
 CREATE POLICY "admin_condo_manage_report_configs" ON public.report_configurations
   FOR ALL TO authenticated
   USING (
@@ -225,12 +227,14 @@ CREATE POLICY "admin_condo_manage_report_configs" ON public.report_configuration
   );
 
 -- Superadmin: full access to generated_reports
+DROP POLICY IF EXISTS "superadmin_manage_generated_reports" ON public.generated_reports;
 CREATE POLICY "superadmin_manage_generated_reports" ON public.generated_reports
   FOR ALL TO authenticated
   USING (public.is_superadmin())
   WITH CHECK (public.is_superadmin());
 
 -- Admin condo: own condominio generated reports
+DROP POLICY IF EXISTS "admin_condo_manage_generated_reports" ON public.generated_reports;
 CREATE POLICY "admin_condo_manage_generated_reports" ON public.generated_reports
   FOR ALL TO authenticated
   USING (

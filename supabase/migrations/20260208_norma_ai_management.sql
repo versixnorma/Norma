@@ -85,6 +85,7 @@ ALTER TABLE public.norma_training_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.norma_performance_metrics ENABLE ROW LEVEL SECURITY;
 
 -- norma_training_logs: superadmin full access
+DROP POLICY IF EXISTS "superadmin_manage_training_logs" ON public.norma_training_logs;
 CREATE POLICY "superadmin_manage_training_logs" ON public.norma_training_logs
   FOR ALL
   TO authenticated
@@ -92,6 +93,7 @@ CREATE POLICY "superadmin_manage_training_logs" ON public.norma_training_logs
   WITH CHECK (public.is_superadmin());
 
 -- norma_training_logs: admin_condo read own condominio
+DROP POLICY IF EXISTS "admin_condo_read_training_logs" ON public.norma_training_logs;
 CREATE POLICY "admin_condo_read_training_logs" ON public.norma_training_logs
   FOR SELECT
   TO authenticated
@@ -101,6 +103,7 @@ CREATE POLICY "admin_condo_read_training_logs" ON public.norma_training_logs
   );
 
 -- norma_training_logs: authenticated users can insert feedback
+DROP POLICY IF EXISTS "users_insert_feedback" ON public.norma_training_logs;
 CREATE POLICY "users_insert_feedback" ON public.norma_training_logs
   FOR INSERT
   TO authenticated
@@ -110,6 +113,7 @@ CREATE POLICY "users_insert_feedback" ON public.norma_training_logs
   );
 
 -- norma_performance_metrics: superadmin full access
+DROP POLICY IF EXISTS "superadmin_manage_perf_metrics" ON public.norma_performance_metrics;
 CREATE POLICY "superadmin_manage_perf_metrics" ON public.norma_performance_metrics
   FOR ALL
   TO authenticated
@@ -117,6 +121,7 @@ CREATE POLICY "superadmin_manage_perf_metrics" ON public.norma_performance_metri
   WITH CHECK (public.is_superadmin());
 
 -- norma_performance_metrics: admin_condo read own condominio
+DROP POLICY IF EXISTS "admin_condo_read_perf_metrics" ON public.norma_performance_metrics;
 CREATE POLICY "admin_condo_read_perf_metrics" ON public.norma_performance_metrics
   FOR SELECT
   TO authenticated

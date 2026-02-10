@@ -85,36 +85,42 @@ ALTER TABLE public.marketplace_discounts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.marketplace_transactions ENABLE ROW LEVEL SECURITY;
 
 -- Policies: marketplace_partners
+DROP POLICY IF EXISTS "superadmin_manage_marketplace_partners" ON public.marketplace_partners;
 CREATE POLICY "superadmin_manage_marketplace_partners" ON public.marketplace_partners
   FOR ALL
   TO authenticated
   USING (public.is_superadmin())
   WITH CHECK (public.is_superadmin());
 
+DROP POLICY IF EXISTS "admin_condo_read_marketplace_partners" ON public.marketplace_partners;
 CREATE POLICY "admin_condo_read_marketplace_partners" ON public.marketplace_partners
   FOR SELECT
   TO authenticated
   USING (public.get_user_role() = 'admin_condo' OR public.is_superadmin());
 
 -- Policies: marketplace_discounts
+DROP POLICY IF EXISTS "superadmin_manage_marketplace_discounts" ON public.marketplace_discounts;
 CREATE POLICY "superadmin_manage_marketplace_discounts" ON public.marketplace_discounts
   FOR ALL
   TO authenticated
   USING (public.is_superadmin())
   WITH CHECK (public.is_superadmin());
 
+DROP POLICY IF EXISTS "admin_condo_read_marketplace_discounts" ON public.marketplace_discounts;
 CREATE POLICY "admin_condo_read_marketplace_discounts" ON public.marketplace_discounts
   FOR SELECT
   TO authenticated
   USING (public.get_user_role() = 'admin_condo' OR public.is_superadmin());
 
 -- Policies: marketplace_transactions
+DROP POLICY IF EXISTS "superadmin_manage_marketplace_transactions" ON public.marketplace_transactions;
 CREATE POLICY "superadmin_manage_marketplace_transactions" ON public.marketplace_transactions
   FOR ALL
   TO authenticated
   USING (public.is_superadmin())
   WITH CHECK (public.is_superadmin());
 
+DROP POLICY IF EXISTS "admin_condo_read_marketplace_transactions" ON public.marketplace_transactions;
 CREATE POLICY "admin_condo_read_marketplace_transactions" ON public.marketplace_transactions
   FOR SELECT
   TO authenticated
