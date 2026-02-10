@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
 // ============================================
@@ -43,13 +43,17 @@ interface AuthGuardProps {
 export function AuthGuard({ children, fallback, requiredRoles }: AuthGuardProps) {
   const { isAuthenticated, loading, profile } = useAuthContext();
   const router = useRouter();
+  const pathname = usePathname();
   const [mounted] = useState(() => typeof window !== 'undefined');
+
+  // Admin routes redirect to /admin/login, others to /login
+  const loginPath = pathname?.startsWith('/admin') ? '/admin/login' : '/login';
 
   useEffect(() => {
     if (!loading && !isAuthenticated && mounted) {
-      router.replace('/login');
+      router.replace(loginPath);
     }
-  }, [loading, isAuthenticated, mounted, router]);
+  }, [loading, isAuthenticated, mounted, router, loginPath]);
 
   if (!mounted || loading) {
     return (

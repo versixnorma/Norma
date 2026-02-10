@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isAuthenticated, loading: authLoading, profile } = useAuthContext();
+  const { login, isAuthenticated, loading: authLoading } = useAuthContext();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,26 +18,16 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
 
-  // Determinar destino baseado no role do usuário
-  const getRedirectPath = () => {
-    const role = profile?.role;
-    const condoRole = profile?.condominio_atual?.role;
-    if (role === 'superadmin' || condoRole === 'admin_condo') {
-      return '/admin/dashboard';
-    }
-    return '/home';
-  };
-
   useEffect(() => {
     setTimeout(() => setMounted(true), 50);
   }, []);
 
   // Redirect se já autenticado
   useEffect(() => {
-    if (isAuthenticated && !authLoading && profile) {
-      router.push(getRedirectPath());
+    if (isAuthenticated && !authLoading) {
+      router.push('/home');
     }
-  }, [isAuthenticated, authLoading, profile, router]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, authLoading, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,11 +44,7 @@ export default function LoginPage() {
 
     if (result.success) {
       toast.success('Login realizado com sucesso!');
-      // Redirect será feito pelo useEffect quando profile carregar
-      // Fallback para /home caso o useEffect não dispare
-      setTimeout(() => {
-        if (!profile) router.push('/home');
-      }, 3000);
+      router.push('/home');
     } else {
       interface AuthError {
         message?: string;

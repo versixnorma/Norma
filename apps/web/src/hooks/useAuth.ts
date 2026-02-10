@@ -105,10 +105,6 @@ export function useAuth() {
             ),
             role,
             status
-          ),
-          unidades:unidade_id (
-            id,
-            numero
           )
         `
           )
@@ -137,7 +133,7 @@ export function useAuth() {
             nome: uc.condominio.nome,
             role: uc.role,
             unidade_id: rawUser.unidade_id, // Legacy unit link from user
-            unidade_identificador: rawUser.unidades?.numero || undefined,
+            unidade_identificador: undefined,
           }));
 
         // Obter condomínio ativo (primeiro da lista se existir)
