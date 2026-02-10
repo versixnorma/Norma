@@ -29,8 +29,9 @@ export default function AdminLoginPage() {
         router.push('/admin/dashboard');
       } else {
         // Usuário sem permissão admin
+        setLoading(false);
+        setLoginError('Acesso restrito a administradores do sistema.');
         toast.error('Acesso restrito a administradores.');
-        router.push('/home');
       }
     }
   }, [isAuthenticated, authLoading, profile, router]);
@@ -51,6 +52,10 @@ export default function AdminLoginPage() {
     if (result.success) {
       toast.success('Autenticação realizada!');
       // Redirect handled by useEffect when profile loads
+      // Safety timeout: reset loading if profile never loads
+      setTimeout(() => {
+        setLoading(false);
+      }, 5000);
     } else {
       interface AuthError {
         message?: string;

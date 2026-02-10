@@ -93,6 +93,7 @@ export function useAuth() {
   const fetchProfile = useCallback(
     async (userId: string): Promise<UsuarioWithCondominios | null> => {
       try {
+        // Tentar query com join de condominios
         const { data: profileData, error } = await supabase
           .from('usuarios')
           .select(
@@ -110,8 +111,31 @@ export function useAuth() {
           )
           .eq('auth_id', userId);
 
-        if (error || !profileData || profileData.length === 0) {
-          logger.error('Erro ao buscar perfil:', error);
+        // Fallback: se join falhar (500/RLS), buscar apenas usuario
+        if (error) {
+          logger.warn('Erro no join de condominios, usando fallback:', error.message);
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('usuarios')
+            .select('*')
+            .eq('auth_id', userId);
+
+          if (fallbackError || !fallbackData || fallbackData.length === 0) {
+            logger.error('Erro ao buscar perfil (fallback):', fallbackError);
+            return null;
+          }
+
+          const rawUser = fallbackData[0];
+          return {
+            ...rawUser,
+            condominio_id: undefined,
+            condominios: [],
+            condominio_atual: null,
+            usuario_condominios: [],
+          } as unknown as UsuarioWithCondominios;
+        }
+
+        if (!profileData || profileData.length === 0) {
+          logger.error('Perfil não encontrado para auth_id:', userId);
           return null;
         }
 
@@ -157,7 +181,7 @@ export function useAuth() {
           })),
           condominio_atual: condominioAtual,
           usuario_condominios: [],
-        } as unknown as UsuarioWithCondominios; // Still need cast because Row type mismatches UsuarioWithCondominios slightly (joins)
+        } as unknown as UsuarioWithCondominios;
 
         return usuario;
       } catch (err: unknown) {
