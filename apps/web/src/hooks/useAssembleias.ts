@@ -182,7 +182,9 @@ export function useAssembleias() {
   const convocarAssembleia = useCallback(
     async (id: string): Promise<boolean> => {
       try {
-        const { data, error: rpcError } = await supabase.rpc('convocar_assembleia', {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const rpcName = 'convocar_assembleia' as any;
+        const { data, error: rpcError } = await supabase.rpc(rpcName, {
           p_assembleia_id: id,
         });
         if (rpcError) throw rpcError;
@@ -201,7 +203,9 @@ export function useAssembleias() {
   const iniciarAssembleia = useCallback(
     async (id: string): Promise<boolean> => {
       try {
-        const { data, error: rpcError } = await supabase.rpc('iniciar_assembleia', {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const rpcName = 'iniciar_assembleia' as any;
+        const { data, error: rpcError } = await supabase.rpc(rpcName, {
           p_assembleia_id: id,
         });
         if (rpcError) throw rpcError;
@@ -220,7 +224,9 @@ export function useAssembleias() {
   const encerrarAssembleia = useCallback(
     async (id: string): Promise<boolean> => {
       try {
-        const { data, error: rpcError } = await supabase.rpc('encerrar_assembleia', {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const rpcName = 'encerrar_assembleia' as any;
+        const { data, error: rpcError } = await supabase.rpc(rpcName, {
           p_assembleia_id: id,
         });
         if (rpcError) throw rpcError;
