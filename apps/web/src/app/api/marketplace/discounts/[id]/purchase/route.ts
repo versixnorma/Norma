@@ -50,6 +50,7 @@ export async function POST(_request: NextRequest, context: { params: unknown }) 
 
   const params = await resolveParams(context.params);
   const discountId = params?.id;
+  if (!discountId) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
   const { data: discount, error: discountError } = await admin
     .from('marketplace_discounts')
