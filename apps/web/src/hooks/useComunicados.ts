@@ -19,15 +19,6 @@ import { useCallback, useState } from 'react';
 // Tipo do banco
 type Comunicado = Database['public']['Tables']['comunicados']['Row'];
 type ComunicadoRow = Database['public']['Tables']['comunicados']['Row'];
-type CategoriaDb =
-  | 'urgente'
-  | 'geral'
-  | 'manutencao'
-  | 'financeiro'
-  | 'seguranca'
-  | 'evento'
-  | 'obras'
-  | 'assembleia';
 
 interface ComunicadoQueryResult extends ComunicadoRow {
   autor?: { nome: string; avatar_url: string | null; email: string } | null;
@@ -66,6 +57,8 @@ export function useComunicados(_options?: {
   userId?: string | null;
 }) {
   const supabase = getSupabaseClient();
+  // reference _options to avoid unused param lint
+  void _options;
   const [comunicados, setComunicados] = useState<ComunicadoComJoins[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -237,7 +230,7 @@ export function useComunicados(_options?: {
 
         const { data, error: updateError } = await supabase
           .from('comunicados')
-          .update(updatePayload as any)
+          .update(updatePayload as Partial<Database['public']['Tables']['comunicados']['Update']>)
           .eq('id', id)
           .select()
           .single();
@@ -259,9 +252,12 @@ export function useComunicados(_options?: {
     async (id: string): Promise<boolean> => {
       setLoading(true);
       try {
+        const payload = { deleted_at: new Date().toISOString() } as Partial<
+          Database['public']['Tables']['comunicados']['Update']
+        >;
         const { error: deleteError } = await supabase
           .from('comunicados')
-          .update({ deleted_at: new Date().toISOString() } as any)
+          .update(payload)
           .eq('id', id);
         if (deleteError) throw deleteError;
         setComunicados((prev) => prev.filter((c) => c.id !== id));

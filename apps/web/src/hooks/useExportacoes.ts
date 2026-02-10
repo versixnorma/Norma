@@ -15,11 +15,15 @@ export function useExportacoes() {
   const [error] = useState<string | null>(null);
 
   const fetchExportacoes = useCallback(async (_condominioId: string) => {
+    // reference param to avoid unused variable lint
+    void _condominioId;
     logger.warn('useExportacoes.fetchExportacoes is deprecated - exportacoes table does not exist');
     return [];
   }, []);
 
   const criarExportacao = useCallback(async (_condominioId: string, _input: unknown) => {
+    void _condominioId;
+    void _input;
     logger.warn(
       'useExportacoes.criarExportacao is deprecated - criar_exportacao RPC does not exist'
     );
@@ -27,6 +31,7 @@ export function useExportacoes() {
   }, []);
 
   const downloadExportacao = useCallback(async (_id: string) => {
+    void _id;
     logger.warn('useExportacoes.downloadExportacao is deprecated');
     return null;
   }, []);
