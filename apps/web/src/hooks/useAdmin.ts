@@ -412,12 +412,12 @@ export function useAdmin() {
           auth_id: user.auth_id || '',
           nome: user.nome,
           email: user.email,
-          telefone: user.telefone,
-          avatar_url: user.avatar_url,
+          telefone: user.telefone ?? null,
+          avatar_url: user.avatar_url ?? null,
           status: user.status as StatusType,
           created_at: user.created_at,
           updated_at: user.updated_at,
-          condominios: [],
+          condominios: [] as AdminUser['condominios'],
         }));
       } catch (err) {
         setError(getErrorMessage(err));
