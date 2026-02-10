@@ -250,10 +250,12 @@ CREATE POLICY "admin_condo_manage_generated_reports" ON public.generated_reports
 -- 6. TRIGGERS (updated_at)
 -- ============================================================================
 
+DROP TRIGGER IF EXISTS set_updated_at_report_configurations ON public.report_configurations;
 CREATE TRIGGER set_updated_at_report_configurations
   BEFORE UPDATE ON public.report_configurations
-  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
+DROP TRIGGER IF EXISTS set_updated_at_generated_reports_status ON public.generated_reports;
 CREATE TRIGGER set_updated_at_generated_reports_status
   BEFORE UPDATE ON public.generated_reports
-  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
