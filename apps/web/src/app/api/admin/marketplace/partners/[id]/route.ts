@@ -12,6 +12,7 @@ export async function PUT(request: NextRequest, context: { params: unknown }) {
   const payload = (await request.json()) as Record<string, unknown>;
   const params = await resolveParams(context.params);
   const id = params?.id;
+  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
   const { data, error } = await supabase
     .from('marketplace_partners')
@@ -30,6 +31,7 @@ export async function DELETE(_request: NextRequest, context: { params: unknown }
   const supabase = createClient(await cookies());
   const params = await resolveParams(context.params);
   const id = params?.id;
+  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
   const { error } = await supabase.from('marketplace_partners').delete().eq('id', id);
 
