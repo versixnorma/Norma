@@ -30,7 +30,9 @@ export default function OcorrenciasPage() {
   const { uploadMultiple, uploading } = useAnexos();
   const [showForm, setShowForm] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [detailedOcorrencia, setDetailedOcorrencia] = useState<OcorrenciaComJoins | null>(null);
+  const [detailedOcorrencia, setDetailedOcorrencia] = useState<
+    (OcorrenciaComJoins & { historico?: OcorrenciaHistorico[] }) | null
+  >(null);
   const [form, setForm] = useState<CreateOcorrenciaInput>({
     titulo: '',
     descricao: '',
