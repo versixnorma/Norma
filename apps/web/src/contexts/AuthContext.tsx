@@ -1,7 +1,8 @@
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
 // ============================================
 // TYPES
@@ -41,7 +42,14 @@ interface AuthGuardProps {
 
 export function AuthGuard({ children, fallback, requiredRoles }: AuthGuardProps) {
   const { isAuthenticated, loading, profile } = useAuthContext();
+  const router = useRouter();
   const [mounted] = useState(() => typeof window !== 'undefined');
+
+  useEffect(() => {
+    if (!loading && !isAuthenticated && mounted) {
+      router.replace('/login');
+    }
+  }, [loading, isAuthenticated, mounted, router]);
 
   if (!mounted || loading) {
     return (
@@ -57,7 +65,17 @@ export function AuthGuard({ children, fallback, requiredRoles }: AuthGuardProps)
   }
 
   if (!isAuthenticated) {
-    return fallback || null;
+    // Redirect is handled by useEffect above, show loading while redirecting
+    return (
+      fallback || (
+        <div className="flex h-screen items-center justify-center bg-bg-light dark:bg-bg-dark">
+          <div className="flex flex-col items-center gap-4">
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+            <p className="text-sm text-text-sub">Redirecionando...</p>
+          </div>
+        </div>
+      )
+    );
   }
 
   if (requiredRoles && requiredRoles.length > 0) {
