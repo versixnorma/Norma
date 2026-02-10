@@ -14,6 +14,7 @@ export async function PUT(
   const payload = await request.json();
   const params = await resolveParams(context.params);
   const id = params?.id;
+  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
   const { data, error } = await supabase
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- table not in generated types
@@ -36,6 +37,7 @@ export async function DELETE(
   const supabase = createClient(await cookies());
   const params = await resolveParams(context.params);
   const id = params?.id;
+  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
   await supabase
     .from('document_chunks' as any) // eslint-disable-line @typescript-eslint/no-explicit-any
