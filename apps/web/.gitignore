@@ -1,8 +1,7 @@
 .vercel
 .env*.local
 
-# next-pwa generated files
-public/sw.js
+# next-pwa generated files (sw.js kept for self-unregister)
 public/sw.js.map
 public/workbox-*.js
 public/worker-*.js
