@@ -39,7 +39,13 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url);
-  const status = searchParams.get('status') || undefined;
+  const status = (searchParams.get('status') || undefined) as
+    | 'pending'
+    | 'active'
+    | 'inactive'
+    | 'suspended'
+    | 'removed'
+    | undefined;
   const condominioId = searchParams.get('condominio_id') || undefined;
   const searchQuery = searchParams.get('search') || undefined;
 
