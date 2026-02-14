@@ -1,6 +1,5 @@
 'use client';
 
-import { getSupabaseClient } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -57,7 +56,6 @@ export function CondominioForm({ mode, initialValues, condominioId }: Condominio
   const [logoPreview, setLogoPreview] = useState<string | null>(initialValues?.logo_url || null);
   const cnpjTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
-  const supabase = getSupabaseClient();
   const router = useRouter();
 
   const LOGO_ALLOWED_TYPES = [
@@ -81,23 +79,31 @@ export function CondominioForm({ mode, initialValues, condominioId }: Condominio
 
     setLogoUploading(true);
     try {
-      // Preview local imediato
       const previewUrl = URL.createObjectURL(file);
       setLogoPreview(previewUrl);
 
       const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-      const fileName = `logos/${Date.now()}_logo.${ext}`;
+      const filePath = `logos/${Date.now()}_logo.${ext}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('anexos')
-        .upload(fileName, file, { cacheControl: '3600', upsert: false });
+      const formDataUpload = new FormData();
+      formDataUpload.append('file', file);
+      formDataUpload.append('bucket', 'anexos');
+      formDataUpload.append('path', filePath);
 
-      if (uploadError) throw uploadError;
+      const res = await fetch('/api/admin/upload', {
+        method: 'POST',
+        credentials: 'include',
+        body: formDataUpload,
+      });
 
-      const { data: urlData } = supabase.storage.from('anexos').getPublicUrl(fileName);
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error || 'Erro ao enviar logo');
+      }
 
-      setForm((prev) => ({ ...prev, logo_url: urlData.publicUrl }));
-      setLogoPreview(urlData.publicUrl);
+      const { data } = (await res.json()) as { data: { url: string } };
+      setForm((prev) => ({ ...prev, logo_url: data.url }));
+      setLogoPreview(data.url);
       toast.success('Logo enviada com sucesso');
     } catch (err) {
       setLogoPreview(form.logo_url || null);
@@ -204,7 +210,7 @@ export function CondominioForm({ mode, initialValues, condominioId }: Condominio
 
     setSaving(true);
     try {
-      const payload = {
+      const payload: Record<string, unknown> = {
         nome: form.nome.trim(),
         cnpj: form.cnpj || null,
         endereco: form.endereco.trim(),
@@ -223,25 +229,34 @@ export function CondominioForm({ mode, initialValues, condominioId }: Condominio
         ativo: form.ativo,
       };
 
+      if (mode === 'edit') {
+        payload.id = condominioId;
+      }
+
+      const res = await fetch('/api/admin/condominios', {
+        method: mode === 'create' ? 'POST' : 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error || 'Erro ao salvar condominio');
+      }
+
+      const { data } = (await res.json()) as { data: { id: string } };
+
       if (mode === 'create') {
-        const { data, error } = await supabase
-          .from('condominios')
-          .insert(payload)
-          .select('id')
-          .single();
-        if (error) throw error;
-        toast.success('Condomínio criado');
-        if (data?.id) router.push(`/admin/condominios/${data.id}`);
+        toast.success('Condominio criado');
+        router.push(`/admin/condominios/${data.id}`);
       } else {
-        if (!condominioId) throw new Error('Condomínio inválido');
-        const { error } = await supabase.from('condominios').update(payload).eq('id', condominioId);
-        if (error) throw error;
-        toast.success('Condomínio atualizado');
+        toast.success('Condominio atualizado');
         router.push(`/admin/condominios/${condominioId}`);
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      toast.error(message || 'Erro ao salvar condomínio');
+      toast.error(message || 'Erro ao salvar condominio');
     } finally {
       setSaving(false);
     }
