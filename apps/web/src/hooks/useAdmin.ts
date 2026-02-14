@@ -74,110 +74,33 @@ export function useAdmin() {
   const [error, setError] = useState<string | null>(null);
 
   // ============================================
-  // FETCH USERS - COM TIPAGEM CORRETA
+  // FETCH USERS - via API route (service role bypassa RLS/404)
   // ============================================
-  const fetchUsers = useCallback(
-    async (filters?: FetchUsersFilters) => {
-      setLoading(true);
-      setError(null);
-      try {
-        let query = supabase
-          .from('usuarios')
-          .select(
-            `
-          id,
-          auth_id,
-          nome,
-          email,
-          telefone,
-          avatar_url,
-          status,
-          created_at,
-          updated_at,
-          role,
-          unidade_id,
-          usuario_condominios (
-            role,
-            condominio:condominio_id (
-              id,
-              nome
-            )
-          ),
-          unidades_habitacionais:unidade_id (numero)
-        `
-          )
-          .order('created_at', { ascending: false });
+  const fetchUsers = useCallback(async (filters?: FetchUsersFilters) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams();
+      if (filters?.status) params.set('status', filters.status);
+      if (filters?.condominio_id) params.set('condominio_id', filters.condominio_id);
 
-        if (filters?.status) {
-          query = query.eq('status', filters.status);
-        }
-        // Condominio filter needs to be applied differently since it's a relation now
-        if (filters?.condominio_id) {
-          // Filtering by inner join relation is tricky with Supabase simple syntax
-          // simpler to filter in memory for now or use !inner if supported well,
-          // but let's stick to post-filter for safety or assume the pivot filter works?
-          // Actually, 'usuario_condominios.condominio_id' eq ...
-          // For now, let's remove the direct .eq('condominio_id') as it fails.
-          // We will filter in memory if needed, or assume the API returns all and we filter.
-          // Or correct approach: .eq('usuario_condominios.condominio_id', filters.condominio_id) needs !inner.
-          query = query.filter('usuario_condominios.condominio_id', 'eq', filters.condominio_id);
-        }
-        if (filters?.role) {
-          query = query.eq('role', filters.role);
-        }
+      const res = await fetch(`/api/admin/usuarios?${params.toString()}`, {
+        credentials: 'include',
+      });
 
-        const { data, error: fetchError } = await query;
-        if (fetchError) throw fetchError;
-
-        type UsuarioWithRelations = {
-          id: string;
-          auth_id: string | null;
-          nome: string;
-          email: string;
-          telefone: string | null;
-          avatar_url: string | null;
-          status: UserStatus;
-          created_at: string;
-          updated_at: string;
-          role: UserRole;
-          unidade_id: string | null;
-          usuario_condominios: Array<{
-            role: UserRole;
-            condominio: { id: string; nome: string } | null;
-          }> | null;
-          unidades_habitacionais: { numero: string } | null;
-        };
-
-        const formattedUsers: AdminUser[] = ((data || []) as UsuarioWithRelations[]).map(
-          (user) => ({
-            id: user.id,
-            auth_id: user.auth_id || '',
-            nome: user.nome,
-            email: user.email,
-            telefone: user.telefone,
-            avatar_url: user.avatar_url,
-            status: user.status as StatusType,
-            created_at: user.created_at,
-            updated_at: user.updated_at,
-            condominios: (user.usuario_condominios || []).map((uc) => ({
-              condominio_id: uc.condominio?.id || '',
-              condominio_nome: uc.condominio?.nome || 'Desconhecido',
-              role: uc.role as RoleType,
-              unidade_id: user.unidade_id, // Legacy/Global unit?
-              unidade_identificador: user.unidades_habitacionais?.numero || null,
-            })),
-          })
-        );
-
-        setUsers(formattedUsers);
-      } catch (err) {
-        setError(getErrorMessage(err));
-      } finally {
-        setLoading(false);
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error((body as { error?: string })?.error || res.statusText);
       }
-    },
-    [supabase]
-  );
+
+      const { data } = (await res.json()) as { data: AdminUser[] };
+      setUsers(data || []);
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   // ============================================
   // FETCH CONDOMINIOS
@@ -366,66 +289,23 @@ export function useAdmin() {
   );
 
   // ============================================
-  // SEARCH USERS
+  // SEARCH USERS - via API route
   // ============================================
-  const searchUsers = useCallback(
-    async (query: string): Promise<AdminUser[]> => {
-      if (!query || query.length < 2) return [];
-      try {
-        const buscaSanitizada = sanitizeSearchQuery(query);
-        const { data } = await supabase
-          .from('usuarios')
-          .select(
-            `
-          id,
-          auth_id,
-          nome,
-          email,
-          telefone,
-          avatar_url,
-          status,
-          created_at,
-          updated_at,
-          role,
-          condominio_id
-        `
-          )
-          .or(`nome.ilike.%${buscaSanitizada}%,email.ilike.%${buscaSanitizada}%`)
-          .limit(20);
-
-        const usersData = (data || []) as unknown as Array<{
-          id: string;
-          auth_id?: string | null;
-          nome: string;
-          email: string;
-          telefone?: string | null;
-          avatar_url?: string | null;
-          status: UserStatus;
-          created_at: string;
-          updated_at: string;
-          role?: UserRole;
-          condominio_id?: string | null;
-        }>;
-
-        return usersData.map((user) => ({
-          id: user.id,
-          auth_id: user.auth_id || '',
-          nome: user.nome,
-          email: user.email,
-          telefone: user.telefone ?? null,
-          avatar_url: user.avatar_url ?? null,
-          status: user.status as StatusType,
-          created_at: user.created_at,
-          updated_at: user.updated_at,
-          condominios: [] as AdminUser['condominios'],
-        }));
-      } catch (err) {
-        setError(getErrorMessage(err));
-        return [];
-      }
-    },
-    [supabase]
-  );
+  const searchUsers = useCallback(async (query: string): Promise<AdminUser[]> => {
+    if (!query || query.length < 2) return [];
+    try {
+      const buscaSanitizada = sanitizeSearchQuery(query);
+      const res = await fetch(`/api/admin/usuarios?search=${encodeURIComponent(buscaSanitizada)}`, {
+        credentials: 'include',
+      });
+      if (!res.ok) return [];
+      const { data } = (await res.json()) as { data: AdminUser[] };
+      return data || [];
+    } catch (err) {
+      setError(getErrorMessage(err));
+      return [];
+    }
+  }, []);
 
   return {
     users,
