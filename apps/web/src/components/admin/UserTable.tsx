@@ -1,6 +1,6 @@
 'use client';
 
-import { useAdmin, type AdminUser } from '@/hooks/useAdmin';
+import { type AdminUser } from '@/hooks/useAdmin';
 import { useImpersonate } from '@/hooks/useImpersonate';
 import type { Database } from '@/types/database';
 import Image from 'next/image';
@@ -10,6 +10,11 @@ import { toast } from 'sonner';
 type StatusType = Database['public']['Enums']['user_status'];
 
 interface UserTableProps {
+  users: AdminUser[];
+  loading: boolean;
+  error: string | null;
+  updateUserStatus: (userId: string, status: StatusType) => Promise<boolean>;
+  searchUsers: (query: string) => Promise<AdminUser[]>;
   onRefresh?: () => void;
 }
 
@@ -34,8 +39,14 @@ const STATUS_CONFIG: Record<StatusType, { label: string; color: string }> = {
   removed: { label: 'Removido', color: 'bg-red-100 text-red-700' },
 };
 
-export function UserTable({ onRefresh }: UserTableProps) {
-  const { users, loading, updateUserStatus, searchUsers } = useAdmin();
+export function UserTable({
+  users,
+  loading,
+  error,
+  updateUserStatus,
+  searchUsers,
+  onRefresh,
+}: UserTableProps) {
   const { startImpersonate } = useImpersonate();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<AdminUser[]>([]);
