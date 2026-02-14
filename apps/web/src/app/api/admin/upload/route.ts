@@ -31,13 +31,31 @@ export async function POST(request: NextRequest) {
 
   const admin = createAdminClient();
 
+  // Ensure bucket exists (auto-create if missing)
+  const { data: buckets } = await admin.storage.listBuckets();
+  const bucketExists = buckets?.some((b) => b.id === bucket);
+  if (!bucketExists) {
+    await admin.storage.createBucket(bucket, {
+      public: true,
+      fileSizeLimit: 5 * 1024 * 1024,
+      allowedMimeTypes: [
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+        'image/svg+xml',
+        'application/pdf',
+      ],
+    });
+  }
+
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
 
   const { error: uploadError } = await admin.storage.from(bucket).upload(path, buffer, {
     contentType: file.type,
     cacheControl: '3600',
-    upsert: false,
+    upsert: true,
   });
 
   if (uploadError) {

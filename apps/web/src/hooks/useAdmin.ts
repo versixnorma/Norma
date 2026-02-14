@@ -1,13 +1,8 @@
 'use client';
 
 import { getErrorMessage } from '@/lib/errors';
-import { logger } from '@/lib/logger';
 import { sanitizeSearchQuery } from '@/lib/sanitize';
-import { getSupabaseClient } from '@/lib/supabase';
-import type { Database } from '@/types/database'; // Ensure Database is imported from here or shared
-// import { Database } from '@versix/shared'; // This was used but let's stick to one. Actually shared exports Database too.
-// Let's use local import if possible or shared. The file used '@/types/database' for StatusType which failed.
-// Let's use the local Database type import which is known to be good.
+import type { Database } from '@/types/database';
 
 type RoleType = Database['public']['Enums']['user_role'];
 type StatusType = Database['public']['Enums']['user_status'];
@@ -17,12 +12,9 @@ import { useCallback, useState } from 'react';
 // ============================================
 // TIPOS
 // ============================================
-type UserStatus = Database['public']['Enums']['user_status'];
-type UserRole = Database['public']['Enums']['user_role'];
-
 interface FetchUsersFilters {
-  status?: UserStatus;
-  role?: UserRole;
+  status?: StatusType;
+  role?: RoleType;
   condominio_id?: string;
 }
 
@@ -66,7 +58,6 @@ export interface AdminStats {
 }
 
 export function useAdmin() {
-  const supabase = getSupabaseClient();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [condominios, setCondominios] = useState<AdminCondominio[]>([]);
   const [stats, setStats] = useState<AdminStats | null>(null);
@@ -103,137 +94,73 @@ export function useAdmin() {
   }, []);
 
   // ============================================
-  // FETCH CONDOMINIOS
+  // FETCH CONDOMINIOS - via API route (service role bypassa RLS)
   // ============================================
   const fetchCondominios = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error: fetchError } = await supabase
-        .from('condominios')
-        .select(
-          `
-          id,
-          nome,
-          cnpj,
-          endereco,
-          created_at,
-          blocos (
-            unidades_habitacionais (id)
-          ),
-          usuarios!usuarios_condominio_id_fkey (
-            id,
-            nome,
-            role
-          )
-        `
-        )
-        .order('nome');
+      const res = await fetch('/api/admin/condominios', {
+        credentials: 'include',
+      });
 
-      if (fetchError) throw fetchError;
-
-      if (!data || !Array.isArray(data)) {
-        logger.error('Invalid data format in fetchCondominios:', data);
-        throw new Error('Failed to load condomínios');
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error((body as { error?: string })?.error || res.statusText);
       }
 
-      type CondominioWithRelations = {
-        id: string;
-        nome: string;
-        cnpj: string | null;
-        endereco: string;
-        created_at: string;
-        blocos: Array<{ unidades_habitacionais: Array<{ id: string }> }> | null;
-        usuarios: Array<{ id: string; nome: string; role: string }> | null;
-      };
-
-      const formattedCondominios: AdminCondominio[] = (data || []).map(
-        (condo: CondominioWithRelations) => {
-          const totalUnidades =
-            condo.blocos?.reduce(
-              (acc: number, bloco) => acc + (bloco.unidades_habitacionais?.length || 0),
-              0
-            ) || 0;
-
-          const sindico = condo.usuarios?.find((u) => u.role === 'sindico');
-
-          return {
-            id: condo.id,
-            nome: condo.nome,
-            slug: condo.cnpj || condo.id,
-            endereco: condo.endereco,
-            status: 'ativo' as StatusType,
-            created_at: condo.created_at,
-            total_usuarios: condo.usuarios?.length || 0,
-            total_unidades: totalUnidades,
-            sindico_nome: sindico?.nome || null,
-          };
-        }
-      );
-
-      setCondominios(formattedCondominios);
+      const { data } = (await res.json()) as { data: AdminCondominio[] };
+      setCondominios(data || []);
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, []);
 
   // ============================================
-  // FETCH STATS
+  // FETCH STATS - via API route (service role bypassa RLS)
   // ============================================
   const fetchStats = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [
-        { count: totalCondominios },
-        { count: totalUsuarios },
-        { count: usuariosAtivos },
-        { count: usuariosPendentes },
-        { count: totalUnidades },
-      ] = await Promise.all([
-        supabase.from('condominios').select('*', { count: 'exact', head: true }),
-        supabase.from('usuarios').select('*', { count: 'exact', head: true }),
-        supabase
-          .from('usuarios')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'active'),
-        supabase
-          .from('usuarios')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'pending'),
-        supabase.from('unidades_habitacionais').select('*', { count: 'exact', head: true }),
-      ]);
-
-      setStats({
-        total_condominios: totalCondominios || 0,
-        total_usuarios: totalUsuarios || 0,
-        usuarios_ativos: usuariosAtivos || 0,
-        usuarios_pendentes: usuariosPendentes || 0,
-        total_unidades: totalUnidades || 0,
+      const res = await fetch('/api/admin/stats', {
+        credentials: 'include',
       });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error((body as { error?: string })?.error || res.statusText);
+      }
+
+      const { data } = (await res.json()) as { data: AdminStats };
+      setStats(data);
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, []);
 
   // ============================================
-  // UPDATE USER STATUS
+  // UPDATE USER STATUS - via API route
   // ============================================
   const updateUserStatus = useCallback(
     async (userId: string, status: StatusType): Promise<boolean> => {
       setLoading(true);
       try {
-        // StatusType agora já está em inglês, não precisa mapear
-        const { error: updateError } = await supabase
-          .from('usuarios')
-          .update({ status: status as UserStatus, updated_at: new Date().toISOString() })
-          .eq('id', userId);
+        const res = await fetch('/api/admin/usuarios', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ id: userId, status }),
+        });
 
-        if (updateError) throw updateError;
+        if (!res.ok) {
+          const body = (await res.json().catch(() => ({}))) as { error?: string };
+          throw new Error(body.error || res.statusText);
+        }
 
         setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, status } : u)));
         return true;
@@ -244,24 +171,27 @@ export function useAdmin() {
         setLoading(false);
       }
     },
-    [supabase]
+    []
   );
 
   // ============================================
-  // UPDATE USER ROLE
+  // UPDATE USER ROLE - via API route
   // ============================================
   const updateUserRole = useCallback(
-    async (userId: string, condominioId: string, role: RoleType): Promise<boolean> => {
+    async (userId: string, _condominioId: string, role: RoleType): Promise<boolean> => {
       setLoading(true);
       try {
-        // Atualiza diretamente na tabela usuarios (relação 1:1)
-        const { error: updateError } = await supabase
-          .from('usuarios')
-          .update({ role: role as UserRole })
-          .eq('id', userId)
-          .eq('condominio_id', condominioId);
+        const res = await fetch('/api/admin/usuarios', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ id: userId, role }),
+        });
 
-        if (updateError) throw updateError;
+        if (!res.ok) {
+          const body = (await res.json().catch(() => ({}))) as { error?: string };
+          throw new Error(body.error || res.statusText);
+        }
 
         setUsers((prev) =>
           prev.map((u) => {
@@ -269,7 +199,7 @@ export function useAdmin() {
               return {
                 ...u,
                 condominios: u.condominios.map((c) =>
-                  c.condominio_id === condominioId ? { ...c, role } : c
+                  c.condominio_id === _condominioId ? { ...c, role } : c
                 ),
               };
             }
@@ -285,7 +215,7 @@ export function useAdmin() {
         setLoading(false);
       }
     },
-    [supabase]
+    []
   );
 
   // ============================================
