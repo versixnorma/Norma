@@ -107,3 +107,158 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({ data: formatted });
 }
+
+// ============================================
+// Helper: verify superadmin
+// ============================================
+async function verifySuperadmin() {
+  const authClient = createClient(await cookies());
+  const {
+    data: { user },
+    error: authError,
+  } = await authClient.auth.getUser();
+
+  if (authError || !user) {
+    return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
+  }
+
+  const admin = createAdminClient();
+  const { data: usuario } = await admin
+    .from('usuarios')
+    .select('id, role')
+    .eq('auth_id', user.id)
+    .single();
+
+  if (!usuario || usuario.role !== 'superadmin') {
+    return {
+      error: NextResponse.json({ error: 'Forbidden - requer superadmin' }, { status: 403 }),
+    };
+  }
+
+  return { admin, usuario };
+}
+
+// ============================================
+// POST - Create user (auth + usuarios + usuario_condominios)
+// ============================================
+export async function POST(request: NextRequest) {
+  const result = await verifySuperadmin();
+  if ('error' in result) return result.error;
+  const { admin } = result;
+
+  const body = await request.json();
+  const { nome, email, telefone, role, status, condominio_id, senha } = body as {
+    nome: string;
+    email: string;
+    telefone?: string;
+    role?: string;
+    status?: string;
+    condominio_id?: string;
+    senha?: string;
+  };
+
+  if (!nome || !email) {
+    return NextResponse.json({ error: 'Nome e email são obrigatórios' }, { status: 400 });
+  }
+
+  // 1. Create auth user
+  const { data: authData, error: authError } = await admin.auth.admin.createUser({
+    email,
+    password: senha || Math.random().toString(36).slice(-12) + 'A1!',
+    email_confirm: true,
+  });
+
+  if (authError) {
+    return NextResponse.json({ error: authError.message }, { status: 400 });
+  }
+
+  // 2. Insert into usuarios table
+  const insertData = {
+    auth_id: authData.user.id,
+    nome,
+    email,
+    telefone: telefone || null,
+    role: role || 'morador',
+    status: status || 'active',
+    condominio_id: condominio_id || null,
+  };
+  const { data: newUser, error: insertError } = await admin
+    .from('usuarios')
+    .insert(insertData as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    .select('id')
+    .single();
+
+  if (insertError) {
+    // Rollback: delete auth user if usuarios insert fails
+    await admin.auth.admin.deleteUser(authData.user.id);
+    return NextResponse.json({ error: insertError.message }, { status: 400 });
+  }
+
+  // 3. If condominio_id provided, insert into usuario_condominios
+  if (condominio_id) {
+    const ucInsert = {
+      usuario_id: newUser.id,
+      condominio_id,
+      role: role || 'morador',
+      status: 'active',
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ucTable = 'usuario_condominios' as any;
+    await admin.from(ucTable).insert(ucInsert as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+  }
+
+  return NextResponse.json(
+    { data: { id: newUser.id, auth_id: authData.user.id } },
+    { status: 201 }
+  );
+}
+
+// ============================================
+// PUT - Update user (usuarios table)
+// ============================================
+export async function PUT(request: NextRequest) {
+  const result = await verifySuperadmin();
+  if ('error' in result) return result.error;
+  const { admin } = result;
+
+  const body = await request.json();
+  const { id, nome, email, telefone, role, status, condominio_id } = body as {
+    id: string;
+    nome?: string;
+    email?: string;
+    telefone?: string;
+    role?: string;
+    status?: string;
+    condominio_id?: string;
+  };
+
+  if (!id) {
+    return NextResponse.json({ error: 'ID do usuário é obrigatório' }, { status: 400 });
+  }
+
+  // Build update object with only provided fields
+  const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (nome !== undefined) updates.nome = nome;
+  if (email !== undefined) updates.email = email;
+  if (telefone !== undefined) updates.telefone = telefone;
+  if (role !== undefined) updates.role = role;
+  if (status !== undefined) updates.status = status;
+  if (condominio_id !== undefined) updates.condominio_id = condominio_id;
+
+  const { error: updateError } = await admin.from('usuarios').update(updates).eq('id', id);
+
+  if (updateError) {
+    return NextResponse.json({ error: updateError.message }, { status: 400 });
+  }
+
+  // If email changed, update auth user email too
+  if (email) {
+    const { data: usuario } = await admin.from('usuarios').select('auth_id').eq('id', id).single();
+
+    if (usuario?.auth_id) {
+      await admin.auth.admin.updateUserById(usuario.auth_id, { email });
+    }
+  }
+
+  return NextResponse.json({ data: { id } });
+}

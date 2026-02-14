@@ -23,7 +23,16 @@ function isValidStatus(status: string | null): status is StatusType {
 }
 
 function AdminUsuariosContent() {
-  const { users, loading, error, fetchUsers, updateUserStatus, searchUsers } = useAdmin();
+  const {
+    users,
+    loading,
+    error,
+    fetchUsers,
+    updateUserStatus,
+    createUser,
+    updateUser,
+    searchUsers,
+  } = useAdmin();
   const searchParams = useSearchParams();
   const statusParam = searchParams?.get('status') ?? null;
   const statusFilter = isValidStatus(statusParam) ? statusParam : undefined;
@@ -51,6 +60,8 @@ function AdminUsuariosContent() {
         loading={loading}
         error={error}
         updateUserStatus={updateUserStatus}
+        createUser={createUser}
+        updateUser={updateUser}
         searchUsers={searchUsers}
         onRefresh={() => fetchUsers({ status: statusFilter, condominio_id: condominioFilter })}
       />

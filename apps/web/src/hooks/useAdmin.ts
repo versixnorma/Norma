@@ -289,6 +289,96 @@ export function useAdmin() {
   );
 
   // ============================================
+  // CREATE USER - via API route
+  // ============================================
+  const createUser = useCallback(
+    async (userData: {
+      nome: string;
+      email: string;
+      telefone?: string;
+      role?: string;
+      status?: string;
+      condominio_id?: string;
+      senha?: string;
+    }): Promise<{ success: boolean; error?: string }> => {
+      setLoading(true);
+      try {
+        const res = await fetch('/api/admin/usuarios', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(userData),
+        });
+
+        if (!res.ok) {
+          const body = (await res.json().catch(() => ({}))) as { error?: string };
+          return { success: false, error: body.error || res.statusText };
+        }
+
+        return { success: true };
+      } catch (err) {
+        return { success: false, error: getErrorMessage(err) };
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
+  // ============================================
+  // UPDATE USER - via API route
+  // ============================================
+  const updateUser = useCallback(
+    async (userData: {
+      id: string;
+      nome?: string;
+      email?: string;
+      telefone?: string;
+      role?: string;
+      status?: string;
+      condominio_id?: string;
+    }): Promise<{ success: boolean; error?: string }> => {
+      setLoading(true);
+      try {
+        const res = await fetch('/api/admin/usuarios', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(userData),
+        });
+
+        if (!res.ok) {
+          const body = (await res.json().catch(() => ({}))) as { error?: string };
+          return { success: false, error: body.error || res.statusText };
+        }
+
+        // Update local state
+        setUsers((prev) =>
+          prev.map((u) => {
+            if (u.id === userData.id) {
+              return {
+                ...u,
+                ...(userData.nome !== undefined && { nome: userData.nome }),
+                ...(userData.email !== undefined && { email: userData.email }),
+                ...(userData.telefone !== undefined && { telefone: userData.telefone }),
+                ...(userData.status !== undefined && { status: userData.status as StatusType }),
+              };
+            }
+            return u;
+          })
+        );
+
+        return { success: true };
+      } catch (err) {
+        return { success: false, error: getErrorMessage(err) };
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
+  // ============================================
   // SEARCH USERS - via API route
   // ============================================
   const searchUsers = useCallback(async (query: string): Promise<AdminUser[]> => {
@@ -318,6 +408,8 @@ export function useAdmin() {
     fetchStats,
     updateUserStatus,
     updateUserRole,
+    createUser,
+    updateUser,
     searchUsers,
   };
 }
