@@ -13,10 +13,20 @@ type SupabaseAnyClient = SupabaseBrowserClient | SupabaseServerClient;
 // BROWSER CLIENT (Client Components)
 // ============================================
 export function createClient(): SupabaseBrowserClient {
-  return createBrowserClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Supabase public env vars are missing');
+  }
+
+  return createBrowserClient<Database>(supabaseUrl, supabaseAnonKey, {
+    db: { schema: 'public' },
+    global: {
+      headers: {
+        apikey: supabaseAnonKey,
+      },
+    },
+  });
 }
 
 // ============================================
@@ -25,24 +35,33 @@ export function createClient(): SupabaseBrowserClient {
 let browserClient: SupabaseBrowserClient | null = null;
 
 export function getSupabaseClient(): SupabaseAnyClient {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Supabase public env vars are missing');
+  }
+
   if (typeof window === 'undefined') {
-    // Server-side: sempre criar novo
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      console.error('❌ NEXT_PUBLIC_SUPABASE_URL is missing in Server Environment!');
-      throw new Error('supabaseUrl is required (server)');
-    }
-    return createSupabaseClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    return createSupabaseClient<Database>(supabaseUrl, supabaseAnonKey, {
+      db: { schema: 'public' },
+      global: {
+        headers: {
+          apikey: supabaseAnonKey,
+        },
+      },
+    });
   }
 
   // Browser: singleton
   if (!browserClient) {
-    browserClient = createBrowserClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    browserClient = createBrowserClient<Database>(supabaseUrl, supabaseAnonKey, {
+      db: { schema: 'public' },
+      global: {
+        headers: {
+          apikey: supabaseAnonKey,
+        },
+      },
+    });
   }
 
   return browserClient;
@@ -52,14 +71,22 @@ export function getSupabaseClient(): SupabaseAnyClient {
 // ADMIN CLIENT (Server Actions only)
 // ============================================
 export function createAdminClient() {
-  return createSupabaseClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error('Supabase server env vars are missing');
+  }
+
+  return createSupabaseClient<Database>(supabaseUrl, serviceRoleKey, {
+    db: { schema: 'public' },
+    global: {
+      headers: {
+        apikey: serviceRoleKey,
       },
-    }
-  );
+    },
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
 }
