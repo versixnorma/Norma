@@ -53,9 +53,66 @@ export function CondominioForm({ mode, initialValues, condominioId }: Condominio
   const [form, setForm] = useState<FormState>({ ...EMPTY_FORM, ...initialValues });
   const [saving, setSaving] = useState(false);
   const [cnpjLoading, setCnpjLoading] = useState(false);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoPreview, setLogoPreview] = useState<string | null>(initialValues?.logo_url || null);
   const cnpjTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const supabase = getSupabaseClient();
   const router = useRouter();
+
+  const LOGO_ALLOWED_TYPES = [
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'image/svg+xml',
+  ];
+  const LOGO_MAX_SIZE = 2 * 1024 * 1024; // 2MB
+
+  const handleLogoUpload = async (file: File) => {
+    if (!LOGO_ALLOWED_TYPES.includes(file.type)) {
+      toast.error('Formato nao suportado. Use JPG, PNG, GIF, WebP ou SVG.');
+      return;
+    }
+    if (file.size > LOGO_MAX_SIZE) {
+      toast.error('Imagem muito grande. Maximo 2MB.');
+      return;
+    }
+
+    setLogoUploading(true);
+    try {
+      // Preview local imediato
+      const previewUrl = URL.createObjectURL(file);
+      setLogoPreview(previewUrl);
+
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const fileName = `logos/${Date.now()}_logo.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('anexos')
+        .upload(fileName, file, { cacheControl: '3600', upsert: false });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from('anexos').getPublicUrl(fileName);
+
+      setForm((prev) => ({ ...prev, logo_url: urlData.publicUrl }));
+      setLogoPreview(urlData.publicUrl);
+      toast.success('Logo enviada com sucesso');
+    } catch (err) {
+      setLogoPreview(form.logo_url || null);
+      const message = err instanceof Error ? err.message : 'Erro ao enviar logo';
+      toast.error(message);
+    } finally {
+      setLogoUploading(false);
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    setForm((prev) => ({ ...prev, logo_url: '' }));
+    setLogoPreview(null);
+    if (logoInputRef.current) logoInputRef.current.value = '';
+  };
 
   const fetchCnpjData = useCallback(async (cnpj: string) => {
     const digits = cnpj.replace(/\D/g, '');
@@ -359,12 +416,69 @@ export function CondominioForm({ mode, initialValues, condominioId }: Condominio
             />
           </div>
           <div className="md:col-span-2">
-            <label className="text-xs font-medium text-gray-500">Logo (URL)</label>
-            <input
-              value={form.logo_url}
-              onChange={(e) => setForm({ ...form, logo_url: e.target.value })}
-              className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-800 dark:bg-gray-950"
-            />
+            <label className="mb-2 block text-xs font-medium text-gray-500">Logo</label>
+            <div className="flex items-start gap-4">
+              {/* Preview */}
+              <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900">
+                {logoPreview ? (
+                  <img
+                    src={logoPreview}
+                    alt="Logo preview"
+                    className="h-full w-full object-contain"
+                  />
+                ) : (
+                  <span className="material-symbols-outlined text-2xl text-gray-300">
+                    apartment
+                  </span>
+                )}
+              </div>
+              <div className="flex-1">
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.gif,.webp,.svg"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleLogoUpload(file);
+                  }}
+                  className="hidden"
+                  id="logo-upload"
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => logoInputRef.current?.click()}
+                    disabled={logoUploading}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                  >
+                    {logoUploading ? (
+                      <>
+                        <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                        Enviando...
+                      </>
+                    ) : (
+                      <>
+                        <span className="material-symbols-outlined text-sm">upload</span>
+                        Enviar imagem
+                      </>
+                    )}
+                  </button>
+                  {logoPreview && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveLogo}
+                      className="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-xs text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20"
+                    >
+                      <span className="material-symbols-outlined text-sm">delete</span>
+                      Remover
+                    </button>
+                  )}
+                </div>
+                <p className="mt-1.5 text-xs text-gray-400">
+                  JPG, PNG, GIF, WebP ou SVG. Maximo 2MB.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
