@@ -21,6 +21,8 @@ async function resolveParams(params: Promise<{ cnpj: string }> | { cnpj: string 
   return await params;
 }
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   _request: NextRequest,
   context: { params: Promise<{ cnpj: string }> | { cnpj: string } }
@@ -46,16 +48,26 @@ export async function GET(
   }
 
   try {
-    const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjClean}`, {
-      headers: { Accept: 'application/json' },
-      next: { revalidate: 86400 }, // cache 24h
+    const url = `https://brasilapi.com.br/api/cnpj/v1/${cnpjClean}`;
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'VersixNorma/1.0',
+      },
+      cache: 'no-store',
     });
 
     if (!res.ok) {
+      const errorBody = await res.text().catch(() => '');
+      console.error(`[CNPJ] BrasilAPI returned ${res.status}: ${errorBody}`);
       if (res.status === 404) {
         return NextResponse.json({ error: 'CNPJ nao encontrado' }, { status: 404 });
       }
-      return NextResponse.json({ error: 'Erro ao consultar CNPJ' }, { status: 502 });
+      return NextResponse.json(
+        { error: `Erro ao consultar CNPJ (status ${res.status})` },
+        { status: 502 }
+      );
     }
 
     const data = (await res.json()) as BrasilApiCnpjResponse;
@@ -84,7 +96,11 @@ export async function GET(
         email: data.email || '',
       },
     });
-  } catch {
-    return NextResponse.json({ error: 'Falha na consulta do CNPJ' }, { status: 502 });
+  } catch (err) {
+    console.error('[CNPJ] Fetch error:', err);
+    return NextResponse.json(
+      { error: 'Falha na consulta do CNPJ - verifique a conexao' },
+      { status: 502 }
+    );
   }
 }
