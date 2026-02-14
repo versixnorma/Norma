@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
   const { data: usuario } = await admin
     .from('usuarios')
-    .select('id')
+    .select('id, role')
     .eq('auth_id', user.id)
     .single();
 
@@ -26,15 +26,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
   }
 
-  const { data: uc } = await admin
-    .from('usuario_condominios')
-    .select('role')
-    .eq('usuario_id', usuario.id)
-    .eq('role', 'superadmin')
-    .eq('status', 'active')
-    .maybeSingle();
-
-  if (!uc) {
+  // superadmin is a global role on usuarios.role, not on usuario_condominios
+  if (usuario.role !== 'superadmin') {
     return NextResponse.json({ error: 'Forbidden - requer superadmin' }, { status: 403 });
   }
 
