@@ -1,6 +1,5 @@
 'use client';
 
-import { getSupabaseClient } from '@/lib/supabase';
 import { AuthGuard } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -32,18 +31,27 @@ export default function CondominioDetailsPage() {
   const id = params?.id;
   const [condominio, setCondominio] = useState<CondominioDetails | null>(null);
   const [loading, setLoading] = useState(true);
-  const supabase = getSupabaseClient();
 
   useEffect(() => {
     const load = async () => {
       if (!id) return;
       setLoading(true);
-      const { data } = await supabase.from('condominios').select('*').eq('id', id).single();
-      setCondominio((data as CondominioDetails) || null);
-      setLoading(false);
+      try {
+        const res = await fetch(`/api/admin/condominios/${id}`, {
+          credentials: 'include',
+        });
+        if (res.ok) {
+          const { data } = await res.json();
+          setCondominio(data as CondominioDetails);
+        }
+      } catch {
+        // ignore
+      } finally {
+        setLoading(false);
+      }
     };
     load();
-  }, [id, supabase]);
+  }, [id]);
 
   if (loading) {
     return (
@@ -86,6 +94,17 @@ export default function CondominioDetailsPage() {
             </Link>
           </div>
         </div>
+
+        {condominio.logo_url && (
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Logo</h2>
+            <img
+              src={condominio.logo_url}
+              alt={`Logo ${condominio.nome}`}
+              className="mt-3 h-20 w-20 rounded-lg object-contain"
+            />
+          </div>
+        )}
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">

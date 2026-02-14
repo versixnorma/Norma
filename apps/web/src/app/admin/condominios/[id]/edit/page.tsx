@@ -2,7 +2,6 @@
 
 import { CondominioForm } from '@/components/admin/condominios/CondominioForm';
 import { AuthGuard } from '@/contexts/AuthContext';
-import { getSupabaseClient } from '@/lib/supabase';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -30,37 +29,46 @@ export default function EditarCondominioPage() {
 
   const [initialValues, setInitialValues] = useState<Condominio | null>(null);
   const [loading, setLoading] = useState(true);
-  const supabase = getSupabaseClient();
 
   useEffect(() => {
     const load = async () => {
       if (!id) return;
       setLoading(true);
-      const { data } = await supabase.from('condominios').select('*').eq('id', id).single();
-      if (data) {
-        setInitialValues({
-          nome: data.nome,
-          cnpj: data.cnpj || '',
-          endereco: data.endereco,
-          numero: data.numero || '',
-          complemento: data.complemento || '',
-          bairro: data.bairro,
-          cidade: data.cidade,
-          estado: data.estado,
-          cep: data.cep,
-          tier: data.tier,
-          total_unidades: String(data.total_unidades || ''),
-          telefone: data.telefone || '',
-          email: data.email || '',
-          logo_url: data.logo_url || '',
-          cor_primaria: data.cor_primaria || '#3B82F6',
-          ativo: data.ativo ?? true,
+      try {
+        const res = await fetch(`/api/admin/condominios/${id}`, {
+          credentials: 'include',
         });
+        if (res.ok) {
+          const { data } = await res.json();
+          if (data) {
+            setInitialValues({
+              nome: data.nome,
+              cnpj: data.cnpj || '',
+              endereco: data.endereco,
+              numero: data.numero || '',
+              complemento: data.complemento || '',
+              bairro: data.bairro,
+              cidade: data.cidade,
+              estado: data.estado,
+              cep: data.cep,
+              tier: data.tier,
+              total_unidades: String(data.total_unidades || ''),
+              telefone: data.telefone || '',
+              email: data.email || '',
+              logo_url: data.logo_url || '',
+              cor_primaria: data.cor_primaria || '#3B82F6',
+              ativo: data.ativo ?? true,
+            });
+          }
+        }
+      } catch {
+        // ignore
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     load();
-  }, [id, supabase]);
+  }, [id]);
 
   if (loading) {
     return (
