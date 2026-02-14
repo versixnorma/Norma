@@ -21,7 +21,8 @@ export const metadata: Metadata = {
     default: 'Norma - Plataforma de Governança Condominial',
     template: '%s | Norma',
   },
-  description: 'Gestão inteligente para condomínios com IA assistente. Assembleias, financeiro, comunicados e mais.',
+  description:
+    'Gestão inteligente para condomínios com IA assistente. Assembleias, financeiro, comunicados e mais.',
   keywords: ['condomínio', 'gestão', 'síndico', 'assembleia', 'norma', 'governança', 'app', 'PWA'],
   authors: [{ name: 'Versix Solutions', url: 'https://versix.com.br' }],
   creator: 'Versix Solutions',
@@ -35,7 +36,8 @@ export const metadata: Metadata = {
     startupImage: [
       {
         url: '/splash/splash-1125x2436.png',
-        media: '(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)',
+        media:
+          '(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)',
       },
     ],
   },
@@ -47,12 +49,10 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: '/icons/icon.svg', type: 'image/svg+xml' },
-      { url: '/icons/icon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icons/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
       { url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
     ],
-    apple: [
-      { url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
-    ],
+    apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
     shortcut: '/icons/icon-192x192.png',
   },
   openGraph: {
@@ -99,11 +99,7 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <head>
@@ -114,9 +110,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.variable} ${montserrat.variable} antialiased`}>
-        <ClientProviders>
-          {children}
-        </ClientProviders>
+        <ClientProviders>{children}</ClientProviders>
       </body>
     </html>
   );
