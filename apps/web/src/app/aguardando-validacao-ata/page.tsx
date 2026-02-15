@@ -7,30 +7,94 @@ export default function AguardandoValidacaoAtaPage() {
   const { profile, isAuthenticated, loading, logout } = useAuthContext();
   const router = useRouter();
 
-  useEffect(() => { if (!loading && !isAuthenticated) router.push('/login'); if (!loading && profile?.status === 'active') router.push('/home'); }, [loading, isAuthenticated, profile, router]);
-  const handleLogout = async () => { await logout(); router.push('/login'); };
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      router.push('/login');
+      return;
+    }
 
-  if (loading) return (<div className="min-h-screen flex items-center justify-center bg-primary"><div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin" /></div>);
+    if (!loading && profile?.status === 'active') {
+      const isSuperAdmin = profile.role === 'superadmin';
+      const hasActiveCondominio = (profile.condominios?.length || 0) > 0;
+
+      if (isSuperAdmin && !profile.condominio_atual) {
+        router.push('/admin/dashboard');
+      } else if (isSuperAdmin || hasActiveCondominio) {
+        router.push('/home');
+      }
+    }
+  }, [loading, isAuthenticated, profile, router]);
+  const handleLogout = async () => {
+    await logout();
+    router.push('/login');
+  };
+
+  if (loading)
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-primary">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-white border-t-transparent" />
+      </div>
+    );
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary to-primary-dark flex flex-col">
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
-        <div className="w-24 h-24 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center mb-8"><span className="material-symbols-outlined text-white text-5xl">description</span></div>
-        <h1 className="text-2xl font-bold text-white text-center mb-3">Validando Ata de Eleição</h1>
-        <p className="text-blue-100 text-center max-w-sm mb-8">Sua ata foi enviada e está sendo analisada. Prazo: até 48h úteis.</p>
-        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 w-full max-w-sm mb-8">
-          <h3 className="font-semibold text-white mb-4">Status da Validação</h3>
+    <div className="to-primary-dark flex min-h-screen flex-col bg-gradient-to-b from-primary">
+      <div className="flex flex-1 flex-col items-center justify-center px-6 py-12">
+        <div className="mb-8 flex h-24 w-24 items-center justify-center rounded-full bg-white/10 backdrop-blur-md">
+          <span className="material-symbols-outlined text-5xl text-white">description</span>
+        </div>
+        <h1 className="mb-3 text-center text-2xl font-bold text-white">Validando Ata de Eleição</h1>
+        <p className="mb-8 max-w-sm text-center text-blue-100">
+          Sua ata foi enviada e está sendo analisada. Prazo: até 48h úteis.
+        </p>
+        <div className="mb-8 w-full max-w-sm rounded-2xl bg-white/10 p-6 backdrop-blur-md">
+          <h3 className="mb-4 font-semibold text-white">Status da Validação</h3>
           <div className="space-y-3">
-            <div className="flex items-center gap-3"><span className="material-symbols-outlined text-green-400">check_circle</span><span className="text-blue-100 text-sm">Cadastro recebido</span></div>
-            <div className="flex items-center gap-3"><span className="material-symbols-outlined text-green-400">check_circle</span><span className="text-blue-100 text-sm">Ata enviada</span></div>
-            <div className="flex items-center gap-3"><span className="material-symbols-outlined text-amber-400 animate-pulse">pending</span><span className="text-blue-100 text-sm">Aguardando análise</span></div>
-            <div className="flex items-center gap-3"><span className="material-symbols-outlined text-gray-500">radio_button_unchecked</span><span className="text-gray-400 text-sm">Aprovação final</span></div>
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined text-green-400">check_circle</span>
+              <span className="text-sm text-blue-100">Cadastro recebido</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined text-green-400">check_circle</span>
+              <span className="text-sm text-blue-100">Ata enviada</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined animate-pulse text-amber-400">
+                pending
+              </span>
+              <span className="text-sm text-blue-100">Aguardando análise</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined text-gray-500">
+                radio_button_unchecked
+              </span>
+              <span className="text-sm text-gray-400">Aprovação final</span>
+            </div>
           </div>
         </div>
-        <div className="bg-amber-500/20 rounded-xl p-4 w-full max-w-sm"><div className="flex gap-3"><span className="material-symbols-outlined text-amber-400">info</span><p className="text-xs text-amber-200">Você receberá um email assim que a validação for concluída.</p></div></div>
+        <div className="w-full max-w-sm rounded-xl bg-amber-500/20 p-4">
+          <div className="flex gap-3">
+            <span className="material-symbols-outlined text-amber-400">info</span>
+            <p className="text-xs text-amber-200">
+              Você receberá um email assim que a validação for concluída.
+            </p>
+          </div>
+        </div>
       </div>
-      <div className="bg-white dark:bg-card-dark rounded-t-[2.5rem] p-6 shadow-2xl">
-        <div className="flex flex-col gap-3"><button onClick={() => window.location.reload()} className="w-full py-4 rounded-xl bg-primary text-white font-bold flex items-center justify-center gap-2"><span className="material-symbols-outlined">refresh</span>Verificar Status</button><button onClick={handleLogout} className="w-full py-3 text-gray-500 hover:text-gray-700 text-sm">Sair da conta</button></div>
+      <div className="rounded-t-[2.5rem] bg-white p-6 shadow-2xl dark:bg-card-dark">
+        <div className="flex flex-col gap-3">
+          <button
+            onClick={() => window.location.reload()}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-4 font-bold text-white"
+          >
+            <span className="material-symbols-outlined">refresh</span>Verificar Status
+          </button>
+          <button
+            onClick={handleLogout}
+            className="w-full py-3 text-sm text-gray-500 hover:text-gray-700"
+          >
+            Sair da conta
+          </button>
+        </div>
       </div>
     </div>
   );

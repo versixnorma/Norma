@@ -165,6 +165,33 @@ serve(async (req) => {
         return errorResponse('Erro ao aprovar usuário', 500, req);
       }
 
+      // Garantir vínculo ativo em usuario_condominios
+      if (targetUser.condominio_id) {
+        const { data: existingLink } = await supabaseAdmin
+          .from('usuario_condominios')
+          .select('id')
+          .eq('usuario_id', usuario_id)
+          .eq('condominio_id', targetUser.condominio_id)
+          .maybeSingle();
+
+        if (existingLink) {
+          await supabaseAdmin
+            .from('usuario_condominios')
+            .update({
+              status: 'active',
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', existingLink.id);
+        } else {
+          await supabaseAdmin.from('usuario_condominios').insert({
+            usuario_id,
+            condominio_id: targetUser.condominio_id,
+            role: targetUser.role,
+            status: 'active',
+          });
+        }
+      }
+
       // Audit log
       await supabaseAdmin.from('audit_logs').insert({
         usuario_id: currentUser.id,
@@ -206,6 +233,17 @@ serve(async (req) => {
           updated_at: new Date().toISOString(),
         })
         .eq('id', usuario_id);
+
+      if (targetUser.condominio_id) {
+        await supabaseAdmin
+          .from('usuario_condominios')
+          .update({
+            status: 'removed',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('usuario_id', usuario_id)
+          .eq('condominio_id', targetUser.condominio_id);
+      }
 
       // Audit log
       await supabaseAdmin.from('audit_logs').insert({

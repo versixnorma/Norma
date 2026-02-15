@@ -62,6 +62,13 @@ interface LoginCredentials {
   password: string;
 }
 
+interface LoginResponse {
+  success: boolean;
+  data?: Session;
+  nextRoute?: '/home' | '/admin/dashboard' | '/aguardando-aprovacao';
+  error?: unknown;
+}
+
 interface SignupCredentials {
   email: string;
   password: string;
@@ -282,7 +289,7 @@ export function useAuth() {
   // AUTH METHODS
   // ============================================
 
-  const login = async ({ email, password }: LoginCredentials) => {
+  const login = async ({ email, password }: LoginCredentials): Promise<LoginResponse> => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
@@ -293,8 +300,40 @@ export function useAuth() {
 
       if (error) throw error;
 
-      // Profile será carregado pelo listener onAuthStateChange
-      return { success: true, data };
+      const session = data.session;
+      const authUser = data.user;
+
+      if (!session || !authUser) {
+        throw new Error('Sessão inválida após autenticação');
+      }
+
+      const profile = await fetchProfile(authUser.id);
+      if (!profile) {
+        await supabase.auth.signOut();
+        throw new Error('Perfil do usuário não encontrado. Contate o administrador.');
+      }
+
+      const isSuperAdmin = profile.role === 'superadmin';
+      const hasActiveCondominio = (profile.condominios?.length || 0) > 0;
+      const isAccessActive = profile.status === 'active' && (isSuperAdmin || hasActiveCondominio);
+
+      setState({
+        user: authUser,
+        profile,
+        session,
+        loading: false,
+        error: null,
+      });
+
+      if (!isAccessActive) {
+        return { success: true, data: session, nextRoute: '/aguardando-aprovacao' };
+      }
+
+      if (isSuperAdmin && !profile.condominio_atual) {
+        return { success: true, data: session, nextRoute: '/admin/dashboard' };
+      }
+
+      return { success: true, data: session, nextRoute: '/home' };
     } catch (error) {
       setState((prev) => ({
         ...prev,
@@ -428,14 +467,16 @@ export function useAuth() {
   // ============================================
   const isAuthenticated = !!state.user && !!state.session;
   // SuperAdmin é verificado pelo role direto do usuário (não precisa de condomínio)
-  const isSuperAdmin = state.profile?.role === 'superadmin';
+  const isSuperAdmin = state.profile?.role === 'superadmin' && state.profile?.status === 'active';
   const isAdmin =
     isSuperAdmin ||
-    state.profile?.condominio_atual?.role === 'admin_condo' ||
-    state.profile?.condominio_atual?.role === 'superadmin';
+    (state.profile?.status === 'active' &&
+      (state.profile?.condominio_atual?.role === 'admin_condo' ||
+        state.profile?.condominio_atual?.role === 'superadmin'));
   const isSindico =
-    state.profile?.condominio_atual?.role === 'sindico' ||
-    state.profile?.condominio_atual?.role === 'subsindico';
+    state.profile?.status === 'active' &&
+    (state.profile?.condominio_atual?.role === 'sindico' ||
+      state.profile?.condominio_atual?.role === 'subsindico');
   const hasMultipleCondominios = (state.profile?.condominios?.length || 0) > 1;
 
   return {

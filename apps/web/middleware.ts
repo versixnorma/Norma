@@ -18,6 +18,7 @@ const PUBLIC_ROUTES = [
 
 // Rotas protegidas que requerem autenticação
 const PROTECTED_ROUTES = [
+  '/home',
   '/dashboard',
   '/profile',
   '/financeiro',
@@ -28,6 +29,9 @@ const PROTECTED_ROUTES = [
   '/assembleia',
   '/norma-ai',
   '/configuracoes',
+  '/admin',
+  '/aguardando-aprovacao',
+  '/aguardando-validacao-ata',
 ];
 
 /**
@@ -122,11 +126,67 @@ export async function middleware(request: NextRequest) {
 
   // Verificar sessão para rotas protegidas
   if (PROTECTED_ROUTES.some((route) => pathname.startsWith(route))) {
+    const isAdminRoute = pathname.startsWith('/admin');
+
     // Se não houver usuário, redirecionar para login
     if (!user) {
-      const redirectUrl = new URL('/login', request.url);
+      const redirectUrl = new URL(isAdminRoute ? '/admin/login' : '/login', request.url);
       redirectUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(redirectUrl);
+    }
+
+    // Admin possui validação de role no AuthGuard/layout.
+    // Aqui garantimos consistência do fluxo de aprovação para a área de morador.
+    if (!isAdminRoute) {
+      const { data: profile } = await supabase
+        .from('usuarios')
+        .select('id, role, status')
+        .eq('auth_id', user.id)
+        .maybeSingle();
+
+      if (!profile) {
+        const redirectUrl = new URL('/login', request.url);
+        redirectUrl.searchParams.set('redirect', pathname);
+        return NextResponse.redirect(redirectUrl);
+      }
+
+      const isSuperAdmin = profile.role === 'superadmin';
+      const isWaitingRoute = pathname.startsWith('/aguardando-aprovacao');
+
+      // Se já está ativo e tenta abrir tela de espera, manda para o sistema.
+      if (isWaitingRoute && profile.status === 'active') {
+        if (isSuperAdmin) {
+          return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+        }
+
+        const { count } = await supabase
+          .from('usuario_condominios')
+          .select('id', { head: true, count: 'exact' })
+          .eq('usuario_id', profile.id)
+          .eq('status', 'active');
+
+        if ((count || 0) > 0) {
+          return NextResponse.redirect(new URL('/home', request.url));
+        }
+      }
+
+      // Não ativo -> deve ficar na tela de aguardando aprovação
+      if (!isWaitingRoute && profile.status !== 'active') {
+        return NextResponse.redirect(new URL('/aguardando-aprovacao', request.url));
+      }
+
+      // Ativo sem vínculo condominial ativo também não acessa o app
+      if (!isWaitingRoute && !isSuperAdmin) {
+        const { count } = await supabase
+          .from('usuario_condominios')
+          .select('id', { head: true, count: 'exact' })
+          .eq('usuario_id', profile.id)
+          .eq('status', 'active');
+
+        if ((count || 0) === 0) {
+          return NextResponse.redirect(new URL('/aguardando-aprovacao', request.url));
+        }
+      }
     }
   }
 

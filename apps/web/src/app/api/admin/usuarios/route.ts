@@ -325,6 +325,21 @@ export async function PUT(request: NextRequest) {
     }
   }
 
+  // Sync status to usuario_condominios links when status changed
+  if (status !== undefined) {
+    const { data: links } = await admin
+      .from('usuario_condominios' as any)
+      .select('id')
+      .eq('usuario_id', id);
+
+    if (links && links.length > 0) {
+      await admin
+        .from('usuario_condominios' as any)
+        .update({ status } as any)
+        .eq('usuario_id', id);
+    }
+  }
+
   // If email changed, update auth user email too
   if (email) {
     const { data: usuario } = await admin.from('usuarios').select('auth_id').eq('id', id).single();

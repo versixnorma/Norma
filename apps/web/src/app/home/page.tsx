@@ -57,6 +57,7 @@ function HomeContent() {
   // Hooks de dados - só carregar se perfil estiver disponível
   const condominioId = profile?.condominio_atual?.id || null;
   const userId = profile?.id || null;
+  const hasActiveCondominio = (profile?.condominios?.length || 0) > 0;
 
   // SuperAdmin sem condomínio - redirecionar para admin dashboard
   useEffect(() => {
@@ -91,6 +92,22 @@ function HomeContent() {
       router.push('/login');
     }
   }, [authLoading, isAuthenticated, router]);
+
+  // Bloquear acesso ao sistema para usuários não ativos
+  useEffect(() => {
+    if (authLoading || !isAuthenticated || !profile) return;
+    if (profile.status !== 'active') {
+      router.replace('/aguardando-aprovacao');
+    }
+  }, [authLoading, isAuthenticated, profile, router]);
+
+  // Usuário ativo sem vínculo condominial ativo também permanece em espera
+  useEffect(() => {
+    if (authLoading || !isAuthenticated || !profile) return;
+    if (!isSuperAdmin && profile.status === 'active' && !hasActiveCondominio) {
+      router.replace('/aguardando-aprovacao');
+    }
+  }, [authLoading, isAuthenticated, profile, isSuperAdmin, hasActiveCondominio, router]);
 
   // Reset scroll state when changing tabs
   useEffect(() => {

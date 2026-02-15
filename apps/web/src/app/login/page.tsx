@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isAuthenticated, loading: authLoading } = useAuthContext();
+  const { login, isAuthenticated, loading: authLoading, profile } = useAuthContext();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,9 +25,17 @@ export default function LoginPage() {
   // Redirect se já autenticado
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
-      router.push('/home');
+      const isSuperAdmin = profile?.role === 'superadmin';
+      const hasActiveCondominio = (profile?.condominios?.length || 0) > 0;
+      const hasAccess = profile?.status === 'active' && (isSuperAdmin || hasActiveCondominio);
+
+      if (hasAccess) {
+        router.push(isSuperAdmin && !profile?.condominio_atual ? '/admin/dashboard' : '/home');
+      } else {
+        router.push('/aguardando-aprovacao');
+      }
     }
-  }, [isAuthenticated, authLoading, router]);
+  }, [isAuthenticated, authLoading, profile, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +52,7 @@ export default function LoginPage() {
 
     if (result.success) {
       toast.success('Login realizado com sucesso!');
-      router.push('/home');
+      router.push(result.nextRoute || '/home');
     } else {
       interface AuthError {
         message?: string;

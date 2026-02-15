@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
       .from('usuarios')
       .select('id')
       .eq('auth_id', authId)
-      .single();
+      .maybeSingle();
 
     let usuarioId: string;
 
@@ -86,13 +86,27 @@ export async function POST(request: NextRequest) {
 
       if (insertError) {
         console.error('Fallback usuario insert error:', insertError);
-        return NextResponse.json({
-          success: true,
-          message: 'Conta criada, mas perfil pendente. Contate o administrador.',
-        });
-      }
+        // Race condition comum: trigger criou logo após a checagem inicial.
+        // Tentamos recuperar pelo auth_id antes de falhar.
+        const { data: recoveredUsuario } = await admin
+          .from('usuarios')
+          .select('id')
+          .eq('auth_id', authId)
+          .maybeSingle();
 
-      usuarioId = newUsuario.id;
+        if (!recoveredUsuario) {
+          // Evita usuário órfão no auth sem linha correspondente em public.usuarios
+          await admin.auth.admin.deleteUser(authId);
+          return NextResponse.json(
+            { error: 'Conta não pôde ser finalizada. Tente novamente em instantes.' },
+            { status: 500 }
+          );
+        }
+
+        usuarioId = recoveredUsuario.id;
+      } else {
+        usuarioId = newUsuario.id;
+      }
     }
 
     // 3. Ensure usuario_condominios link exists
@@ -102,7 +116,7 @@ export async function POST(request: NextRequest) {
         .select('id')
         .eq('usuario_id', usuarioId)
         .eq('condominio_id', condominio_id)
-        .single();
+        .maybeSingle();
 
       if (!existingLink) {
         await admin.from('usuario_condominios' as any).insert({
