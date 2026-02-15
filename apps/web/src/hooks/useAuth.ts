@@ -309,23 +309,20 @@ export function useAuth() {
     setState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
-      // Criar usuário no Auth - o trigger handle_new_user cria automaticamente
-      // o registro em public.usuarios e o vínculo em usuario_condominios
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            nome,
-            telefone,
-            condominio_id,
-          },
-        },
+      // Usar API route server-side para signup (bypass RLS + melhor tratamento de erros)
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome, email, password, telefone, condominio_id }),
       });
 
-      if (authError) throw authError;
+      const data = await res.json();
 
-      return { success: true, data: authData };
+      if (!res.ok) {
+        throw { message: data.error || 'Erro ao criar conta', status: res.status };
+      }
+
+      return { success: true, data };
     } catch (error) {
       setState((prev) => ({
         ...prev,
