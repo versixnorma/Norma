@@ -309,7 +309,8 @@ export function useAuth() {
     setState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
-      // 1. Criar usuário no Auth
+      // Criar usuário no Auth - o trigger handle_new_user cria automaticamente
+      // o registro em public.usuarios e o vínculo em usuario_condominios
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -317,51 +318,12 @@ export function useAuth() {
           data: {
             nome,
             telefone,
+            condominio_id,
           },
         },
       });
 
       if (authError) throw authError;
-
-      // 2. Criar perfil na tabela usuarios (trigger pode fazer isso automaticamente)
-      if (authData.user) {
-        const { error: profileError } = await supabase.from('usuarios').insert({
-          auth_id: authData.user.id,
-          nome,
-          email,
-          telefone: telefone || null,
-          status: 'pending',
-          config: {},
-        });
-
-        if (profileError) {
-          logger.error('Erro ao criar perfil:', profileError);
-          // Não falha, pois o trigger pode ter criado
-        }
-
-        // 3. Vincular ao condomínio selecionado
-        if (condominio_id) {
-          // Buscar o id do usuario recém-criado
-          const { data: usuarioData } = await supabase
-            .from('usuarios')
-            .select('id')
-            .eq('auth_id', authData.user.id)
-            .single();
-
-          if (usuarioData) {
-            const { error: vincError } = await supabase.from('usuario_condominios' as any).insert({
-              usuario_id: usuarioData.id,
-              condominio_id,
-              role: 'morador',
-              status: 'pending',
-            });
-
-            if (vincError) {
-              logger.error('Erro ao vincular condomínio:', vincError);
-            }
-          }
-        }
-      }
 
       return { success: true, data: authData };
     } catch (error) {
