@@ -257,7 +257,7 @@ export async function POST(request: NextRequest) {
   const { blocos_ruas, ...insertPayload } = body as Record<string, unknown>;
   const { data, error } = await admin
     .from('condominios')
-    .insert(insertPayload)
+    .insert(insertPayload as any)
     .select('id')
     .single();
 

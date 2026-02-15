@@ -304,7 +304,7 @@ export async function POST(request: NextRequest) {
         telefone: telefone || null,
         role: targetRole,
         status: targetStatus,
-      })
+      } as any)
       .eq('id', usuarioId);
   } else {
     const { data: newUser, error: insertError } = await admin
@@ -316,7 +316,7 @@ export async function POST(request: NextRequest) {
         telefone: telefone || null,
         role: targetRole,
         status: targetStatus,
-      })
+      } as any)
       .select('id')
       .single();
 
@@ -343,7 +343,7 @@ export async function POST(request: NextRequest) {
         condominio_id,
         role: targetRole,
         status: targetStatus,
-      });
+      } as any);
     }
   }
 
@@ -396,7 +396,10 @@ export async function PUT(request: NextRequest) {
       .eq('usuario_id', id);
 
     if (((links || []) as UsuarioCondominioLinkRow[]).length > 0) {
-      await admin.from('usuario_condominios').update({ role }).eq('usuario_id', id);
+      await admin
+        .from('usuario_condominios')
+        .update({ role } as any)
+        .eq('usuario_id', id);
     }
   }
 
@@ -408,7 +411,10 @@ export async function PUT(request: NextRequest) {
       .eq('usuario_id', id);
 
     if (((links || []) as UsuarioCondominioLinkRow[]).length > 0) {
-      await admin.from('usuario_condominios').update({ status }).eq('usuario_id', id);
+      await admin
+        .from('usuario_condominios')
+        .update({ status } as any)
+        .eq('usuario_id', id);
     }
   }
 

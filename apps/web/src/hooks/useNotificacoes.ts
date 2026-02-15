@@ -56,9 +56,12 @@ export function useNotificacoes() {
 
       if (!userId) return 0;
 
-      const { data, error: rpcError } = (await supabase.rpc('get_contagem_nao_lidas', {
-        p_usuario_id: userId,
-      })) as { data: number | null; error: SupabaseError | null };
+      const { data, error: rpcError } = (await supabase.rpc(
+        'get_contagem_nao_lidas' as any,
+        {
+          p_usuario_id: userId,
+        } as any
+      )) as { data: number | null; error: SupabaseError | null };
 
       if (rpcError) throw rpcError;
 
@@ -79,10 +82,13 @@ export function useNotificacoes() {
 
         if (!userId) return false;
 
-        const { data, error: rpcError } = (await supabase.rpc('confirmar_leitura', {
-          p_notificacao_id: notificacaoId,
-          p_usuario_id: userId,
-        })) as { data: boolean; error: SupabaseError | null };
+        const { data, error: rpcError } = (await supabase.rpc(
+          'confirmar_leitura' as any,
+          {
+            p_notificacao_id: notificacaoId,
+            p_usuario_id: userId,
+          } as any
+        )) as { data: boolean; error: SupabaseError | null };
 
         if (rpcError) throw rpcError;
 
@@ -113,9 +119,12 @@ export function useNotificacoes() {
 
       if (!userId) return 0;
 
-      const { data, error: rpcError } = (await supabase.rpc('marcar_todas_lidas', {
-        p_usuario_id: userId,
-      })) as { data: number | null; error: SupabaseError | null };
+      const { data, error: rpcError } = (await supabase.rpc(
+        'marcar_todas_lidas' as any,
+        {
+          p_usuario_id: userId,
+        } as any
+      )) as { data: number | null; error: SupabaseError | null };
 
       if (rpcError) throw rpcError;
 
@@ -142,19 +151,22 @@ export function useNotificacoes() {
 
         if (!userId) throw new Error('Usuário não autenticado');
 
-        const { data, error: rpcError } = (await supabase.rpc('enviar_notificacao', {
-          p_condominio_id: condominioId,
-          p_tipo: input.tipo,
-          p_titulo: input.titulo,
-          p_corpo: input.corpo,
-          p_prioridade: input.prioridade || 'normal',
-          p_destinatarios_tipo: input.destinatarios_tipo || 'todos',
-          p_destinatarios_filtro: input.destinatarios_filtro || null,
-          p_referencia_tipo: input.referencia_tipo || null,
-          p_referencia_id: input.referencia_id || null,
-          p_gerar_mural: input.gerar_mural || false,
-          p_criado_por: userId,
-        })) as { data: string | null; error: SupabaseError | null };
+        const { data, error: rpcError } = (await supabase.rpc(
+          'enviar_notificacao' as any,
+          {
+            p_condominio_id: condominioId,
+            p_tipo: input.tipo,
+            p_titulo: input.titulo,
+            p_corpo: input.corpo,
+            p_prioridade: input.prioridade || 'normal',
+            p_destinatarios_tipo: input.destinatarios_tipo || 'todos',
+            p_destinatarios_filtro: input.destinatarios_filtro || undefined,
+            p_referencia_tipo: input.referencia_tipo || undefined,
+            p_referencia_id: input.referencia_id || undefined,
+            p_gerar_mural: input.gerar_mural || false,
+            p_criado_por: userId,
+          } as any
+        )) as { data: string | null; error: SupabaseError | null };
 
         if (rpcError) throw rpcError;
         return data;
@@ -174,7 +186,7 @@ export function useNotificacoes() {
     async (condominioId: string): Promise<NotificacaoDashboard[]> => {
       try {
         const { data, error: fetchError } = await supabase
-          .from('v_notificacoes_dashboard')
+          .from('v_notificacoes_dashboard' as any)
           .select('*')
           .eq('condominio_id', condominioId)
           .order('created_at', { ascending: false })

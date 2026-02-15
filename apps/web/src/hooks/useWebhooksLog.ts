@@ -66,9 +66,12 @@ export function useWebhooksLog() {
   const retentarWebhook = useCallback(
     async (entregaId: string): Promise<string | null> => {
       try {
-        const { data, error: rpcError } = await supabase.rpc('retentar_webhook', {
-          p_entrega_id: entregaId,
-        });
+        const { data, error: rpcError } = await supabase.rpc(
+          'retentar_webhook' as any,
+          {
+            p_entrega_id: entregaId,
+          } as any
+        );
         if (rpcError) throw rpcError;
         return data;
       } catch (err) {
@@ -91,7 +94,7 @@ export function useWebhooksLog() {
           .eq('webhook_config.integracao_id', integracaoId);
         if (fetchError) throw fetchError;
 
-        const rows = (data || []) as Array<{ sucesso: boolean | null }>;
+        const rows = (data || []) as unknown as Array<{ sucesso: boolean | null }>;
         const total = rows.length;
         const sucesso = rows.filter((e) => e.sucesso === true).length;
         const falha = rows.filter((e) => e.sucesso === false).length;

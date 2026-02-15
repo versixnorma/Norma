@@ -27,7 +27,7 @@ export function useIntegracoes() {
           .from('v_integracoes_resumo')
           .select('*')
           .eq('condominio_id', condominioId);
-        if (filters?.tipo) query = query.eq('tipo', String(filters.tipo));
+        if (filters?.tipo) query = query.eq('tipo', String(filters.tipo) as any);
         if (filters?.status) query = query.eq('status', filters.status);
 
         const { data, error: fetchError } = await query.order('created_at', { ascending: false });

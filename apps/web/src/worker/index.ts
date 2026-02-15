@@ -67,7 +67,7 @@ sw.addEventListener('push', (event) => {
       data: data.data || {},
       actions: data.actions || [],
       tag: data.tag || 'versix-norma-notification',
-    };
+    } as any;
 
     event.waitUntil(sw.registration.showNotification(title, options));
   } catch (err) {

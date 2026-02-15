@@ -81,7 +81,7 @@ export function usePrestacaoContas() {
 
         return {
           ...data,
-          lancamentos: lancamentos || [],
+          lancamentos: (lancamentos || []) as any,
           lancamentos_por_categoria: porCategoria,
         };
       } catch (err) {

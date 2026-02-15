@@ -200,7 +200,7 @@ export function useOcorrencias() {
         // Setar user_id para o trigger de histórico
         if (userId) {
           try {
-            await supabase.rpc('set_app_user_id', { user_id: userId });
+            await supabase.rpc('set_app_user_id' as any, { user_id: userId } as any);
           } catch {
             // Ignore error
           }

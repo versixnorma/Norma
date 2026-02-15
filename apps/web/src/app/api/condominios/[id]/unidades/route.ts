@@ -86,7 +86,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
           tipo: 'apartamento',
           ativo: true,
         }));
-        await admin.from('unidades_habitacionais').insert(novasUnidades);
+        await admin.from('unidades_habitacionais').insert(novasUnidades as any);
 
         const refreshed = await admin
           .from('unidades_habitacionais')
