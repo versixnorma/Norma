@@ -66,7 +66,7 @@ export function useWebhooksLog() {
   const retentarWebhook = useCallback(
     async (entregaId: string): Promise<string | null> => {
       try {
-        const { data, error: rpcError } = await supabase.rpc('retentar_webhook' as any, {
+        const { data, error: rpcError } = await supabase.rpc('retentar_webhook', {
           p_entrega_id: entregaId,
         });
         if (rpcError) throw rpcError;
@@ -91,10 +91,11 @@ export function useWebhooksLog() {
           .eq('webhook_config.integracao_id', integracaoId);
         if (fetchError) throw fetchError;
 
-        const total = (data as any[])?.length || 0;
-        const sucesso = (data as any[])?.filter((e: any) => e.sucesso === true).length || 0;
-        const falha = (data as any[])?.filter((e: any) => e.sucesso === false).length || 0;
-        const pendente = (data as any[])?.filter((e: any) => e.sucesso === null).length || 0;
+        const rows = (data || []) as Array<{ sucesso: boolean | null }>;
+        const total = rows.length;
+        const sucesso = rows.filter((e) => e.sucesso === true).length;
+        const falha = rows.filter((e) => e.sucesso === false).length;
+        const pendente = rows.filter((e) => e.sucesso === null).length;
 
         return { total, sucesso, falha, pendente };
       } catch {

@@ -3,7 +3,7 @@
 // Custom analytics tracking
 // =====================================================
 
-import type { AnalyticsEvent, WebVitals } from '@/types/observabilidade';
+import type { AnalyticsEvent, JsonValue, WebVitals } from '@/types/observabilidade';
 import { addBreadcrumb } from './sentry';
 import { getSupabaseClient } from './supabase';
 
@@ -55,7 +55,7 @@ export function initWebVitals() {
 export function trackEvent(
   type: AnalyticsEvent['type'],
   name: string,
-  properties?: Record<string, any>
+  properties?: Record<string, JsonValue>
 ) {
   const event: AnalyticsEvent = {
     type,
@@ -90,15 +90,19 @@ export function trackPageView(path: string, title?: string) {
   });
 }
 
-export function trackFeatureUsed(feature: string, details?: Record<string, any>) {
+export function trackFeatureUsed(feature: string, details?: Record<string, JsonValue>) {
   trackEvent('feature_used', feature, details);
 }
 
-export function trackUserAction(action: string, target?: string, details?: Record<string, any>) {
+export function trackUserAction(
+  action: string,
+  target?: string,
+  details?: Record<string, JsonValue>
+) {
   trackEvent('user_action', action, { target, ...details });
 }
 
-export function trackError(error: string, source?: string, details?: Record<string, any>) {
+export function trackError(error: string, source?: string, details?: Record<string, JsonValue>) {
   trackEvent('error_occurred', error, { source, ...details });
 }
 

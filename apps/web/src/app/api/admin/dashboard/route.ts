@@ -3,6 +3,14 @@ import { createClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
+type CondominioHealthItem = {
+  id: string;
+  nome: string;
+  blocos?: Array<{
+    unidades_habitacionais?: Array<{ id: string }> | null;
+  }> | null;
+};
+
 export async function GET() {
   const authClient = createClient(await cookies());
   const {
@@ -119,9 +127,9 @@ export async function GET() {
     .select('id, nome, blocos (unidades_habitacionais (id))')
     .limit(10);
 
-  const ucTable = 'usuario_condominios' as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  const ucTable = 'usuario_condominios';
   const condominiosHealth = await Promise.all(
-    ((condominios as any[]) || []).map(async (condo: any) => {
+    ((condominios || []) as CondominioHealthItem[]).map(async (condo) => {
       const { count: usuariosActiveCondo } = await admin
         .from(ucTable)
         .select('*', { count: 'exact', head: true })
@@ -135,7 +143,7 @@ export async function GET() {
 
       const totalUnidadesCondo =
         condo.blocos?.reduce(
-          (acc: number, bloco: any) => acc + (bloco.unidades_habitacionais?.length || 0),
+          (acc: number, bloco) => acc + (bloco.unidades_habitacionais?.length || 0),
           0
         ) || 0;
 

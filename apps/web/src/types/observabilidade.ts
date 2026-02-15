@@ -12,6 +12,13 @@ export type StatusAlerta = 'aberto' | 'reconhecido' | 'resolvido' | 'ignorado';
 export type StatusUptime = 'ok' | 'degraded' | 'error' | 'timeout';
 export type StatusSistema = 'healthy' | 'degraded' | 'unhealthy';
 export type SeveridadeAnomalia = 'low' | 'medium' | 'high' | 'critical';
+export type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: JsonValue }
+  | JsonValue[];
 
 // =====================================================
 // TABELAS
@@ -106,7 +113,7 @@ export interface AlertaSistema {
 
   titulo: string;
   descricao: string | null;
-  dados: Record<string, any>;
+  dados: Record<string, JsonValue>;
   stack_trace: string | null;
 
   status: StatusAlerta;
@@ -147,8 +154,8 @@ export interface ApiRequestLog {
   request_id: string;
   metodo: string;
   path: string;
-  query_params: Record<string, any> | null;
-  headers_selecionados: Record<string, any> | null;
+  query_params: Record<string, JsonValue> | null;
+  headers_selecionados: Record<string, JsonValue> | null;
 
   status_code: number;
   response_time_ms: number;
@@ -197,7 +204,7 @@ export interface HealthCheckConfig {
   url: string;
   metodo: string;
   headers: Record<string, string>;
-  body: Record<string, any> | null;
+  body: Record<string, JsonValue> | null;
 
   ativo: boolean;
   critico: boolean;
@@ -274,7 +281,7 @@ export interface CriarAlertaInput {
   titulo: string;
   descricao?: string;
   condominio_id?: string;
-  dados?: Record<string, any>;
+  dados?: Record<string, JsonValue>;
 }
 
 export interface ResolverAlertaInput {
@@ -417,7 +424,7 @@ export type AnalyticsEventType =
 export interface AnalyticsEvent {
   type: AnalyticsEventType;
   name: string;
-  properties?: Record<string, any>;
+  properties?: Record<string, JsonValue>;
   timestamp?: string;
 }
 

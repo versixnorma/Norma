@@ -8,6 +8,9 @@ import type { Database } from '@/types/database';
 type MarketplacePartnerRow = Database['public']['Tables']['marketplace_partners']['Row'];
 type MarketplaceDiscountRow = Database['public']['Tables']['marketplace_discounts']['Row'];
 type MarketplaceTransactionRow = Database['public']['Tables']['marketplace_transactions']['Row'];
+type DiscountWithPartner = MarketplaceDiscountRow & {
+  partner?: { name?: string; category?: string };
+};
 
 export type MarketplacePartner = MarketplacePartnerRow;
 export interface MarketplaceDiscount extends MarketplaceDiscountRow {
@@ -195,8 +198,8 @@ export function useMarketplace() {
         if (data) {
           const formatted = {
             ...(data as MarketplaceDiscountRow),
-            partner_name: (data as any).partner?.name || null,
-            partner_category: (data as any).partner?.category || null,
+            partner_name: (data as DiscountWithPartner).partner?.name || null,
+            partner_category: (data as DiscountWithPartner).partner?.category || null,
           };
           setDiscounts((prev) => [formatted, ...prev]);
           return formatted as MarketplaceDiscount;
@@ -240,8 +243,8 @@ export function useMarketplace() {
         if (data) {
           const formatted = {
             ...(data as MarketplaceDiscountRow),
-            partner_name: (data as any).partner?.name || null,
-            partner_category: (data as any).partner?.category || null,
+            partner_name: (data as DiscountWithPartner).partner?.name || null,
+            partner_category: (data as DiscountWithPartner).partner?.category || null,
           };
           setDiscounts((prev) => prev.map((d) => (d.id === id ? formatted : d)));
           return formatted as MarketplaceDiscount;
@@ -393,10 +396,9 @@ export function useMarketplace() {
         }
       );
 
-      const totalRevenue = (transactionsData || []).reduce(
-        (acc: number, item: any) => acc + (Number(item.final_amount) || 0),
-        0
-      );
+      const totalRevenue = (
+        (transactionsData || []) as Array<{ final_amount?: string | number | null }>
+      ).reduce((acc, item) => acc + (Number(item.final_amount) || 0), 0);
 
       const monthlyTrendMap = new Map<string, { transactions: number; revenue: number }>();
       (

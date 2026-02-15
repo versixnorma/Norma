@@ -56,7 +56,7 @@ export function useNormaChat({ condominioId, userId }: UseNormaChatOptions): Use
 
     try {
       const { data, error } = await supabase
-        .from('norma_chat_logs' as any)
+        .from('norma_chat_logs')
         .select('*')
         .eq('condominio_id', condominioId)
         .eq('user_id', userId)
@@ -213,7 +213,7 @@ export function useNormaChat({ condominioId, userId }: UseNormaChatOptions): Use
                 const data = line.slice(6);
                 if (data === '[DONE]') {
                   // Stream finished, generate suggestions and log
-                  suggestions = generateSuggestions(fullResponse, sources);
+                  suggestions = generateSuggestions(fullResponse);
 
                   // Log the interaction
                   await supabase.from('norma_chat_logs').insert({
@@ -247,7 +247,7 @@ export function useNormaChat({ condominioId, userId }: UseNormaChatOptions): Use
                       )
                     );
                   }
-                } catch (e) {
+                } catch {
                   // Ignore parsing errors for incomplete chunks
                 }
               }
@@ -329,10 +329,7 @@ export function useNormaChat({ condominioId, userId }: UseNormaChatOptions): Use
 // ============================================
 // UTILITY FUNCTIONS
 // ============================================
-function generateSuggestions(
-  response: string,
-  sources: Array<{ type: string; name: string; content: string }>
-): string[] {
+function generateSuggestions(response: string): string[] {
   const suggestions: string[] = [];
 
   // Analyze response content to generate relevant suggestions

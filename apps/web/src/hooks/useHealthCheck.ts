@@ -185,11 +185,11 @@ export function useSystemHealthStatus() {
   const getChecksSummary = () => {
     if (!health?.checks) return { ok: 0, degraded: 0, error: 0 };
 
-    const checks = Object.values(health.checks);
+    const checks = Object.values(health.checks) as CheckResult[];
     return {
-      ok: checks.filter((c: any) => c.status === 'ok').length,
-      degraded: checks.filter((c: any) => c.status === 'degraded').length,
-      error: checks.filter((c: any) => c.status === 'error').length,
+      ok: checks.filter((c) => c.status === 'ok').length,
+      degraded: checks.filter((c) => c.status === 'degraded').length,
+      error: checks.filter((c) => c.status === 'error').length,
     };
   };
 
@@ -197,8 +197,8 @@ export function useSystemHealthStatus() {
   const getAverageLatency = () => {
     if (!health?.checks) return 0;
 
-    const latencies = Object.values(health.checks)
-      .map((c: any) => c.latencyMs)
+    const latencies = (Object.values(health.checks) as CheckResult[])
+      .map((c) => c.latencyMs)
       .filter((l: number) => l > 0);
 
     return latencies.length > 0

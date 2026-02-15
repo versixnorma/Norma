@@ -1,6 +1,13 @@
 import { createAdminClient } from '@/lib/supabase';
 import { NextRequest, NextResponse } from 'next/server';
 
+type UnidadeRow = {
+  id: string;
+  bloco_id: string | null;
+  numero: string;
+  bloco?: { nome?: string | null } | null;
+};
+
 /**
  * GET /api/condominios/[id]/unidades
  * Lista pública de unidades habitacionais ativas por condomínio para signup.
@@ -13,7 +20,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
   const admin = createAdminClient();
 
-  let { data, error } = await admin
+  const { data: initialData, error } = await admin
     .from('unidades_habitacionais')
     .select(
       `
@@ -32,6 +39,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+  let data = (initialData || []) as UnidadeRow[];
 
   // Auto-healing para condomínios legados sem unidades cadastradas.
   if (!data || data.length === 0) {
@@ -58,21 +66,27 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
           .insert({
             condominio_id: condominioId,
             nome: 'Bloco Único',
-          } as any)
+          })
           .select('id')
           .single();
         blocoId = novoBloco?.id;
       }
 
       if (blocoId) {
-        const novasUnidades = Array.from({ length: totalUnidades }, (_, idx) => ({
+        const novasUnidades: Array<{
+          condominio_id: string;
+          bloco_id: string;
+          numero: string;
+          tipo: string;
+          ativo: boolean;
+        }> = Array.from({ length: totalUnidades }, (_, idx) => ({
           condominio_id: condominioId,
           bloco_id: blocoId,
           numero: String(idx + 1),
           tipo: 'apartamento',
           ativo: true,
         }));
-        await admin.from('unidades_habitacionais').insert(novasUnidades as any);
+        await admin.from('unidades_habitacionais').insert(novasUnidades);
 
         const refreshed = await admin
           .from('unidades_habitacionais')
@@ -90,12 +104,12 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
           .eq('ativo', true)
           .order('numero', { ascending: true });
 
-        data = refreshed.data || [];
+        data = (refreshed.data || []) as UnidadeRow[];
       }
     }
   }
 
-  const formatted = (data || []).map((u: any) => ({
+  const formatted = (data || []).map((u) => ({
     id: u.id,
     numero: u.numero,
     bloco_id: u.bloco_id || null,

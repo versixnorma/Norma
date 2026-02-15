@@ -98,6 +98,7 @@ export default function CondominioDetailsPage() {
         {condominio.logo_url && (
           <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
             <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Logo</h2>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={condominio.logo_url}
               alt={`Logo ${condominio.nome}`}

@@ -18,6 +18,8 @@ import type {
 } from '@versix/shared';
 import { useCallback, useState } from 'react';
 
+type JsonLike = string | number | boolean | null | { [key: string]: JsonLike } | JsonLike[];
+
 /**
  * Hook para gerenciamento de lançamentos financeiros
  * Inclui métodos para buscar categorias, contas, lançamentos e dashboard financeiro.
@@ -168,7 +170,7 @@ export function useFinanceiro() {
           fornecedor: input.fornecedor_nome || null, // Mapped from fornecedor_nome
           // fornecedor_documento not in DB schema
           numero_documento: input.numero_documento || null,
-          comprovantes: input.comprovantes ? (input.comprovantes as unknown as any) : null,
+          comprovantes: input.comprovantes ? (input.comprovantes as unknown as JsonLike) : null,
           status: input.status || 'pendente',
         };
 
@@ -214,7 +216,7 @@ export function useFinanceiro() {
         if (updates.numero_documento !== undefined)
           payload.numero_documento = updates.numero_documento;
         if (updates.comprovantes !== undefined)
-          payload.comprovantes = updates.comprovantes as unknown as any;
+          payload.comprovantes = updates.comprovantes as unknown as JsonLike;
         if (updates.status) payload.status = updates.status;
 
         const { data, error: updateError } = await supabase

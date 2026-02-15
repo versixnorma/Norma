@@ -13,7 +13,7 @@ import type {
 import { useCallback, useState } from 'react';
 
 type LancamentoRow = Database['public']['Tables']['lancamentos_financeiros']['Row'];
-type LancamentoWithCategoria = LancamentoRow & {
+type LancamentoResumoRow = Pick<LancamentoRow, 'valor' | 'tipo'> & {
   categoria: { nome: string } | null;
 };
 
@@ -72,11 +72,7 @@ export function usePrestacaoContas() {
 
         // Agrupar por categoria
         const porCategoria: Record<string, { receitas: number; despesas: number }> = {};
-        type LancamentoRow = Database['public']['Tables']['lancamentos_financeiros']['Row'];
-        type LancamentoWithCategoria = LancamentoRow & {
-          categoria: { nome: string } | null;
-        };
-        (lancamentos || []).forEach((l: any) => {
+        ((lancamentos as LancamentoResumoRow[] | null) || []).forEach((l) => {
           const cat = l.categoria?.nome || 'Outros';
           if (!porCategoria[cat]) porCategoria[cat] = { receitas: 0, despesas: 0 };
           if (l.tipo === 'receita') porCategoria[cat].receitas += l.valor;
@@ -85,7 +81,7 @@ export function usePrestacaoContas() {
 
         return {
           ...data,
-          lancamentos: (lancamentos || []) as any,
+          lancamentos: lancamentos || [],
           lancamentos_por_categoria: porCategoria,
         };
       } catch (err) {
@@ -215,7 +211,7 @@ export function usePrestacaoContas() {
         const receitas: Record<string, number> = {};
         const despesas: Record<string, number> = {};
 
-        (lancamentos || []).forEach((l: any) => {
+        ((lancamentos as LancamentoResumoRow[] | null) || []).forEach((l) => {
           const cat = l.categoria?.nome || 'Outros';
           if (l.tipo === 'receita') receitas[cat] = (receitas[cat] || 0) + l.valor;
           else if (l.tipo === 'despesa') despesas[cat] = (despesas[cat] || 0) + l.valor;

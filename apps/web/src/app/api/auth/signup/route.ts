@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
           notificacoes_push: typeof notificacoes_push === 'boolean' ? notificacoes_push : true,
           notificacoes_whatsapp:
             typeof notificacoes_whatsapp === 'boolean' ? notificacoes_whatsapp : false,
-        } as any)
+        })
         .eq('id', usuarioId);
     } else {
       // Trigger failed silently — create manually
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
             typeof notificacoes_whatsapp === 'boolean' ? notificacoes_whatsapp : false,
           role: 'morador',
           status: 'pending',
-        } as any)
+        })
         .select('id')
         .single();
 
@@ -157,14 +157,14 @@ export async function POST(request: NextRequest) {
     // 3. Ensure usuario_condominios link exists
     if (condominio_id && usuarioId) {
       const { data: existingLink } = await admin
-        .from('usuario_condominios' as any)
+        .from('usuario_condominios')
         .select('id')
         .eq('usuario_id', usuarioId)
         .eq('condominio_id', condominio_id)
         .maybeSingle();
 
       if (!existingLink) {
-        await admin.from('usuario_condominios' as any).insert({
+        await admin.from('usuario_condominios').insert({
           usuario_id: usuarioId,
           condominio_id,
           role: 'morador',

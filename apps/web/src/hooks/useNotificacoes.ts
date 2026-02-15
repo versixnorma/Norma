@@ -37,7 +37,7 @@ export function useNotificacoes() {
 
       const notificacoesData = (data as unknown as NotificacaoUsuario[]) || [];
       setNotificacoes(notificacoesData);
-      setNaoLidas(notificacoesData.filter((n: any) => n.status !== 'lido').length);
+      setNaoLidas(notificacoesData.filter((n) => n.status !== 'lido').length);
       return notificacoesData;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar notificações';
@@ -56,7 +56,7 @@ export function useNotificacoes() {
 
       if (!userId) return 0;
 
-      const { data, error: rpcError } = (await supabase.rpc('get_contagem_nao_lidas' as any, {
+      const { data, error: rpcError } = (await supabase.rpc('get_contagem_nao_lidas', {
         p_usuario_id: userId,
       })) as { data: number | null; error: SupabaseError | null };
 
@@ -79,7 +79,7 @@ export function useNotificacoes() {
 
         if (!userId) return false;
 
-        const { data, error: rpcError } = (await supabase.rpc('confirmar_leitura' as any, {
+        const { data, error: rpcError } = (await supabase.rpc('confirmar_leitura', {
           p_notificacao_id: notificacaoId,
           p_usuario_id: userId,
         })) as { data: boolean; error: SupabaseError | null };
@@ -142,7 +142,7 @@ export function useNotificacoes() {
 
         if (!userId) throw new Error('Usuário não autenticado');
 
-        const { data, error: rpcError } = (await supabase.rpc('enviar_notificacao' as any, {
+        const { data, error: rpcError } = (await supabase.rpc('enviar_notificacao', {
           p_condominio_id: condominioId,
           p_tipo: input.tipo,
           p_titulo: input.titulo,
@@ -174,7 +174,7 @@ export function useNotificacoes() {
     async (condominioId: string): Promise<NotificacaoDashboard[]> => {
       try {
         const { data, error: fetchError } = await supabase
-          .from('v_notificacoes_dashboard' as any)
+          .from('v_notificacoes_dashboard')
           .select('*')
           .eq('condominio_id', condominioId)
           .order('created_at', { ascending: false })

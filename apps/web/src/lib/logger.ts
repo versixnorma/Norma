@@ -5,8 +5,6 @@
 
 const isDev = process.env.NODE_ENV === 'development';
 
-type LogLevel = 'log' | 'info' | 'warn' | 'error' | 'debug';
-
 interface Logger {
   log: (...args: unknown[]) => void;
   info: (...args: unknown[]) => void;

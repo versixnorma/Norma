@@ -453,6 +453,7 @@ export function CondominioForm({ mode, initialValues, condominioId }: Condominio
               {/* Preview */}
               <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900">
                 {logoPreview ? (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={logoPreview}
                     alt="Logo preview"

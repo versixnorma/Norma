@@ -61,7 +61,7 @@ export function usePushNotifications() {
       setSubscription(sub);
 
       // 4. Salvar subscription no servidor
-      const { error } = await supabase.rpc('registrar_fcm_token' as any, {
+      const { error } = await supabase.rpc('registrar_fcm_token', {
         p_token: JSON.stringify(sub.toJSON()),
         p_provider: 'webpush',
       });
@@ -88,7 +88,7 @@ export function usePushNotifications() {
 
       // 2. Remover do servidor
       // 2. Remover do servidor
-      await supabase.rpc('remover_fcm_token' as any, {
+      await supabase.rpc('remover_fcm_token', {
         p_token: JSON.stringify(subscription.toJSON()),
       });
 

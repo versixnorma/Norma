@@ -13,7 +13,13 @@ import { useCallback, useEffect } from 'react';
  */
 export function useNormaChatMetrics(condominioId: string, userId: string) {
   const trackMessage = useCallback(
-    async (message: string, responseTime: number, hasSources: boolean, hadError: boolean, tokensUsed?: number) => {
+    async (
+      message: string,
+      responseTime: number,
+      hasSources: boolean,
+      hadError: boolean,
+      tokensUsed?: number
+    ) => {
       try {
         recordNormaChatMetric({
           name: 'norma_chat_message',
@@ -82,13 +88,19 @@ export function useFinancialMetrics(condominioId: string) {
  */
 export function useAssembleiaMetrics(condominioId: string, assembleiaId: string) {
   const trackEvent = useCallback(
-    async (eventType: 'vote' | 'view' | 'create' | 'finalize', operation: () => Promise<unknown>, participantsCount?: number) => {
+    async (
+      eventType: 'vote' | 'view' | 'create' | 'finalize',
+      operation: () => Promise<unknown>,
+      participantsCount?: number
+    ) => {
       try {
         const startTime = performance.now();
         await operation();
         const processingTime = performance.now() - startTime;
 
         logger.debug('[AssembleiaMetrics]', {
+          condominioId,
+          assembleiaId,
           eventType,
           processingTime,
           participantsCount,
@@ -97,7 +109,7 @@ export function useAssembleiaMetrics(condominioId: string, assembleiaId: string)
         logger.error('[AssembleiaMetrics Error]', error);
       }
     },
-    []
+    [assembleiaId, condominioId]
   );
 
   return { trackEvent };

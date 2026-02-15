@@ -3,6 +3,27 @@ import { createClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
+type UsuarioAuthIdRow = { auth_id: string | null };
+type UsuarioCondominioLinkRow = { id: string };
+type UsuarioListRow = {
+  id: string;
+  auth_id: string | null;
+  nome: string;
+  email: string;
+  telefone: string | null;
+  avatar_url: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  role: string | null;
+  unidade_id: string | null;
+  usuario_condominios?: Array<{
+    role: string;
+    condominio?: { id: string; nome: string } | null;
+  }> | null;
+  unidades_habitacionais?: { numero: string | null } | null;
+};
+
 // ============================================
 // Helper: verify superadmin
 // ============================================
@@ -64,7 +85,11 @@ export async function GET(request: NextRequest) {
     const { data: authListData } = await admin.auth.admin.listUsers({ perPage: 200 });
     if (authListData?.users) {
       const { data: existingUsuarios } = await admin.from('usuarios').select('auth_id');
-      const existingAuthIds = new Set((existingUsuarios || []).map((u: any) => u.auth_id));
+      const existingAuthIds = new Set(
+        ((existingUsuarios || []) as UsuarioAuthIdRow[])
+          .map((u) => u.auth_id)
+          .filter((authId): authId is string => Boolean(authId))
+      );
 
       const orphans = authListData.users.filter((au) => !existingAuthIds.has(au.id));
       let orphanSyncErrors = 0;
@@ -98,7 +123,7 @@ export async function GET(request: NextRequest) {
                 telefone: meta.telefone || null,
                 role: 'morador',
                 status: 'pending',
-              } as any)
+              })
               .select('id')
               .single();
 
@@ -115,13 +140,13 @@ export async function GET(request: NextRequest) {
           }
 
           if (condominioId && usuarioId) {
-            await admin.from('usuario_condominios' as any).upsert(
+            await admin.from('usuario_condominios').upsert(
               {
                 usuario_id: usuarioId,
                 condominio_id: condominioId,
                 role: 'morador',
                 status: 'pending',
-              } as any,
+              },
               { onConflict: 'usuario_id,condominio_id' }
             );
           }
@@ -194,7 +219,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  const formatted = (data || []).map((u: any) => ({
+  const formatted = ((data || []) as UsuarioListRow[]).map((u) => ({
     id: u.id,
     auth_id: u.auth_id || '',
     nome: u.nome,
@@ -205,7 +230,7 @@ export async function GET(request: NextRequest) {
     role: u.role || 'morador',
     created_at: u.created_at,
     updated_at: u.updated_at,
-    condominios: (u.usuario_condominios || []).map((uc: any) => ({
+    condominios: (u.usuario_condominios || []).map((uc) => ({
       condominio_id: uc.condominio?.id || '',
       condominio_nome: uc.condominio?.nome || 'Desconhecido',
       role: uc.role,
@@ -279,7 +304,7 @@ export async function POST(request: NextRequest) {
         telefone: telefone || null,
         role: targetRole,
         status: targetStatus,
-      } as any)
+      })
       .eq('id', usuarioId);
   } else {
     const { data: newUser, error: insertError } = await admin
@@ -291,7 +316,7 @@ export async function POST(request: NextRequest) {
         telefone: telefone || null,
         role: targetRole,
         status: targetStatus,
-      } as any)
+      })
       .select('id')
       .single();
 
@@ -306,19 +331,19 @@ export async function POST(request: NextRequest) {
   // 3. Ensure usuario_condominios link exists
   if (condominio_id) {
     const { data: existingLink } = await admin
-      .from('usuario_condominios' as any)
+      .from('usuario_condominios')
       .select('id')
       .eq('usuario_id', usuarioId)
       .eq('condominio_id', condominio_id)
       .single();
 
     if (!existingLink) {
-      await admin.from('usuario_condominios' as any).insert({
+      await admin.from('usuario_condominios').insert({
         usuario_id: usuarioId,
         condominio_id,
         role: targetRole,
         status: targetStatus,
-      } as any);
+      });
     }
   }
 
@@ -366,30 +391,24 @@ export async function PUT(request: NextRequest) {
   // Sync role to usuario_condominios if role changed
   if (role !== undefined) {
     const { data: links } = await admin
-      .from('usuario_condominios' as any)
+      .from('usuario_condominios')
       .select('id')
       .eq('usuario_id', id);
 
-    if (links && links.length > 0) {
-      await admin
-        .from('usuario_condominios' as any)
-        .update({ role } as any)
-        .eq('usuario_id', id);
+    if (((links || []) as UsuarioCondominioLinkRow[]).length > 0) {
+      await admin.from('usuario_condominios').update({ role }).eq('usuario_id', id);
     }
   }
 
   // Sync status to usuario_condominios links when status changed
   if (status !== undefined) {
     const { data: links } = await admin
-      .from('usuario_condominios' as any)
+      .from('usuario_condominios')
       .select('id')
       .eq('usuario_id', id);
 
-    if (links && links.length > 0) {
-      await admin
-        .from('usuario_condominios' as any)
-        .update({ status } as any)
-        .eq('usuario_id', id);
+    if (((links || []) as UsuarioCondominioLinkRow[]).length > 0) {
+      await admin.from('usuario_condominios').update({ status }).eq('usuario_id', id);
     }
   }
 

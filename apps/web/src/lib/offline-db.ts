@@ -4,6 +4,7 @@
 // ============================================
 
 import { DBSchema, IDBPDatabase, openDB } from 'idb';
+type JsonValue = string | number | boolean | null | { [key: string]: JsonValue } | JsonValue[];
 
 // ============================================
 // SCHEMA DO BANCO
@@ -63,7 +64,14 @@ export interface VulnerableResident {
   nome: string;
   unidade: string;
   bloco: string;
-  tipo: 'idoso' | 'cadeirante' | 'acamado' | 'gestante' | 'crianca' | 'deficiente_visual' | 'deficiente_auditivo';
+  tipo:
+    | 'idoso'
+    | 'cadeirante'
+    | 'acamado'
+    | 'gestante'
+    | 'crianca'
+    | 'deficiente_visual'
+    | 'deficiente_auditivo';
   observacoes: string;
   contato_emergencia?: string;
 }
@@ -73,7 +81,7 @@ export interface PendingAction {
   tipo: 'ocorrencia' | 'chamado' | 'reserva';
   method: 'POST' | 'PUT' | 'DELETE';
   url: string;
-  body: Record<string, any>;
+  body: Record<string, JsonValue>;
   created_at: number;
   retries: number;
 }
@@ -179,7 +187,7 @@ export async function getDB(): Promise<IDBPDatabase<VersixOfflineDB>> {
       if (!db.objectStoreNames.contains('sync-metadata')) {
         db.createObjectStore('sync-metadata', { keyPath: 'key' });
       }
-    }
+    },
   });
 
   return dbInstance;
@@ -224,7 +232,9 @@ export async function getVulnerableResidents(): Promise<VulnerableResident[]> {
   return db.getAll('vulnerable-residents');
 }
 
-export async function getVulnerableResidentsByBuilding(bloco: string): Promise<VulnerableResident[]> {
+export async function getVulnerableResidentsByBuilding(
+  bloco: string
+): Promise<VulnerableResident[]> {
   const db = await getDB();
   return db.getAllFromIndex('vulnerable-residents', 'by-building', bloco);
 }
@@ -232,14 +242,16 @@ export async function getVulnerableResidentsByBuilding(bloco: string): Promise<V
 // ============================================
 // PENDING ACTIONS (Offline Queue)
 // ============================================
-export async function addPendingAction(action: Omit<PendingAction, 'id' | 'created_at' | 'retries'>): Promise<string> {
+export async function addPendingAction(
+  action: Omit<PendingAction, 'id' | 'created_at' | 'retries'>
+): Promise<string> {
   const db = await getDB();
   const id = `action_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   const pendingAction: PendingAction = {
     ...action,
     id,
     created_at: Date.now(),
-    retries: 0
+    retries: 0,
   };
   await db.put('pending-actions', pendingAction);
   return id;
@@ -318,7 +330,10 @@ export async function saveEvacuationMap(map: EvacuationMap): Promise<void> {
   await db.put('evacuation-maps', { ...map, cached_at: Date.now() });
 }
 
-export async function getEvacuationMap(bloco: string, andar: string): Promise<EvacuationMap | undefined> {
+export async function getEvacuationMap(
+  bloco: string,
+  andar: string
+): Promise<EvacuationMap | undefined> {
   const db = await getDB();
   return db.get('evacuation-maps', `${bloco}-${andar}`);
 }
@@ -331,7 +346,7 @@ async function updateSyncMetadata(key: string): Promise<void> {
   await db.put('sync-metadata', {
     key,
     last_sync: Date.now(),
-    version: '1.0.0'
+    version: '1.0.0',
   });
 }
 
@@ -359,7 +374,7 @@ export async function getAllCriticalData(): Promise<{
     getVulnerableResidents(),
     getCondominioInfo(),
     getLastSyncTime('emergency-contacts'),
-    getLastSyncTime('vulnerable-residents')
+    getLastSyncTime('vulnerable-residents'),
   ]);
 
   return {
@@ -368,8 +383,8 @@ export async function getAllCriticalData(): Promise<{
     condominio,
     lastSync: {
       contacts: contactsSync,
-      vulnerable: vulnerableSync
-    }
+      vulnerable: vulnerableSync,
+    },
   };
 }
 
@@ -386,7 +401,7 @@ export async function clearAllOfflineData(): Promise<void> {
     'condominio-info',
     'notifications-cache',
     'evacuation-maps',
-    'sync-metadata'
+    'sync-metadata',
   ] as const;
 
   for (const store of stores) {

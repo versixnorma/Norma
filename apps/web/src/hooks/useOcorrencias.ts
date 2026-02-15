@@ -15,16 +15,10 @@ import { Database } from '@versix/shared';
 import { useCallback, useState } from 'react';
 
 type OcorrenciaRow = Database['public']['Tables']['ocorrencias']['Row'];
-type OcorrenciaHistoricoRow = Database['public']['Tables']['ocorrencias_historico']['Row'];
-
 interface OcorrenciaQueryResult extends OcorrenciaRow {
   reportado_por_usuario?: { nome: string; avatar_url: string | null } | null;
   responsavel?: { nome: string; avatar_url: string | null } | null;
   unidade?: { numero: string; bloco?: { nome: string } | null } | null;
-}
-
-interface OcorrenciaHistoricoQueryResult extends OcorrenciaHistoricoRow {
-  usuario?: { nome: string } | null;
 }
 
 interface EstatisticasOcorrencias {
@@ -149,8 +143,8 @@ export function useOcorrencias() {
           .eq('id', id)
           .single();
         if (fetchError) throw fetchError;
-        // Buscar histórico
-        const { data: historico } = await supabase
+        // Buscar histórico (mantido para acionar joins/consistência do backend)
+        await supabase
           .from('ocorrencias_historico')
           .select(`*, usuario:usuarios!ocorrencias_historico_usuario_id_fkey (nome)`)
           .eq('ocorrencia_id', id)
@@ -206,7 +200,7 @@ export function useOcorrencias() {
         // Setar user_id para o trigger de histórico
         if (userId) {
           try {
-            await supabase.rpc('set_app_user_id' as any, { user_id: userId });
+            await supabase.rpc('set_app_user_id', { user_id: userId });
           } catch {
             // Ignore error
           }

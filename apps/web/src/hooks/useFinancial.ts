@@ -310,9 +310,11 @@ export function useFinancial({
 
   const updateLancamento = async (id: string, data: Partial<LancamentoFinanceiro>) => {
     try {
+      const updatePayload =
+        data as unknown as Database['public']['Tables']['lancamentos_financeiros']['Update'];
       const { error } = await supabase
         .from('lancamentos_financeiros')
-        .update(data as any)
+        .update(updatePayload)
         .eq('id', id);
 
       if (error) throw error;

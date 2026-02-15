@@ -304,7 +304,7 @@ export async function getCohortData(
     const size = cohortUsers.length;
     const periods: { period: number; retained: number; rate: number }[] = [];
 
-    sortedMonths.forEach((checkMonth, idx) => {
+    sortedMonths.forEach((checkMonth) => {
       if (checkMonth < cohortMonth) return;
       const periodNum = sortedMonths.indexOf(checkMonth) - sortedMonths.indexOf(cohortMonth);
       const retained = cohortUsers.filter((uid) =>

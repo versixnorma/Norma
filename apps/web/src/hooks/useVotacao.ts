@@ -11,20 +11,6 @@ import type {
 } from '@versix/shared';
 import { useCallback, useState } from 'react';
 
-// Type for comentario query result
-interface ComentarioQueryResult {
-  id: string;
-  pauta_id: string;
-  usuario_id: string;
-  conteudo: string;
-  visivel: boolean;
-  moderado_por?: string | null;
-  moderado_em?: string | null;
-  motivo_moderacao?: string | null;
-  created_at: string;
-  usuario?: { nome: string; avatar_url: string | null } | null;
-}
-
 // Helper to get table reference for tables not in generated types
 const getUntypedTable = (supabase: ReturnType<typeof getSupabaseClient>, table: string) =>
   (supabase as { from: (t: string) => ReturnType<typeof supabase.from> }).from(table);

@@ -12,6 +12,25 @@ import { useCallback, useState } from 'react';
 
 // Tipos do banco
 type NotificacoesConfig = Database['public']['Tables']['notificacoes_config']['Row'];
+type PushTokenEntry = {
+  token: string;
+  device_type?: string;
+  device_name?: string;
+  last_used?: string;
+};
+
+function normalizePushTokens(value: unknown): PushTokenEntry[] {
+  if (Array.isArray(value)) return value as PushTokenEntry[];
+  if (typeof value === 'string' && value.length > 0) {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? (parsed as PushTokenEntry[]) : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
 
 /**
  * Normaliza dados do banco para o tipo UsuarioCanaisPreferencias
@@ -22,11 +41,7 @@ function normalizePreferencias(
 ): UsuarioCanaisPreferencias {
   return {
     ...data,
-    push_tokens: Array.isArray(data.push_tokens)
-      ? (data.push_tokens as any)
-      : data.push_tokens
-        ? JSON.parse(data.push_tokens as string)
-        : null,
+    push_tokens: normalizePushTokens(data.push_tokens),
   };
 }
 
@@ -120,8 +135,8 @@ export function usePreferenciasCanais() {
         if (!current) return false;
 
         // Adicionar novo token (evitar duplicatas)
-        const currentTokens = (current.push_tokens as any) || [];
-        const tokenExists = currentTokens.some((t: any) => t.token === token);
+        const currentTokens = normalizePushTokens(current.push_tokens);
+        const tokenExists = currentTokens.some((t) => t.token === token);
 
         if (tokenExists) return true;
 
@@ -162,8 +177,8 @@ export function usePreferenciasCanais() {
 
         if (!current) return false;
 
-        const updatedTokens = ((current.push_tokens as any) || []).filter(
-          (t: any) => t.token !== token
+        const updatedTokens = normalizePushTokens(current.push_tokens).filter(
+          (t) => t.token !== token
         );
 
         const { error: updateError } = await supabase

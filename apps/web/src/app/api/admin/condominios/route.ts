@@ -3,6 +3,25 @@ import { createClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
+type BlocoRow = { id: string; nome: string };
+type UnidadeAtivaRow = { id: string; bloco_id: string | null; numero: string | number | null };
+type CondominioListRow = {
+  id: string;
+  nome: string;
+  cnpj: string | null;
+  endereco: string | null;
+  created_at: string;
+};
+type UsuarioCondominioRow = {
+  condominio_id: string;
+  role: string;
+  usuario: { id: string; nome: string } | null;
+};
+type BlocoComUnidadesRow = {
+  condominio_id: string;
+  unidades_habitacionais?: Array<{ id: string }> | null;
+};
+
 async function verifySuperadmin() {
   const authClient = createClient(await cookies());
   const {
@@ -65,7 +84,7 @@ async function ensureCondominioUnits(
     .eq('condominio_id', condominioId)
     .order('created_at', { ascending: true });
 
-  const blocosByName = new Map<string, { id: string; nome: string }>();
+  const blocosByName = new Map<string, BlocoRow>();
   for (const bloco of blocosExistentes || []) {
     blocosByName.set(String(bloco.nome).trim().toLowerCase(), {
       id: bloco.id,
@@ -74,7 +93,7 @@ async function ensureCondominioUnits(
   }
 
   const desiredNames = blockNames.length > 0 ? blockNames : ['Bloco Único'];
-  const orderedBlocos: Array<{ id: string; nome: string }> = [];
+  const orderedBlocos: BlocoRow[] = [];
 
   for (const name of desiredNames) {
     const key = name.trim().toLowerCase();
@@ -89,7 +108,7 @@ async function ensureCondominioUnits(
       .insert({
         condominio_id: condominioId,
         nome: name,
-      } as any)
+      })
       .select('id, nome')
       .single();
 
@@ -116,22 +135,28 @@ async function ensureCondominioUnits(
     .eq('condominio_id', condominioId)
     .eq('ativo', true);
 
-  const unidadesAtivas = unidadesExistentes || [];
+  const unidadesAtivas = (unidadesExistentes || []) as UnidadeAtivaRow[];
   const existingCount = unidadesAtivas.length;
   if (existingCount >= totalUnidades) return;
 
   const nextNumberByBloco = new Map<string, number>();
   for (const bloco of orderedBlocos) {
     const maxNumero = unidadesAtivas
-      .filter((u: any) => u.bloco_id === bloco.id)
-      .map((u: any) => Number(u.numero))
+      .filter((u) => u.bloco_id === bloco.id)
+      .map((u) => Number(u.numero))
       .filter((n: number) => Number.isFinite(n))
       .reduce((max: number, n: number) => Math.max(max, n), 0);
     nextNumberByBloco.set(bloco.id, maxNumero + 1);
   }
 
   const missing = totalUnidades - existingCount;
-  const novasUnidades: Array<Record<string, unknown>> = [];
+  const novasUnidades: Array<{
+    condominio_id: string;
+    bloco_id: string;
+    numero: string;
+    tipo: string;
+    ativo: boolean;
+  }> = [];
   for (let i = 0; i < missing; i += 1) {
     const bloco = orderedBlocos[i % orderedBlocos.length];
     const numero = String(nextNumberByBloco.get(bloco.id) || 1);
@@ -148,7 +173,7 @@ async function ensureCondominioUnits(
   if (novasUnidades.length > 0) {
     const { error: unidadesError } = await admin
       .from('unidades_habitacionais')
-      .insert(novasUnidades as any);
+      .insert(novasUnidades);
     if (unidadesError) {
       console.error('Erro ao criar unidades automáticas:', unidadesError);
     }
@@ -180,12 +205,12 @@ export async function GET() {
   }
 
   // For each condominio, get user count and sindico
-  const condominioIds = (condominios || []).map((c: { id: string }) => c.id);
+  const condominioRows = (condominios || []) as CondominioListRow[];
+  const condominioIds = condominioRows.map((c) => c.id);
 
   // Get users per condominio via usuario_condominios
-  const ucTable = 'usuario_condominios' as any; // eslint-disable-line @typescript-eslint/no-explicit-any
   const { data: ucData } = await admin
-    .from(ucTable)
+    .from('usuario_condominios')
     .select('condominio_id, role, usuario:usuario_id (id, nome)')
     .in('condominio_id', condominioIds.length > 0 ? condominioIds : ['__none__']);
 
@@ -198,21 +223,21 @@ export async function GET() {
   // Build lookup maps
   const userCountMap: Record<string, number> = {};
   const sindicoMap: Record<string, string | null> = {};
-  for (const uc of (ucData as any[]) || []) {
+  for (const uc of (ucData || []) as UsuarioCondominioRow[]) {
     const cid = uc.condominio_id;
     userCountMap[cid] = (userCountMap[cid] || 0) + 1;
     if (uc.role === 'sindico' && uc.usuario) {
-      sindicoMap[cid] = (uc.usuario as any).nome || null;
+      sindicoMap[cid] = uc.usuario.nome || null;
     }
   }
 
   const unitCountMap: Record<string, number> = {};
-  for (const bloco of (blocos as any[]) || []) {
+  for (const bloco of (blocos || []) as BlocoComUnidadesRow[]) {
     const cid = bloco.condominio_id;
     unitCountMap[cid] = (unitCountMap[cid] || 0) + (bloco.unidades_habitacionais?.length || 0);
   }
 
-  const formatted = (condominios || []).map((c: any) => ({
+  const formatted = condominioRows.map((c) => ({
     id: c.id,
     nome: c.nome,
     slug: c.cnpj || c.id,
@@ -235,7 +260,11 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json();
   const { blocos_ruas, ...insertPayload } = body as Record<string, unknown>;
-  const { data, error } = await admin.from('condominios').insert(insertPayload).select('id').single();
+  const { data, error } = await admin
+    .from('condominios')
+    .insert(insertPayload)
+    .select('id')
+    .single();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
@@ -254,7 +283,11 @@ export async function PUT(request: NextRequest) {
   const { admin } = result;
 
   const body = await request.json();
-  const { id, blocos_ruas, ...updates } = body as { id: string; blocos_ruas?: unknown; [key: string]: unknown };
+  const { id, blocos_ruas, ...updates } = body as {
+    id: string;
+    blocos_ruas?: unknown;
+    [key: string]: unknown;
+  };
 
   if (!id) {
     return NextResponse.json({ error: 'ID do condominio e obrigatorio' }, { status: 400 });

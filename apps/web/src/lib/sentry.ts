@@ -7,6 +7,8 @@ import { logger } from '@/lib/logger';
 import type { SentryContext, SentryUser } from '@/types/observabilidade';
 import * as Sentry from '@sentry/react';
 
+type BreadcrumbData = Record<string, unknown>;
+
 const SENTRY_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN;
 const ENVIRONMENT = process.env.NEXT_PUBLIC_ENVIRONMENT || 'development';
 const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0';
@@ -88,7 +90,8 @@ export function initSentry() {
     ],
 
     // Sanitização de dados sensíveis
-    beforeSend(event, hint) {
+    beforeSend(event, _hint) {
+      void _hint;
       // Remover dados sensíveis do request
       if (event.request?.data) {
         try {
@@ -166,7 +169,7 @@ export function clearUser() {
 export function addBreadcrumb(
   category: string,
   message: string,
-  data?: Record<string, any>,
+  data?: BreadcrumbData,
   level: Sentry.SeverityLevel = 'info'
 ) {
   Sentry.addBreadcrumb({
@@ -214,7 +217,7 @@ export function captureError(
 export function captureMessage(
   message: string,
   level: Sentry.SeverityLevel = 'info',
-  context?: Record<string, any>
+  context?: BreadcrumbData
 ) {
   Sentry.withScope((scope) => {
     scope.setLevel(level);
@@ -255,7 +258,7 @@ export function measureSync<T>(name: string, operation: string, fn: () => T): T 
 
 export function setCustomMetric(name: string, value: number, unit?: string) {
   // Sentry.setMeasurement accepts string units - just pass directly
-  Sentry.setMeasurement(name, value, unit as any);
+  Sentry.setMeasurement(name, value, unit);
 }
 
 // =====================================================

@@ -27,7 +27,7 @@ export async function GET() {
   }
 
   const { data: link } = await admin
-    .from('usuario_condominios' as any)
+    .from('usuario_condominios')
     .select('condominio_id, role')
     .eq('usuario_id', usuario.id)
     .eq('status', 'active')
@@ -35,7 +35,7 @@ export async function GET() {
     .limit(1)
     .maybeSingle();
 
-  const linkData = (link as { condominio_id?: string; role?: string } | null) || null;
+  const linkData = (link as { condominio_id: string | null; role: string | null } | null) || null;
   const condominioId = linkData?.condominio_id;
   if (!condominioId) {
     return NextResponse.json({ data: null });
