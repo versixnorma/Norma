@@ -4,7 +4,7 @@ import { type AdminUser } from '@/hooks/useAdmin';
 import { useImpersonate } from '@/hooks/useImpersonate';
 import type { Database } from '@/types/database';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 type StatusType = Database['public']['Enums']['user_status'];
@@ -13,6 +13,14 @@ interface UserFormData {
   nome: string;
   email: string;
   telefone: string;
+  cpf: string;
+  data_nascimento: string;
+  condominio_id: string;
+  bloco_id: string;
+  unidade_id: string;
+  notificacoes_email: boolean;
+  notificacoes_push: boolean;
+  notificacoes_whatsapp: boolean;
   role: string;
   status: string;
   senha: string;
@@ -22,9 +30,25 @@ const EMPTY_FORM: UserFormData = {
   nome: '',
   email: '',
   telefone: '',
+  cpf: '',
+  data_nascimento: '',
+  condominio_id: '',
+  bloco_id: '',
+  unidade_id: '',
+  notificacoes_email: true,
+  notificacoes_push: true,
+  notificacoes_whatsapp: false,
   role: 'morador',
   status: 'active',
   senha: '',
+};
+
+type CondominioOption = { id: string; nome: string };
+type UnidadeOption = {
+  id: string;
+  numero: string;
+  bloco_id: string | null;
+  bloco_nome: string | null;
 };
 
 interface UserTableProps {
@@ -37,6 +61,13 @@ interface UserTableProps {
     nome: string;
     email: string;
     telefone?: string;
+    cpf?: string;
+    data_nascimento?: string;
+    condominio_id?: string;
+    unidade_id?: string;
+    notificacoes_email?: boolean;
+    notificacoes_push?: boolean;
+    notificacoes_whatsapp?: boolean;
     role?: string;
     status?: string;
     senha?: string;
@@ -46,6 +77,13 @@ interface UserTableProps {
     nome?: string;
     email?: string;
     telefone?: string;
+    cpf?: string;
+    data_nascimento?: string;
+    condominio_id?: string;
+    unidade_id?: string;
+    notificacoes_email?: boolean;
+    notificacoes_push?: boolean;
+    notificacoes_whatsapp?: boolean;
     role?: string;
     status?: string;
   }) => Promise<{ success: boolean; error?: string }>;
@@ -111,6 +149,8 @@ export function UserTable({
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [formData, setFormData] = useState<UserFormData>(EMPTY_FORM);
   const [formLoading, setFormLoading] = useState(false);
+  const [condominios, setCondominios] = useState<CondominioOption[]>([]);
+  const [unidades, setUnidades] = useState<UnidadeOption[]>([]);
 
   const displayUsers = searchQuery && searchResults.length > 0 ? searchResults : users;
 
@@ -167,6 +207,14 @@ export function UserTable({
       nome: user.nome,
       email: user.email,
       telefone: user.telefone || '',
+      cpf: user.cpf || '',
+      data_nascimento: user.data_nascimento || '',
+      condominio_id: user.condominios[0]?.condominio_id || '',
+      bloco_id: '',
+      unidade_id: user.unidade_id || '',
+      notificacoes_email: user.notificacoes_email ?? true,
+      notificacoes_push: user.notificacoes_push ?? true,
+      notificacoes_whatsapp: user.notificacoes_whatsapp ?? false,
       role: user.condominios[0]?.role || 'morador',
       status: user.status,
       senha: '',
@@ -179,12 +227,85 @@ export function UserTable({
     setShowUserModal(false);
     setEditingUser(null);
     setFormData(EMPTY_FORM);
+    setUnidades([]);
   };
+
+  const formatCPF = (value: string) => {
+    const numbers = value.replace(/\D/g, '').slice(0, 11);
+    return numbers
+      .replace(/^(\d{3})(\d)/, '$1.$2')
+      .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
+      .replace(/\.(\d{3})(\d)/, '.$1-$2');
+  };
+
+  useEffect(() => {
+    if (!showUserModal) return;
+    fetch('/api/condominios')
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) setCondominios(data);
+      })
+      .catch(() => setCondominios([]));
+  }, [showUserModal]);
+
+  useEffect(() => {
+    if (!formData.condominio_id) {
+      setUnidades([]);
+      return;
+    }
+    fetch(`/api/condominios/${formData.condominio_id}/unidades`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) setUnidades(data);
+        else setUnidades([]);
+      })
+      .catch(() => setUnidades([]));
+  }, [formData.condominio_id]);
+
+  useEffect(() => {
+    if (!formData.unidade_id || formData.bloco_id) return;
+    const selected = unidades.find((u) => u.id === formData.unidade_id);
+    if (selected?.bloco_id) {
+      setFormData((prev) => ({ ...prev, bloco_id: selected.bloco_id || '' }));
+    }
+  }, [unidades, formData.unidade_id, formData.bloco_id]);
+
+  const blocosDisponiveis = useMemo(
+    () =>
+      Array.from(
+        new Map(
+          unidades.map((u) => [
+            u.bloco_id || '__sem_bloco__',
+            { id: u.bloco_id || '__sem_bloco__', nome: u.bloco_nome || 'Bloco Único' },
+          ])
+        ).values()
+      ),
+    [unidades]
+  );
+  const unidadesFiltradas = useMemo(
+    () =>
+      formData.bloco_id
+        ? unidades.filter((u) => (u.bloco_id || '__sem_bloco__') === formData.bloco_id)
+        : [],
+    [formData.bloco_id, unidades]
+  );
 
   // Handle form submit
   const handleUserFormSubmit = async () => {
-    if (!formData.nome.trim() || !formData.email.trim()) {
-      toast.error('Nome e email sao obrigatorios');
+    if (
+      !formData.nome.trim() ||
+      !formData.email.trim() ||
+      !formData.cpf.trim() ||
+      !formData.data_nascimento ||
+      !formData.condominio_id ||
+      !formData.bloco_id ||
+      !formData.unidade_id
+    ) {
+      toast.error('Preencha todos os campos obrigatórios');
+      return;
+    }
+    if (formData.cpf.replace(/\D/g, '').length !== 11) {
+      toast.error('Informe um CPF válido');
       return;
     }
 
@@ -197,6 +318,13 @@ export function UserTable({
         nome: formData.nome,
         email: formData.email,
         telefone: formData.telefone || undefined,
+        cpf: formData.cpf || undefined,
+        data_nascimento: formData.data_nascimento || undefined,
+        condominio_id: formData.condominio_id || undefined,
+        unidade_id: formData.unidade_id || undefined,
+        notificacoes_email: formData.notificacoes_email,
+        notificacoes_push: formData.notificacoes_push,
+        notificacoes_whatsapp: formData.notificacoes_whatsapp,
         role: formData.role,
         status: formData.status,
       });
@@ -213,6 +341,13 @@ export function UserTable({
         nome: formData.nome,
         email: formData.email,
         telefone: formData.telefone || undefined,
+        cpf: formData.cpf || undefined,
+        data_nascimento: formData.data_nascimento || undefined,
+        condominio_id: formData.condominio_id || undefined,
+        unidade_id: formData.unidade_id || undefined,
+        notificacoes_email: formData.notificacoes_email,
+        notificacoes_push: formData.notificacoes_push,
+        notificacoes_whatsapp: formData.notificacoes_whatsapp,
         role: formData.role,
         status: formData.status,
         senha: formData.senha || undefined,
@@ -229,7 +364,27 @@ export function UserTable({
     setFormLoading(false);
   };
 
-  const updateField = (field: keyof UserFormData, value: string) => {
+  const updateField = (
+    field:
+      | 'nome'
+      | 'email'
+      | 'telefone'
+      | 'cpf'
+      | 'data_nascimento'
+      | 'condominio_id'
+      | 'bloco_id'
+      | 'unidade_id'
+      | 'role'
+      | 'status'
+      | 'senha',
+    value: string
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+  const updateToggle = (
+    field: 'notificacoes_email' | 'notificacoes_push' | 'notificacoes_whatsapp',
+    value: boolean
+  ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -498,6 +653,136 @@ export function UserTable({
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      CPF *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.cpf}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, cpf: formatCPF(e.target.value) }))
+                      }
+                      placeholder="000.000.000-00"
+                      className="w-full rounded-xl border-none bg-gray-100 px-4 py-3 text-gray-700 placeholder-gray-500 focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Data de nascimento *
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.data_nascimento}
+                      onChange={(e) => updateField('data_nascimento', e.target.value)}
+                      className="w-full rounded-xl border-none bg-gray-100 px-4 py-3 text-gray-700 focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Condomínio *
+                  </label>
+                  <select
+                    value={formData.condominio_id}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        condominio_id: e.target.value,
+                        bloco_id: '',
+                        unidade_id: '',
+                      }))
+                    }
+                    className="w-full rounded-xl border-none bg-gray-100 px-4 py-3 text-gray-700 focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:text-white"
+                  >
+                    <option value="">Selecione um condomínio</option>
+                    {condominios.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.nome}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Bloco/Rua *
+                    </label>
+                    <select
+                      value={formData.bloco_id}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          bloco_id: e.target.value,
+                          unidade_id: '',
+                        }))
+                      }
+                      disabled={!formData.condominio_id}
+                      className="w-full rounded-xl border-none bg-gray-100 px-4 py-3 text-gray-700 focus:ring-2 focus:ring-primary disabled:opacity-60 dark:bg-gray-800 dark:text-white"
+                    >
+                      <option value="">Selecione</option>
+                      {blocosDisponiveis.map((bloco) => (
+                        <option key={bloco.id} value={bloco.id}>
+                          {bloco.nome}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Unidade *
+                    </label>
+                    <select
+                      value={formData.unidade_id}
+                      onChange={(e) => updateField('unidade_id', e.target.value)}
+                      disabled={!formData.bloco_id}
+                      className="w-full rounded-xl border-none bg-gray-100 px-4 py-3 text-gray-700 focus:ring-2 focus:ring-primary disabled:opacity-60 dark:bg-gray-800 dark:text-white"
+                    >
+                      <option value="">Selecione</option>
+                      {unidadesFiltradas.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.numero}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="rounded-xl bg-gray-50 p-3 dark:bg-gray-800/60">
+                  <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Notificações
+                  </p>
+                  <div className="grid grid-cols-3 gap-3 text-sm">
+                    <label className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                      <input
+                        type="checkbox"
+                        checked={formData.notificacoes_email}
+                        onChange={(e) => updateToggle('notificacoes_email', e.target.checked)}
+                      />
+                      Email
+                    </label>
+                    <label className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                      <input
+                        type="checkbox"
+                        checked={formData.notificacoes_push}
+                        onChange={(e) => updateToggle('notificacoes_push', e.target.checked)}
+                      />
+                      Push
+                    </label>
+                    <label className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                      <input
+                        type="checkbox"
+                        checked={formData.notificacoes_whatsapp}
+                        onChange={(e) => updateToggle('notificacoes_whatsapp', e.target.checked)}
+                      />
+                      WhatsApp
+                    </label>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Role
                     </label>
                     <select
@@ -559,7 +844,16 @@ export function UserTable({
               </button>
               <button
                 onClick={handleUserFormSubmit}
-                disabled={formLoading || !formData.nome.trim() || !formData.email.trim()}
+                disabled={
+                  formLoading ||
+                  !formData.nome.trim() ||
+                  !formData.email.trim() ||
+                  !formData.cpf.trim() ||
+                  !formData.data_nascimento ||
+                  !formData.condominio_id ||
+                  !formData.bloco_id ||
+                  !formData.unidade_id
+                }
                 className="rounded-lg bg-primary px-6 py-2 font-medium text-white transition-colors hover:bg-primary/90 disabled:opacity-50"
               >
                 {formLoading

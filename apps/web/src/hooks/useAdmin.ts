@@ -27,6 +27,12 @@ export interface AdminUser {
   avatar_url: string | null;
   status: StatusType;
   role: RoleType;
+  unidade_id: string | null;
+  cpf: string | null;
+  data_nascimento: string | null;
+  notificacoes_email: boolean;
+  notificacoes_push: boolean;
+  notificacoes_whatsapp: boolean;
   created_at: string;
   updated_at: string;
   condominios: Array<{
@@ -229,6 +235,12 @@ export function useAdmin() {
       role?: string;
       status?: string;
       condominio_id?: string;
+      unidade_id?: string;
+      cpf?: string;
+      data_nascimento?: string;
+      notificacoes_email?: boolean;
+      notificacoes_push?: boolean;
+      notificacoes_whatsapp?: boolean;
       senha?: string;
     }): Promise<{ success: boolean; error?: string }> => {
       setLoading(true);
@@ -267,6 +279,12 @@ export function useAdmin() {
       role?: string;
       status?: string;
       condominio_id?: string;
+      unidade_id?: string;
+      cpf?: string;
+      data_nascimento?: string;
+      notificacoes_email?: boolean;
+      notificacoes_push?: boolean;
+      notificacoes_whatsapp?: boolean;
     }): Promise<{ success: boolean; error?: string }> => {
       setLoading(true);
       try {

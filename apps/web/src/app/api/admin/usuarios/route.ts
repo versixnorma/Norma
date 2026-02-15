@@ -1,7 +1,11 @@
 import { createAdminClient } from '@/lib/supabase';
 import { createClient } from '@/lib/supabase/server';
+import type { Database } from '@/types/database';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
+
+type UserRole = Database['public']['Enums']['user_role'];
+type UserStatus = Database['public']['Enums']['user_status'];
 
 type UsuarioAuthIdRow = { auth_id: string | null };
 type UsuarioCondominioLinkRow = { id: string };
@@ -17,12 +21,38 @@ type UsuarioListRow = {
   updated_at: string;
   role: string | null;
   unidade_id: string | null;
+  cpf: string | null;
+  data_nascimento: string | null;
+  notificacoes_email: boolean;
+  notificacoes_push: boolean;
+  notificacoes_whatsapp: boolean;
   usuario_condominios?: Array<{
     role: string;
     condominio?: { id: string; nome: string } | null;
   }> | null;
   unidades_habitacionais?: { numero: string | null } | null;
 };
+
+const VALID_ROLES: UserRole[] = [
+  'superadmin',
+  'admin_condo',
+  'sindico',
+  'subsindico',
+  'conselheiro',
+  'morador',
+  'proprietario',
+  'inquilino',
+  'porteiro',
+  'zelador',
+];
+const VALID_STATUS: UserStatus[] = ['pending', 'active', 'inactive', 'suspended', 'removed'];
+
+function normalizeRole(role: string | undefined, fallback: UserRole = 'morador'): UserRole {
+  return role && VALID_ROLES.includes(role as UserRole) ? (role as UserRole) : fallback;
+}
+function normalizeStatus(status: string | undefined, fallback: UserStatus = 'active'): UserStatus {
+  return status && VALID_STATUS.includes(status as UserStatus) ? (status as UserStatus) : fallback;
+}
 
 // ============================================
 // Helper: verify superadmin
@@ -190,6 +220,11 @@ export async function GET(request: NextRequest) {
       updated_at,
       role,
       unidade_id,
+      cpf,
+      data_nascimento,
+      notificacoes_email,
+      notificacoes_push,
+      notificacoes_whatsapp,
       usuario_condominios (
         role,
         condominio:condominio_id (
@@ -228,6 +263,12 @@ export async function GET(request: NextRequest) {
     avatar_url: u.avatar_url,
     status: u.status,
     role: u.role || 'morador',
+    unidade_id: u.unidade_id,
+    cpf: u.cpf,
+    data_nascimento: u.data_nascimento,
+    notificacoes_email: u.notificacoes_email,
+    notificacoes_push: u.notificacoes_push,
+    notificacoes_whatsapp: u.notificacoes_whatsapp,
     created_at: u.created_at,
     updated_at: u.updated_at,
     condominios: (u.usuario_condominios || []).map((uc) => ({
@@ -251,13 +292,33 @@ export async function POST(request: NextRequest) {
   const { admin } = result;
 
   const body = await request.json();
-  const { nome, email, telefone, role, status, condominio_id, senha } = body as {
+  const {
+    nome,
+    email,
+    telefone,
+    role,
+    status,
+    condominio_id,
+    unidade_id,
+    cpf,
+    data_nascimento,
+    notificacoes_email,
+    notificacoes_push,
+    notificacoes_whatsapp,
+    senha,
+  } = body as {
     nome: string;
     email: string;
     telefone?: string;
     role?: string;
     status?: string;
     condominio_id?: string;
+    unidade_id?: string;
+    cpf?: string;
+    data_nascimento?: string;
+    notificacoes_email?: boolean;
+    notificacoes_push?: boolean;
+    notificacoes_whatsapp?: boolean;
     senha?: string;
   };
 
@@ -265,8 +326,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Nome e email são obrigatórios' }, { status: 400 });
   }
 
-  const targetRole = role || 'morador';
-  const targetStatus = status || 'active';
+  const targetRole = normalizeRole(role);
+  const targetStatus = normalizeStatus(status);
 
   // 1. Create auth user (trigger handle_new_user may create usuarios row)
   const { data: authData, error: authError } = await admin.auth.admin.createUser({
@@ -277,6 +338,13 @@ export async function POST(request: NextRequest) {
       nome,
       telefone: telefone || null,
       condominio_id: condominio_id || null,
+      unidade_id: unidade_id || null,
+      cpf: cpf || null,
+      data_nascimento: data_nascimento || null,
+      notificacoes_email: typeof notificacoes_email === 'boolean' ? notificacoes_email : true,
+      notificacoes_push: typeof notificacoes_push === 'boolean' ? notificacoes_push : true,
+      notificacoes_whatsapp:
+        typeof notificacoes_whatsapp === 'boolean' ? notificacoes_whatsapp : false,
     },
   });
 
@@ -297,26 +365,39 @@ export async function POST(request: NextRequest) {
 
   if (existingUsuario) {
     usuarioId = existingUsuario.id;
-    await admin
-      .from('usuarios')
-      .update({
-        nome,
-        telefone: telefone || null,
-        role: targetRole,
-        status: targetStatus,
-      } as any)
-      .eq('id', usuarioId);
+    const updatePayload: Database['public']['Tables']['usuarios']['Update'] = {
+      nome,
+      telefone: telefone || null,
+      role: targetRole,
+      status: targetStatus,
+      unidade_id: unidade_id || null,
+      cpf: cpf || null,
+      data_nascimento: data_nascimento || null,
+      notificacoes_email: typeof notificacoes_email === 'boolean' ? notificacoes_email : true,
+      notificacoes_push: typeof notificacoes_push === 'boolean' ? notificacoes_push : true,
+      notificacoes_whatsapp:
+        typeof notificacoes_whatsapp === 'boolean' ? notificacoes_whatsapp : false,
+    };
+    await admin.from('usuarios').update(updatePayload).eq('id', usuarioId);
   } else {
+    const insertPayload: Database['public']['Tables']['usuarios']['Insert'] = {
+      auth_id: authId,
+      nome,
+      email,
+      telefone: telefone || null,
+      role: targetRole,
+      status: targetStatus,
+      unidade_id: unidade_id || null,
+      cpf: cpf || null,
+      data_nascimento: data_nascimento || null,
+      notificacoes_email: typeof notificacoes_email === 'boolean' ? notificacoes_email : true,
+      notificacoes_push: typeof notificacoes_push === 'boolean' ? notificacoes_push : true,
+      notificacoes_whatsapp:
+        typeof notificacoes_whatsapp === 'boolean' ? notificacoes_whatsapp : false,
+    };
     const { data: newUser, error: insertError } = await admin
       .from('usuarios')
-      .insert({
-        auth_id: authId,
-        nome,
-        email,
-        telefone: telefone || null,
-        role: targetRole,
-        status: targetStatus,
-      } as any)
+      .insert(insertPayload)
       .select('id')
       .single();
 
@@ -343,7 +424,7 @@ export async function POST(request: NextRequest) {
         condominio_id,
         role: targetRole,
         status: targetStatus,
-      } as any);
+      });
     }
   }
 
@@ -359,7 +440,21 @@ export async function PUT(request: NextRequest) {
   const { admin } = result;
 
   const body = await request.json();
-  const { id, nome, email, telefone, role, status, condominio_id } = body as {
+  const {
+    id,
+    nome,
+    email,
+    telefone,
+    role,
+    status,
+    condominio_id,
+    unidade_id,
+    cpf,
+    data_nascimento,
+    notificacoes_email,
+    notificacoes_push,
+    notificacoes_whatsapp,
+  } = body as {
     id: string;
     nome?: string;
     email?: string;
@@ -367,6 +462,12 @@ export async function PUT(request: NextRequest) {
     role?: string;
     status?: string;
     condominio_id?: string;
+    unidade_id?: string;
+    cpf?: string;
+    data_nascimento?: string;
+    notificacoes_email?: boolean;
+    notificacoes_push?: boolean;
+    notificacoes_whatsapp?: boolean;
   };
 
   if (!id) {
@@ -378,9 +479,14 @@ export async function PUT(request: NextRequest) {
   if (nome !== undefined) updates.nome = nome;
   if (email !== undefined) updates.email = email;
   if (telefone !== undefined) updates.telefone = telefone;
-  if (role !== undefined) updates.role = role;
-  if (status !== undefined) updates.status = status;
-  if (condominio_id !== undefined) updates.condominio_id = condominio_id;
+  if (unidade_id !== undefined) updates.unidade_id = unidade_id;
+  if (cpf !== undefined) updates.cpf = cpf;
+  if (data_nascimento !== undefined) updates.data_nascimento = data_nascimento;
+  if (notificacoes_email !== undefined) updates.notificacoes_email = notificacoes_email;
+  if (notificacoes_push !== undefined) updates.notificacoes_push = notificacoes_push;
+  if (notificacoes_whatsapp !== undefined) updates.notificacoes_whatsapp = notificacoes_whatsapp;
+  if (role !== undefined) updates.role = normalizeRole(role);
+  if (status !== undefined) updates.status = normalizeStatus(status);
 
   const { error: updateError } = await admin.from('usuarios').update(updates).eq('id', id);
 
@@ -390,32 +496,54 @@ export async function PUT(request: NextRequest) {
 
   // Sync role to usuario_condominios if role changed
   if (role !== undefined) {
+    const roleValue = normalizeRole(role);
     const { data: links } = await admin
       .from('usuario_condominios')
       .select('id')
       .eq('usuario_id', id);
 
     if (((links || []) as UsuarioCondominioLinkRow[]).length > 0) {
-      await admin
-        .from('usuario_condominios')
-        .update({ role } as any)
-        .eq('usuario_id', id);
+      await admin.from('usuario_condominios').update({ role: roleValue }).eq('usuario_id', id);
     }
   }
 
   // Sync status to usuario_condominios links when status changed
   if (status !== undefined) {
+    const statusValue = normalizeStatus(status);
     const { data: links } = await admin
       .from('usuario_condominios')
       .select('id')
       .eq('usuario_id', id);
 
     if (((links || []) as UsuarioCondominioLinkRow[]).length > 0) {
-      await admin
-        .from('usuario_condominios')
-        .update({ status } as any)
-        .eq('usuario_id', id);
+      await admin.from('usuario_condominios').update({ status: statusValue }).eq('usuario_id', id);
     }
+  }
+
+  // Sync selected condominio link when condominio_id is provided
+  if (condominio_id) {
+    const { data: usuarioAtual } = await admin
+      .from('usuarios')
+      .select('role, status')
+      .eq('id', id)
+      .maybeSingle();
+    const roleValue = normalizeRole(
+      role,
+      (usuarioAtual?.role as UserRole | undefined) || 'morador'
+    );
+    const statusValue = normalizeStatus(
+      status,
+      (usuarioAtual?.status as UserStatus | undefined) || 'active'
+    );
+    const linkPayload: Database['public']['Tables']['usuario_condominios']['Insert'] = {
+      usuario_id: id,
+      condominio_id,
+      role: roleValue,
+      status: statusValue,
+    };
+    await admin
+      .from('usuario_condominios')
+      .upsert(linkPayload, { onConflict: 'usuario_id,condominio_id' });
   }
 
   // If email changed, update auth user email too
