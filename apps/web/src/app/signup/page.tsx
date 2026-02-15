@@ -14,10 +14,19 @@ export default function SignupPage() {
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [condominios, setCondominios] = useState<{ id: string; nome: string }[]>([]);
+  const [unidades, setUnidades] = useState<
+    { id: string; numero: string; bloco_nome: string | null }[]
+  >([]);
   const [formData, setFormData] = useState({
     nome: '',
     email: '',
     telefone: '',
+    cpf: '',
+    data_nascimento: '',
+    unidade_id: '',
+    notificacoes_email: true,
+    notificacoes_push: true,
+    notificacoes_whatsapp: false,
     password: '',
     confirmPassword: '',
     condominio_id: '',
@@ -38,6 +47,22 @@ export default function SignupPage() {
       .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    if (!formData.condominio_id) {
+      setUnidades([]);
+      setFormData((prev) => ({ ...prev, unidade_id: '' }));
+      return;
+    }
+
+    fetch(`/api/condominios/${formData.condominio_id}/unidades`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) setUnidades(data);
+        else setUnidades([]);
+      })
+      .catch(() => setUnidades([]));
+  }, [formData.condominio_id]);
+
   // Redirect se já autenticado
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
@@ -48,8 +73,21 @@ export default function SignupPage() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.nome || !formData.email || !formData.password || !formData.condominio_id) {
+    if (
+      !formData.nome ||
+      !formData.email ||
+      !formData.password ||
+      !formData.condominio_id ||
+      !formData.unidade_id ||
+      !formData.cpf ||
+      !formData.data_nascimento
+    ) {
       toast.error('Preencha todos os campos obrigatórios');
+      return;
+    }
+
+    if (formData.cpf.replace(/\D/g, '').length !== 11) {
+      toast.error('Informe um CPF válido');
       return;
     }
 
@@ -76,6 +114,12 @@ export default function SignupPage() {
       password: formData.password,
       telefone: formData.telefone || undefined,
       condominio_id: formData.condominio_id,
+      unidade_id: formData.unidade_id,
+      cpf: formData.cpf,
+      data_nascimento: formData.data_nascimento,
+      notificacoes_email: formData.notificacoes_email,
+      notificacoes_push: formData.notificacoes_push,
+      notificacoes_whatsapp: formData.notificacoes_whatsapp,
     });
 
     if (result.success) {
@@ -104,6 +148,14 @@ export default function SignupPage() {
       return numbers.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
     }
     return value;
+  };
+
+  const formatCPF = (value: string) => {
+    const numbers = value.replace(/\D/g, '').slice(0, 11);
+    return numbers
+      .replace(/^(\d{3})(\d)/, '$1.$2')
+      .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
+      .replace(/\.(\d{3})(\d)/, '.$1-$2');
   };
 
   if (authLoading) {
@@ -195,6 +247,39 @@ export default function SignupPage() {
               />
             </div>
 
+            {/* CPF */}
+            <div className="relative">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                <span className="material-symbols-outlined text-xl text-gray-400">badge</span>
+              </div>
+              <input
+                type="text"
+                value={formData.cpf}
+                onChange={(e) => setFormData({ ...formData, cpf: formatCPF(e.target.value) })}
+                className="w-full rounded-xl border-none bg-white/95 py-3.5 pl-12 pr-4 text-sm text-gray-700 placeholder-gray-500 shadow-lg backdrop-blur-md focus:ring-2 focus:ring-secondary"
+                placeholder="CPF *"
+                required
+                disabled={loading}
+              />
+            </div>
+
+            {/* Data de nascimento */}
+            <div className="relative">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                <span className="material-symbols-outlined text-xl text-gray-400">
+                  calendar_month
+                </span>
+              </div>
+              <input
+                type="date"
+                value={formData.data_nascimento}
+                onChange={(e) => setFormData({ ...formData, data_nascimento: e.target.value })}
+                className="w-full rounded-xl border-none bg-white/95 py-3.5 pl-12 pr-4 text-sm text-gray-700 shadow-lg backdrop-blur-md focus:ring-2 focus:ring-secondary"
+                required
+                disabled={loading}
+              />
+            </div>
+
             {/* Condomínio */}
             <div className="relative">
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
@@ -213,6 +298,32 @@ export default function SignupPage() {
                 {condominios.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.nome}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
+                <span className="material-symbols-outlined text-lg text-gray-400">expand_more</span>
+              </div>
+            </div>
+
+            {/* Unidade Habitacional */}
+            <div className="relative">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                <span className="material-symbols-outlined text-xl text-gray-400">home</span>
+              </div>
+              <select
+                value={formData.unidade_id}
+                onChange={(e) => setFormData({ ...formData, unidade_id: e.target.value })}
+                className="w-full appearance-none rounded-xl border-none bg-white/95 py-3.5 pl-12 pr-4 text-sm text-gray-700 shadow-lg backdrop-blur-md focus:ring-2 focus:ring-secondary dark:bg-gray-800/95 dark:text-gray-200"
+                required
+                disabled={loading || !formData.condominio_id}
+              >
+                <option value="" disabled>
+                  Selecione sua unidade *
+                </option>
+                {unidades.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.bloco_nome ? `${u.bloco_nome} - ${u.numero}` : u.numero}
                   </option>
                 ))}
               </select>
@@ -255,6 +366,43 @@ export default function SignupPage() {
             </div>
 
             {/* Terms */}
+            <div className="space-y-2 rounded-xl bg-white/10 p-3">
+              <p className="text-xs font-semibold text-blue-100">Notificações</p>
+              <label className="flex items-center justify-between text-xs text-white">
+                <span>Email</span>
+                <input
+                  type="checkbox"
+                  checked={formData.notificacoes_email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, notificacoes_email: e.target.checked })
+                  }
+                  disabled={loading}
+                />
+              </label>
+              <label className="flex items-center justify-between text-xs text-white">
+                <span>Push</span>
+                <input
+                  type="checkbox"
+                  checked={formData.notificacoes_push}
+                  onChange={(e) =>
+                    setFormData({ ...formData, notificacoes_push: e.target.checked })
+                  }
+                  disabled={loading}
+                />
+              </label>
+              <label className="flex items-center justify-between text-xs text-white">
+                <span>WhatsApp</span>
+                <input
+                  type="checkbox"
+                  checked={formData.notificacoes_whatsapp}
+                  onChange={(e) =>
+                    setFormData({ ...formData, notificacoes_whatsapp: e.target.checked })
+                  }
+                  disabled={loading}
+                />
+              </label>
+            </div>
+
             <div className="flex items-start gap-3 pt-2">
               <input
                 type="checkbox"

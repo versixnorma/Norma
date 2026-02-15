@@ -75,6 +75,12 @@ interface SignupCredentials {
   nome: string;
   telefone?: string;
   condominio_id?: string;
+  unidade_id?: string;
+  cpf?: string;
+  data_nascimento?: string;
+  notificacoes_email?: boolean;
+  notificacoes_push?: boolean;
+  notificacoes_whatsapp?: boolean;
 }
 
 // ============================================
@@ -344,7 +350,19 @@ export function useAuth() {
     }
   };
 
-  const signup = async ({ email, password, nome, telefone, condominio_id }: SignupCredentials) => {
+  const signup = async ({
+    email,
+    password,
+    nome,
+    telefone,
+    condominio_id,
+    unidade_id,
+    cpf,
+    data_nascimento,
+    notificacoes_email,
+    notificacoes_push,
+    notificacoes_whatsapp,
+  }: SignupCredentials) => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
@@ -352,7 +370,19 @@ export function useAuth() {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome, email, password, telefone, condominio_id }),
+        body: JSON.stringify({
+          nome,
+          email,
+          password,
+          telefone,
+          condominio_id,
+          unidade_id,
+          cpf,
+          data_nascimento,
+          notificacoes_email,
+          notificacoes_push,
+          notificacoes_whatsapp,
+        }),
       });
 
       const data = await res.json();

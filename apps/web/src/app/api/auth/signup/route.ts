@@ -10,10 +10,28 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { nome, email, password, telefone, condominio_id } = body;
+    const {
+      nome,
+      email,
+      password,
+      telefone,
+      condominio_id,
+      unidade_id,
+      cpf,
+      data_nascimento,
+      notificacoes_email,
+      notificacoes_push,
+      notificacoes_whatsapp,
+    } = body;
 
-    if (!nome || !email || !password) {
-      return NextResponse.json({ error: 'Nome, email e senha são obrigatórios' }, { status: 400 });
+    if (!nome || !email || !password || !condominio_id || !unidade_id || !cpf || !data_nascimento) {
+      return NextResponse.json(
+        {
+          error:
+            'Nome, email, senha, condomínio, unidade, CPF e data de nascimento são obrigatórios',
+        },
+        { status: 400 }
+      );
     }
 
     if (password.length < 6) {
@@ -21,6 +39,11 @@ export async function POST(request: NextRequest) {
         { error: 'A senha deve ter pelo menos 6 caracteres' },
         { status: 400 }
       );
+    }
+
+    const cpfDigits = String(cpf).replace(/\D/g, '');
+    if (cpfDigits.length !== 11) {
+      return NextResponse.json({ error: 'CPF inválido' }, { status: 400 });
     }
 
     const admin = createAdminClient();
@@ -34,6 +57,9 @@ export async function POST(request: NextRequest) {
         nome,
         telefone: telefone || null,
         condominio_id: condominio_id || null,
+        unidade_id: unidade_id || null,
+        cpf: cpf || null,
+        data_nascimento: data_nascimento || null,
       },
     });
 
@@ -68,6 +94,19 @@ export async function POST(request: NextRequest) {
 
     if (existingUsuario) {
       usuarioId = existingUsuario.id;
+      await admin
+        .from('usuarios')
+        .update({
+          telefone: telefone || null,
+          unidade_id: unidade_id || null,
+          cpf: cpf || null,
+          data_nascimento: data_nascimento || null,
+          notificacoes_email: typeof notificacoes_email === 'boolean' ? notificacoes_email : true,
+          notificacoes_push: typeof notificacoes_push === 'boolean' ? notificacoes_push : true,
+          notificacoes_whatsapp:
+            typeof notificacoes_whatsapp === 'boolean' ? notificacoes_whatsapp : false,
+        } as any)
+        .eq('id', usuarioId);
     } else {
       // Trigger failed silently — create manually
       const { data: newUsuario, error: insertError } = await admin
@@ -77,6 +116,13 @@ export async function POST(request: NextRequest) {
           nome,
           email,
           telefone: telefone || null,
+          unidade_id: unidade_id || null,
+          cpf: cpf || null,
+          data_nascimento: data_nascimento || null,
+          notificacoes_email: typeof notificacoes_email === 'boolean' ? notificacoes_email : true,
+          notificacoes_push: typeof notificacoes_push === 'boolean' ? notificacoes_push : true,
+          notificacoes_whatsapp:
+            typeof notificacoes_whatsapp === 'boolean' ? notificacoes_whatsapp : false,
           role: 'morador',
           status: 'pending',
         } as any)
