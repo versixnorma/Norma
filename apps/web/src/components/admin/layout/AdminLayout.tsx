@@ -10,13 +10,22 @@ interface AdminLayoutProps {
   requiredRoles?: string[];
 }
 
-export function AdminLayout({ children, requiredRoles = ['superadmin', 'admin_condo'] }: AdminLayoutProps) {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+export function AdminLayout({
+  children,
+  requiredRoles = ['superadmin', 'admin_condo'],
+}: AdminLayoutProps) {
+  // Initialize from viewport immediately to avoid layout shift
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth < 1024 : false
+  );
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth < 1024 : false
+  );
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  // Handle responsive sidebar
   useEffect(() => {
+    setMounted(true);
     const handleResize = () => {
       const mobile = window.innerWidth < 1024;
       setIsMobile(mobile);
@@ -25,14 +34,8 @@ export function AdminLayout({ children, requiredRoles = ['superadmin', 'admin_co
       }
     };
 
-    handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Close mobile menu on route change
-  useEffect(() => {
-    setMobileMenuOpen(false);
   }, []);
 
   return (
@@ -61,7 +64,7 @@ export function AdminLayout({ children, requiredRoles = ['superadmin', 'admin_co
 
         {/* Main Content */}
         <div
-          className={`min-h-screen transition-all ${isMobile ? 'ml-0' : sidebarCollapsed ? 'ml-20' : 'ml-64'} `}
+          className={`min-h-screen ${mounted ? 'transition-all' : ''} ${isMobile ? 'ml-0' : sidebarCollapsed ? 'ml-20' : 'ml-64'} `}
         >
           {/* Header */}
           <AdminHeader
