@@ -28,14 +28,15 @@ export async function GET() {
 
   const { data: link } = await admin
     .from('usuario_condominios' as any)
-    .select('condominio_id')
+    .select('condominio_id, role')
     .eq('usuario_id', usuario.id)
     .eq('status', 'active')
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
 
-  const condominioId = (link as { condominio_id?: string } | null)?.condominio_id;
+  const linkData = (link as { condominio_id?: string; role?: string } | null) || null;
+  const condominioId = linkData?.condominio_id;
   if (!condominioId) {
     return NextResponse.json({ data: null });
   }
@@ -51,6 +52,7 @@ export async function GET() {
       ? {
           id: condominio.id,
           nome: condominio.nome,
+          role: linkData?.role || null,
         }
       : null,
   });

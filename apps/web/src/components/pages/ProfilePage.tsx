@@ -4,6 +4,7 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { useChamados } from '@/hooks/useChamados';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 interface ProfilePageProps {
@@ -13,6 +14,8 @@ interface ProfilePageProps {
 export function ProfilePage({ onScroll }: ProfilePageProps) {
   const router = useRouter();
   const { profile, logout } = useAuthContext();
+  const [resolvedCondominioName, setResolvedCondominioName] = useState<string | null>(null);
+  const [resolvedRole, setResolvedRole] = useState<string | null>(null);
 
   const unidadeInfo = profile?.condominios?.find(
     (c) => c.condominio_id === profile?.condominio_atual?.id
@@ -41,6 +44,38 @@ export function ProfilePage({ onScroll }: ProfilePageProps) {
         .toUpperCase()
     : 'US';
 
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch('/api/auth/me/condominio', { credentials: 'include' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((payload) => {
+        if (cancelled) return;
+        const nome = payload?.data?.nome;
+        const role = payload?.data?.role;
+
+        if (typeof nome === 'string' && nome.trim().length > 0) {
+          setResolvedCondominioName(nome);
+        }
+        if (typeof role === 'string' && role.trim().length > 0) {
+          setResolvedRole(role);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const condominioDisplayName =
+    resolvedCondominioName ||
+    profile?.condominio_atual?.nome ||
+    profile?.condominios?.[0]?.condominio?.nome ||
+    'Condomínio';
+
+  const roleDisplay = resolvedRole || profile?.condominio_atual?.role || profile?.role || 'morador';
+
   return (
     <div
       className="hide-scroll relative z-0 flex-1 animate-slide-up space-y-6 overflow-y-auto px-6 pb-32 pt-6"
@@ -57,9 +92,7 @@ export function ProfilePage({ onScroll }: ProfilePageProps) {
         <h2 className="font-display text-xl font-bold text-primary dark:text-white">
           {profile?.nome || 'Usuário'}
         </h2>
-        <p className="text-sm font-medium text-text-sub">
-          {profile?.condominio_atual?.nome || 'Condomínio'}
-        </p>
+        <p className="text-sm font-medium text-text-sub">{condominioDisplayName}</p>
         <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
           {unidadeInfo?.unidade_identificador && (
             <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700">
@@ -71,7 +104,7 @@ export function ProfilePage({ onScroll }: ProfilePageProps) {
             {profile?.status === 'active' ? 'Ativo' : profile?.status}
           </span>
           <span className="rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-bold text-purple-700">
-            {profile?.condominio_atual?.role || 'morador'}
+            {roleDisplay}
           </span>
         </div>
       </div>
