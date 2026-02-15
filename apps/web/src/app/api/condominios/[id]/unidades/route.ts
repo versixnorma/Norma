@@ -13,7 +13,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
   const admin = createAdminClient();
 
-  const { data, error } = await admin
+  let { data, error } = await admin
     .from('unidades_habitacionais')
     .select(
       `
@@ -30,6 +30,67 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // Auto-healing para condomínios legados sem unidades cadastradas.
+  if (!data || data.length === 0) {
+    const { data: condominio } = await admin
+      .from('condominios')
+      .select('total_unidades')
+      .eq('id', condominioId)
+      .maybeSingle();
+
+    const totalUnidades = Number(condominio?.total_unidades || 0);
+    if (totalUnidades > 0) {
+      const { data: bloco } = await admin
+        .from('blocos')
+        .select('id')
+        .eq('condominio_id', condominioId)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      let blocoId = bloco?.id as string | undefined;
+      if (!blocoId) {
+        const { data: novoBloco } = await admin
+          .from('blocos')
+          .insert({
+            condominio_id: condominioId,
+            nome: 'Bloco Único',
+          } as any)
+          .select('id')
+          .single();
+        blocoId = novoBloco?.id;
+      }
+
+      if (blocoId) {
+        const novasUnidades = Array.from({ length: totalUnidades }, (_, idx) => ({
+          condominio_id: condominioId,
+          bloco_id: blocoId,
+          numero: String(idx + 1),
+          tipo: 'apartamento',
+          ativo: true,
+        }));
+        await admin.from('unidades_habitacionais').insert(novasUnidades as any);
+
+        const refreshed = await admin
+          .from('unidades_habitacionais')
+          .select(
+            `
+            id,
+            numero,
+            bloco:bloco_id (
+              nome
+            )
+          `
+          )
+          .eq('condominio_id', condominioId)
+          .eq('ativo', true)
+          .order('numero', { ascending: true });
+
+        data = refreshed.data || [];
+      }
+    }
   }
 
   const formatted = (data || []).map((u: any) => ({

@@ -30,6 +30,76 @@ async function verifySuperadmin() {
   return { admin, usuario };
 }
 
+/**
+ * Garante que o condomínio tenha unidades suficientes para o signup.
+ * Estratégia:
+ * - Usa o primeiro bloco existente, ou cria "Bloco Único" se não houver.
+ * - Completa unidades numéricas (1..total_unidades) sem duplicar números existentes.
+ */
+async function ensureCondominioUnits(
+  admin: ReturnType<typeof createAdminClient>,
+  condominioId: string,
+  totalUnidades: number
+) {
+  if (!Number.isFinite(totalUnidades) || totalUnidades <= 0) return;
+
+  const { data: blocos } = await admin
+    .from('blocos')
+    .select('id, nome')
+    .eq('condominio_id', condominioId)
+    .order('created_at', { ascending: true })
+    .limit(1);
+
+  let blocoId = blocos?.[0]?.id as string | undefined;
+  if (!blocoId) {
+    const { data: novoBloco, error: blocoError } = await admin
+      .from('blocos')
+      .insert({
+        condominio_id: condominioId,
+        nome: 'Bloco Único',
+      } as any)
+      .select('id')
+      .single();
+
+    if (blocoError || !novoBloco?.id) {
+      console.error('Erro ao criar bloco padrão:', blocoError);
+      return;
+    }
+    blocoId = novoBloco.id;
+  }
+
+  const { data: unidadesExistentes } = await admin
+    .from('unidades_habitacionais')
+    .select('numero')
+    .eq('condominio_id', condominioId)
+    .eq('ativo', true);
+
+  const numerosExistentes = new Set((unidadesExistentes || []).map((u: any) => String(u.numero)));
+  const novasUnidades: Array<Record<string, unknown>> = [];
+
+  for (let i = 1; i <= totalUnidades; i += 1) {
+    const numero = String(i);
+    if (!numerosExistentes.has(numero)) {
+      novasUnidades.push({
+        condominio_id: condominioId,
+        bloco_id: blocoId,
+        numero,
+        tipo: 'apartamento',
+        ativo: true,
+      });
+    }
+  }
+
+  if (novasUnidades.length > 0) {
+    const { error: unidadesError } = await admin
+      .from('unidades_habitacionais')
+      .insert(novasUnidades as any);
+    if (unidadesError) {
+      console.error('Erro ao criar unidades automáticas:', unidadesError);
+    }
+  }
+}
+
 // GET - List condominios
 export async function GET() {
   const result = await verifySuperadmin();
@@ -109,12 +179,14 @@ export async function POST(request: NextRequest) {
   const { admin } = result;
 
   const body = await request.json();
-
   const { data, error } = await admin.from('condominios').insert(body).select('id').single();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
+
+  const totalUnidades = Number((body as { total_unidades?: number }).total_unidades || 0);
+  await ensureCondominioUnits(admin, data.id, totalUnidades);
 
   return NextResponse.json({ data: { id: data.id } }, { status: 201 });
 }
@@ -136,6 +208,11 @@ export async function PUT(request: NextRequest) {
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+
+  if (updates.total_unidades !== undefined) {
+    const totalUnidades = Number(updates.total_unidades || 0);
+    await ensureCondominioUnits(admin, id, totalUnidades);
   }
 
   return NextResponse.json({ data: { id } });
