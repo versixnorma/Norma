@@ -67,6 +67,7 @@ interface SignupCredentials {
   password: string;
   nome: string;
   telefone?: string;
+  condominio_id?: string;
 }
 
 // ============================================
@@ -304,7 +305,7 @@ export function useAuth() {
     }
   };
 
-  const signup = async ({ email, password, nome, telefone }: SignupCredentials) => {
+  const signup = async ({ email, password, nome, telefone, condominio_id }: SignupCredentials) => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
@@ -336,6 +337,29 @@ export function useAuth() {
         if (profileError) {
           logger.error('Erro ao criar perfil:', profileError);
           // Não falha, pois o trigger pode ter criado
+        }
+
+        // 3. Vincular ao condomínio selecionado
+        if (condominio_id) {
+          // Buscar o id do usuario recém-criado
+          const { data: usuarioData } = await supabase
+            .from('usuarios')
+            .select('id')
+            .eq('auth_id', authData.user.id)
+            .single();
+
+          if (usuarioData) {
+            const { error: vincError } = await supabase.from('usuario_condominios' as any).insert({
+              usuario_id: usuarioData.id,
+              condominio_id,
+              role: 'morador',
+              status: 'pending',
+            });
+
+            if (vincError) {
+              logger.error('Erro ao vincular condomínio:', vincError);
+            }
+          }
         }
       }
 

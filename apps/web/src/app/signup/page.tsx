@@ -13,17 +13,29 @@ export default function SignupPage() {
 
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [condominios, setCondominios] = useState<{ id: string; nome: string }[]>([]);
   const [formData, setFormData] = useState({
     nome: '',
     email: '',
     telefone: '',
     password: '',
     confirmPassword: '',
+    condominio_id: '',
   });
   const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   useEffect(() => {
     setTimeout(() => setMounted(true), 50);
+  }, []);
+
+  // Carregar lista de condomínios
+  useEffect(() => {
+    fetch('/api/condominios')
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) setCondominios(data);
+      })
+      .catch(() => {});
   }, []);
 
   // Redirect se já autenticado
@@ -36,7 +48,7 @@ export default function SignupPage() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.nome || !formData.email || !formData.password) {
+    if (!formData.nome || !formData.email || !formData.password || !formData.condominio_id) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
@@ -63,6 +75,7 @@ export default function SignupPage() {
       email: formData.email,
       password: formData.password,
       telefone: formData.telefone || undefined,
+      condominio_id: formData.condominio_id,
     });
 
     if (result.success) {
@@ -95,19 +108,19 @@ export default function SignupPage() {
 
   if (authLoading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-primary">
-        <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin" />
+      <div className="flex h-screen items-center justify-center bg-primary">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-white border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <div className="h-screen w-full flex flex-col overflow-hidden relative font-sans">
+    <div className="relative flex h-screen w-full flex-col overflow-hidden font-sans">
       {/* Background */}
       <div className="absolute inset-0 z-0">
         <Image
           alt="Building"
-          className="w-full h-full object-cover filter brightness-[0.4] contrast-125"
+          className="h-full w-full object-cover brightness-[0.4] contrast-125 filter"
           src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop"
           fill
           priority
@@ -118,33 +131,31 @@ export default function SignupPage() {
 
       {/* Content */}
       <div
-        className={`relative z-10 flex flex-col h-full transition-all duration-700 ${
-          mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+        className={`relative z-10 flex h-full flex-col transition-all duration-700 ${
+          mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
         }`}
       >
         {/* Header */}
-        <div className="flex-1 flex flex-col items-center justify-center px-8 pb-4 overflow-y-auto">
-          <div className="text-center mb-6 mt-8">
-            <h1 className="text-3xl font-display font-bold text-white tracking-widest mb-2">
+        <div className="flex flex-1 flex-col items-center justify-center overflow-y-auto px-8 pb-4">
+          <div className="mb-6 mt-8 text-center">
+            <h1 className="mb-2 font-display text-3xl font-bold tracking-widest text-white">
               NORMA
             </h1>
-            <p className="text-blue-200 text-xs uppercase tracking-[0.2em]">
-              Criar Conta
-            </p>
+            <p className="text-xs uppercase tracking-[0.2em] text-blue-200">Criar Conta</p>
           </div>
 
           {/* Signup Form */}
           <form onSubmit={handleSignup} className="w-full max-w-sm space-y-3">
             {/* Nome */}
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <span className="material-symbols-outlined text-gray-400 text-xl">person</span>
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                <span className="material-symbols-outlined text-xl text-gray-400">person</span>
               </div>
               <input
                 type="text"
                 value={formData.nome}
                 onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-white/95 backdrop-blur-md border-none text-gray-700 placeholder-gray-500 focus:ring-2 focus:ring-secondary shadow-lg text-sm"
+                className="w-full rounded-xl border-none bg-white/95 py-3.5 pl-12 pr-4 text-sm text-gray-700 placeholder-gray-500 shadow-lg backdrop-blur-md focus:ring-2 focus:ring-secondary"
                 placeholder="Nome completo *"
                 required
                 disabled={loading}
@@ -153,14 +164,14 @@ export default function SignupPage() {
 
             {/* Email */}
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <span className="material-symbols-outlined text-gray-400 text-xl">mail</span>
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                <span className="material-symbols-outlined text-xl text-gray-400">mail</span>
               </div>
               <input
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-white/95 backdrop-blur-md border-none text-gray-700 placeholder-gray-500 focus:ring-2 focus:ring-secondary shadow-lg text-sm"
+                className="w-full rounded-xl border-none bg-white/95 py-3.5 pl-12 pr-4 text-sm text-gray-700 placeholder-gray-500 shadow-lg backdrop-blur-md focus:ring-2 focus:ring-secondary"
                 placeholder="E-mail *"
                 required
                 disabled={loading}
@@ -169,29 +180,57 @@ export default function SignupPage() {
 
             {/* Telefone */}
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <span className="material-symbols-outlined text-gray-400 text-xl">phone</span>
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                <span className="material-symbols-outlined text-xl text-gray-400">phone</span>
               </div>
               <input
                 type="tel"
                 value={formData.telefone}
-                onChange={(e) => setFormData({ ...formData, telefone: formatPhone(e.target.value) })}
-                className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-white/95 backdrop-blur-md border-none text-gray-700 placeholder-gray-500 focus:ring-2 focus:ring-secondary shadow-lg text-sm"
+                onChange={(e) =>
+                  setFormData({ ...formData, telefone: formatPhone(e.target.value) })
+                }
+                className="w-full rounded-xl border-none bg-white/95 py-3.5 pl-12 pr-4 text-sm text-gray-700 placeholder-gray-500 shadow-lg backdrop-blur-md focus:ring-2 focus:ring-secondary"
                 placeholder="Telefone (opcional)"
                 disabled={loading}
               />
             </div>
 
+            {/* Condomínio */}
+            <div className="relative">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                <span className="material-symbols-outlined text-xl text-gray-400">apartment</span>
+              </div>
+              <select
+                value={formData.condominio_id}
+                onChange={(e) => setFormData({ ...formData, condominio_id: e.target.value })}
+                className="w-full appearance-none rounded-xl border-none bg-white/95 py-3.5 pl-12 pr-4 text-sm text-gray-700 shadow-lg backdrop-blur-md focus:ring-2 focus:ring-secondary dark:bg-gray-800/95 dark:text-gray-200"
+                required
+                disabled={loading}
+              >
+                <option value="" disabled>
+                  Selecione seu condomínio *
+                </option>
+                {condominios.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nome}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
+                <span className="material-symbols-outlined text-lg text-gray-400">expand_more</span>
+              </div>
+            </div>
+
             {/* Password */}
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <span className="material-symbols-outlined text-gray-400 text-xl">lock</span>
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                <span className="material-symbols-outlined text-xl text-gray-400">lock</span>
               </div>
               <input
                 type="password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-white/95 backdrop-blur-md border-none text-gray-700 placeholder-gray-500 focus:ring-2 focus:ring-secondary shadow-lg text-sm"
+                className="w-full rounded-xl border-none bg-white/95 py-3.5 pl-12 pr-4 text-sm text-gray-700 placeholder-gray-500 shadow-lg backdrop-blur-md focus:ring-2 focus:ring-secondary"
                 placeholder="Senha (mín. 6 caracteres) *"
                 required
                 minLength={6}
@@ -201,14 +240,14 @@ export default function SignupPage() {
 
             {/* Confirm Password */}
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <span className="material-symbols-outlined text-gray-400 text-xl">lock</span>
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                <span className="material-symbols-outlined text-xl text-gray-400">lock</span>
               </div>
               <input
                 type="password"
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-white/95 backdrop-blur-md border-none text-gray-700 placeholder-gray-500 focus:ring-2 focus:ring-secondary shadow-lg text-sm"
+                className="w-full rounded-xl border-none bg-white/95 py-3.5 pl-12 pr-4 text-sm text-gray-700 placeholder-gray-500 shadow-lg backdrop-blur-md focus:ring-2 focus:ring-secondary"
                 placeholder="Confirmar senha *"
                 required
                 disabled={loading}
@@ -222,16 +261,16 @@ export default function SignupPage() {
                 id="terms"
                 checked={acceptedTerms}
                 onChange={(e) => setAcceptedTerms(e.target.checked)}
-                className="mt-1 w-4 h-4 rounded border-gray-300 text-secondary focus:ring-secondary"
+                className="mt-1 h-4 w-4 rounded border-gray-300 text-secondary focus:ring-secondary"
                 disabled={loading}
               />
-              <label htmlFor="terms" className="text-xs text-blue-100 leading-relaxed">
+              <label htmlFor="terms" className="text-xs leading-relaxed text-blue-100">
                 Li e aceito os{' '}
-                <span className="text-white font-bold hover:underline cursor-pointer">
+                <span className="cursor-pointer font-bold text-white hover:underline">
                   Termos de Uso
                 </span>{' '}
                 e{' '}
-                <span className="text-white font-bold hover:underline cursor-pointer">
+                <span className="cursor-pointer font-bold text-white hover:underline">
                   Política de Privacidade
                 </span>
               </label>
@@ -241,11 +280,11 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading || !acceptedTerms}
-              className="w-full py-4 rounded-xl bg-secondary text-white font-bold shadow-lg hover:bg-secondary/90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 mt-4"
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-secondary py-4 font-bold text-white shadow-lg transition-all hover:bg-secondary/90 active:scale-[0.98] disabled:opacity-50"
             >
               {loading ? (
                 <>
-                  <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                   Criando conta...
                 </>
               ) : (
@@ -259,10 +298,10 @@ export default function SignupPage() {
         </div>
 
         {/* Footer */}
-        <div className="bg-white dark:bg-card-dark rounded-t-[2.5rem] p-6 shadow-2xl">
+        <div className="rounded-t-[2.5rem] bg-white p-6 shadow-2xl dark:bg-card-dark">
           <p className="text-center text-sm text-text-sub">
             Já tem conta?{' '}
-            <Link href="/login" className="text-primary font-bold hover:underline">
+            <Link href="/login" className="font-bold text-primary hover:underline">
               Entrar
             </Link>
           </p>
