@@ -8,7 +8,29 @@
       "Bash(pnpm type-check:*)",
       "Bash(pnpm lint:*)",
       "Bash(npm run type-check:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(cd:*)",
+      "Bash(grep:*)",
+      "Bash(ls:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh run rerun:*)",
+      "Bash(pnpm --filter @versix/web add:*)",
+      "Bash(pnpm --filter @versix/web build:*)",
+      "Bash(git status:*)",
+      "Bash(timeout:*)",
+      "Bash(npx --filter @versix/web next dev:*)",
+      "Bash(npx next dev --port 3000)",
+      "Bash(curl:*)",
+      "Bash(git rm:*)",
+      "Bash(npx next lint:*)",
+      "Bash(pnpm --filter @versix/web lint:*)",
+      "Bash(find:*)",
+      "Bash(npx supabase migration:*)",
+      "Bash(npx supabase db push:*)",
+      "Bash(npx supabase:*)",
+      "Bash(findstr:*)",
+      "Bash(git checkout:*)",
+      "Bash(git cherry-pick:*)"
     ]
   }
 }

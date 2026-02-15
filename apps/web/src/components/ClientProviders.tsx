@@ -27,26 +27,22 @@ export function ClientProviders({ children }: ClientProvidersProps) {
           {/* P1 Accessibility Fix: Enhanced Toaster with ARIA support */}
           <Toaster
             position="top-center"
-            // Accessibility: Announce toasts to screen readers
             richColors
             closeButton
             toastOptions={{
               style: {
-                background: 'var(--card)',
-                color: 'var(--foreground)',
-                border: '1px solid var(--border)',
+                background: 'rgba(255, 255, 255, 0.95)',
+                color: '#1a1a2e',
+                border: '1px solid rgba(0, 0, 0, 0.1)',
+                backdropFilter: 'blur(12px)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
               },
-              // Accessibility: Ensure proper contrast and focus
               className: 'toast-accessible',
               descriptionClassName: 'toast-description',
             }}
-            // Duration for different toast types (ms)
             duration={5000}
-            // Gap between toasts
             gap={8}
-            // Accessibility: Toasts expand on hover for easier reading
             expand
-            // Accessibility: Visible close button
             visibleToasts={3}
           />
           {/*
