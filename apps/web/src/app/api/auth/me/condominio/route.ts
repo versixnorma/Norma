@@ -35,14 +35,15 @@ export async function GET() {
     .limit(1)
     .maybeSingle();
 
-  if (!link?.condominio_id) {
+  const condominioId = (link as { condominio_id?: string } | null)?.condominio_id;
+  if (!condominioId) {
     return NextResponse.json({ data: null });
   }
 
   const { data: condominio } = await admin
     .from('condominios')
     .select('id, nome')
-    .eq('id', link.condominio_id)
+    .eq('id', condominioId)
     .maybeSingle();
 
   return NextResponse.json({
