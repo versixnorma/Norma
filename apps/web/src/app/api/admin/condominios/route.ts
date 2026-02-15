@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase';
 import { createClient } from '@/lib/supabase/server';
+import type { Database } from '@/types/database';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -150,13 +151,7 @@ async function ensureCondominioUnits(
   }
 
   const missing = totalUnidades - existingCount;
-  const novasUnidades: Array<{
-    condominio_id: string;
-    bloco_id: string;
-    numero: string;
-    tipo: string;
-    ativo: boolean;
-  }> = [];
+  const novasUnidades: Database['public']['Tables']['unidades_habitacionais']['Insert'][] = [];
   for (let i = 0; i < missing; i += 1) {
     const bloco = orderedBlocos[i % orderedBlocos.length];
     const numero = String(nextNumberByBloco.get(bloco.id) || 1);
