@@ -46,6 +46,10 @@ export const metadata: Metadata = {
     email: true,
     address: true,
   },
+  other: {
+    'mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-capable': 'yes',
+  },
   icons: {
     icon: [
       { url: '/icons/icon.svg', type: 'image/svg+xml' },
