@@ -32,6 +32,7 @@ interface UserTableProps {
   loading: boolean;
   error: string | null;
   updateUserStatus: (userId: string, status: StatusType) => Promise<boolean>;
+  updateUserRole: (userId: string, role: string) => Promise<boolean>;
   createUser: (data: {
     nome: string;
     email: string;
@@ -55,16 +56,29 @@ interface UserTableProps {
 const ROLE_LABELS: Record<string, string> = {
   superadmin: 'Super Admin',
   admin_condo: 'Admin Condominio',
-  sindico: 'Sindico',
-  subsindico: 'Sub-sindico',
+  sindico: 'Síndico',
+  subsindico: 'Sub-síndico',
   conselheiro: 'Conselheiro',
   morador: 'Morador',
   porteiro: 'Porteiro',
   zelador: 'Zelador',
-  funcionario: 'Funcionario',
-  proprietario: 'Proprietario',
+  funcionario: 'Funcionário',
+  proprietario: 'Proprietário',
   inquilino: 'Inquilino',
 };
+
+// Roles that superadmin can assign to users
+const ASSIGNABLE_ROLES = [
+  'sindico',
+  'subsindico',
+  'conselheiro',
+  'morador',
+  'porteiro',
+  'zelador',
+  'funcionario',
+  'proprietario',
+  'inquilino',
+] as const;
 const STATUS_CONFIG: Record<StatusType, { label: string; color: string }> = {
   active: { label: 'Ativo', color: 'bg-green-100 text-green-700' },
   pending: { label: 'Pendente', color: 'bg-yellow-100 text-yellow-700' },
@@ -78,6 +92,7 @@ export function UserTable({
   loading,
   error,
   updateUserStatus,
+  updateUserRole,
   createUser,
   updateUser,
   searchUsers,
@@ -114,6 +129,15 @@ export function UserTable({
       toast.success('Status atualizado');
       onRefresh?.();
     } else toast.error('Erro ao atualizar status');
+  };
+  const handleRoleChange = async (userId: string, newRole: string) => {
+    setProcessing(userId);
+    const success = await updateUserRole(userId, newRole);
+    setProcessing(null);
+    if (success) {
+      toast.success('Hierarquia atualizada');
+      onRefresh?.();
+    } else toast.error('Erro ao atualizar hierarquia');
   };
   const handleImpersonate = async () => {
     if (!showImpersonateModal || impersonateReason.length < 10) {
@@ -259,7 +283,10 @@ export function UserTable({
                   Usuario
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                  Condominio / Role
+                  Condominio
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                  Hierarquia
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
                   Status
@@ -275,7 +302,7 @@ export function UserTable({
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {loading && displayUsers.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center">
+                  <td colSpan={6} className="px-6 py-12 text-center">
                     <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
                     <p className="mt-2 text-sm text-gray-500">Carregando usuarios...</p>
                   </td>
@@ -324,9 +351,6 @@ export function UserTable({
                               <span className="text-gray-800 dark:text-white">
                                 {c.condominio_nome}
                               </span>
-                              <span className="ml-2 text-gray-500">
-                                ({ROLE_LABELS[c.role] || c.role})
-                              </span>
                             </div>
                           ))}
                           {user.condominios.length > 2 && (
@@ -337,6 +361,26 @@ export function UserTable({
                         </div>
                       ) : (
                         <span className="text-sm text-gray-400">Sem condominio</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      {user.role === 'superadmin' ? (
+                        <span className="inline-flex rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-700">
+                          Super Admin
+                        </span>
+                      ) : (
+                        <select
+                          value={user.role}
+                          onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                          disabled={processing === user.id}
+                          className="rounded-lg border-none bg-gray-100 px-2 py-1.5 text-xs font-medium focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:text-white"
+                        >
+                          {ASSIGNABLE_ROLES.map((r) => (
+                            <option key={r} value={r}>
+                              {ROLE_LABELS[r]}
+                            </option>
+                          ))}
+                        </select>
                       )}
                     </td>
                     <td className="px-6 py-4">

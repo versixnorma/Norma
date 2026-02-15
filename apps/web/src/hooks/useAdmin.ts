@@ -26,6 +26,7 @@ export interface AdminUser {
   telefone: string | null;
   avatar_url: string | null;
   status: StatusType;
+  role: RoleType;
   created_at: string;
   updated_at: string;
   condominios: Array<{
@@ -198,9 +199,8 @@ export function useAdmin() {
             if (u.id === userId) {
               return {
                 ...u,
-                condominios: u.condominios.map((c) =>
-                  c.condominio_id === _condominioId ? { ...c, role } : c
-                ),
+                role,
+                condominios: u.condominios.map((c) => ({ ...c, role })),
               };
             }
             return u;

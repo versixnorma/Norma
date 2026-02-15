@@ -3,6 +3,39 @@ import { createClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
+// ============================================
+// Helper: verify superadmin
+// ============================================
+async function verifySuperadmin() {
+  const authClient = createClient(await cookies());
+  const {
+    data: { user },
+    error: authError,
+  } = await authClient.auth.getUser();
+
+  if (authError || !user) {
+    return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
+  }
+
+  const admin = createAdminClient();
+  const { data: usuario } = await admin
+    .from('usuarios')
+    .select('id, role')
+    .eq('auth_id', user.id)
+    .single();
+
+  if (!usuario || usuario.role !== 'superadmin') {
+    return {
+      error: NextResponse.json({ error: 'Forbidden - requer superadmin' }, { status: 403 }),
+    };
+  }
+
+  return { admin, usuario };
+}
+
+// ============================================
+// GET - List users (with orphan sync)
+// ============================================
 export async function GET(request: NextRequest) {
   const authClient = createClient(await cookies());
   const {
@@ -16,19 +49,39 @@ export async function GET(request: NextRequest) {
 
   const admin = createAdminClient();
 
-  const { data: usuario } = await admin
+  const { data: currentUser } = await admin
     .from('usuarios')
     .select('id, role')
     .eq('auth_id', user.id)
     .single();
 
-  if (!usuario) {
-    return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
+  if (!currentUser || currentUser.role !== 'superadmin') {
+    return NextResponse.json({ error: 'Forbidden - requer superadmin' }, { status: 403 });
   }
 
-  // superadmin is a global role on usuarios.role, not on usuario_condominios
-  if (usuario.role !== 'superadmin') {
-    return NextResponse.json({ error: 'Forbidden - requer superadmin' }, { status: 403 });
+  // Sync orphaned auth users (in auth.users but missing from public.usuarios)
+  try {
+    const { data: authListData } = await admin.auth.admin.listUsers({ perPage: 200 });
+    if (authListData?.users) {
+      const { data: existingUsuarios } = await admin.from('usuarios').select('auth_id');
+      const existingAuthIds = new Set((existingUsuarios || []).map((u: any) => u.auth_id));
+
+      const orphans = authListData.users.filter((au) => !existingAuthIds.has(au.id));
+      for (const orphan of orphans) {
+        const meta = orphan.user_metadata || {};
+        await admin.from('usuarios').insert({
+          auth_id: orphan.id,
+          nome: meta.nome || meta.full_name || orphan.email?.split('@')[0] || 'Usuário',
+          email: orphan.email || '',
+          telefone: meta.telefone || null,
+          condominio_id: meta.condominio_id || null,
+          role: 'morador',
+          status: 'pending',
+        } as any);
+      }
+    }
+  } catch (syncErr) {
+    console.error('Orphan sync error (non-fatal):', syncErr);
   }
 
   const { searchParams } = new URL(request.url);
@@ -94,6 +147,7 @@ export async function GET(request: NextRequest) {
     telefone: u.telefone,
     avatar_url: u.avatar_url,
     status: u.status,
+    role: u.role || 'morador',
     created_at: u.created_at,
     updated_at: u.updated_at,
     condominios: (u.usuario_condominios || []).map((uc: any) => ({
@@ -106,36 +160,6 @@ export async function GET(request: NextRequest) {
   }));
 
   return NextResponse.json({ data: formatted });
-}
-
-// ============================================
-// Helper: verify superadmin
-// ============================================
-async function verifySuperadmin() {
-  const authClient = createClient(await cookies());
-  const {
-    data: { user },
-    error: authError,
-  } = await authClient.auth.getUser();
-
-  if (authError || !user) {
-    return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
-  }
-
-  const admin = createAdminClient();
-  const { data: usuario } = await admin
-    .from('usuarios')
-    .select('id, role')
-    .eq('auth_id', user.id)
-    .single();
-
-  if (!usuario || usuario.role !== 'superadmin') {
-    return {
-      error: NextResponse.json({ error: 'Forbidden - requer superadmin' }, { status: 403 }),
-    };
-  }
-
-  return { admin, usuario };
 }
 
 // ============================================
@@ -192,7 +216,6 @@ export async function POST(request: NextRequest) {
   let usuarioId: string;
 
   if (existingUsuario) {
-    // Trigger created the row — update it with admin-specified values
     usuarioId = existingUsuario.id;
     await admin
       .from('usuarios')
@@ -205,7 +228,6 @@ export async function POST(request: NextRequest) {
       } as any)
       .eq('id', usuarioId);
   } else {
-    // Trigger failed silently — create manually
     const { data: newUser, error: insertError } = await admin
       .from('usuarios')
       .insert({
@@ -251,7 +273,7 @@ export async function POST(request: NextRequest) {
 }
 
 // ============================================
-// PUT - Update user (usuarios table)
+// PUT - Update user (usuarios + usuario_condominios role sync)
 // ============================================
 export async function PUT(request: NextRequest) {
   const result = await verifySuperadmin();
@@ -286,6 +308,21 @@ export async function PUT(request: NextRequest) {
 
   if (updateError) {
     return NextResponse.json({ error: updateError.message }, { status: 400 });
+  }
+
+  // Sync role to usuario_condominios if role changed
+  if (role !== undefined) {
+    const { data: links } = await admin
+      .from('usuario_condominios' as any)
+      .select('id')
+      .eq('usuario_id', id);
+
+    if (links && links.length > 0) {
+      await admin
+        .from('usuario_condominios' as any)
+        .update({ role } as any)
+        .eq('usuario_id', id);
+    }
   }
 
   // If email changed, update auth user email too

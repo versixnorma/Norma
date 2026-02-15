@@ -4,7 +4,7 @@ import { UserTable } from '@/components/admin/UserTable';
 import { useAdmin } from '@/hooks/useAdmin';
 import type { Database } from '@/types/database';
 import { useSearchParams } from 'next/navigation';
-import { Suspense, useEffect } from 'react';
+import { Suspense, useCallback, useEffect } from 'react';
 
 type StatusType = Database['public']['Enums']['user_status'];
 
@@ -29,6 +29,7 @@ function AdminUsuariosContent() {
     error,
     fetchUsers,
     updateUserStatus,
+    updateUserRole,
     createUser,
     updateUser,
     searchUsers,
@@ -43,6 +44,13 @@ function AdminUsuariosContent() {
   }, [fetchUsers, statusFilter, condominioFilter]);
 
   const statusLabel = statusFilter ? STATUS_LABELS[statusFilter] : 'Todos os usuários';
+
+  const handleRoleChange = useCallback(
+    async (userId: string, role: string) => {
+      return updateUserRole(userId, '', role as Database['public']['Enums']['user_role']);
+    },
+    [updateUserRole]
+  );
 
   return (
     <div className="space-y-6">
@@ -60,6 +68,7 @@ function AdminUsuariosContent() {
         loading={loading}
         error={error}
         updateUserStatus={updateUserStatus}
+        updateUserRole={handleRoleChange}
         createUser={createUser}
         updateUser={updateUser}
         searchUsers={searchUsers}
