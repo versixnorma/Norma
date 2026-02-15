@@ -28,25 +28,28 @@ export async function GET() {
 
   const { data: link } = await admin
     .from('usuario_condominios' as any)
-    .select(
-      `
-      condominio:condominio_id (
-        id,
-        nome
-      )
-    `
-    )
+    .select('condominio_id')
     .eq('usuario_id', usuario.id)
     .eq('status', 'active')
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
 
+  if (!link?.condominio_id) {
+    return NextResponse.json({ data: null });
+  }
+
+  const { data: condominio } = await admin
+    .from('condominios')
+    .select('id, nome')
+    .eq('id', link.condominio_id)
+    .maybeSingle();
+
   return NextResponse.json({
-    data: link?.condominio
+    data: condominio
       ? {
-          id: link.condominio.id,
-          nome: link.condominio.nome,
+          id: condominio.id,
+          nome: condominio.nome,
         }
       : null,
   });
