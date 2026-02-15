@@ -53,6 +53,7 @@ function HomeContent() {
   const [showAvatarMenu, setShowAvatarMenu] = useState(false);
   const [showNormaChat, setShowNormaChat] = useState(false);
   const [dataLoadingTimeout, setDataLoadingTimeout] = useState(false);
+  const [resolvedCondominioName, setResolvedCondominioName] = useState<string | null>(null);
 
   // Hooks de dados - só carregar se perfil estiver disponível
   const condominioId = profile?.condominio_atual?.id || null;
@@ -65,6 +66,27 @@ function HomeContent() {
       router.push('/admin/dashboard');
     }
   }, [authLoading, isAuthenticated, isSuperAdmin, condominioId, router]);
+
+  useEffect(() => {
+    if (authLoading || !isAuthenticated) return;
+
+    let cancelled = false;
+
+    fetch('/api/auth/me/condominio', { credentials: 'include' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((payload) => {
+        if (cancelled) return;
+        const nome = payload?.data?.nome;
+        if (typeof nome === 'string' && nome.trim().length > 0) {
+          setResolvedCondominioName(nome);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, isAuthenticated]);
 
   const { dashboard, loading: financialLoading } = useFinancial({
     condominioId,
@@ -133,6 +155,7 @@ function HomeContent() {
         .toUpperCase()
     : 'US';
   const condominioNome =
+    resolvedCondominioName ||
     profile?.condominio_atual?.nome ||
     profile?.condominios?.[0]?.condominio?.nome ||
     'Sem condomínio';
