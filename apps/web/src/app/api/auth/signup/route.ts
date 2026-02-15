@@ -77,7 +77,6 @@ export async function POST(request: NextRequest) {
           nome,
           email,
           telefone: telefone || null,
-          condominio_id: condominio_id || null,
           role: 'morador',
           status: 'pending',
         } as any)

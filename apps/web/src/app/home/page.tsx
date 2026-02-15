@@ -132,7 +132,10 @@ function HomeContent() {
         .join('')
         .toUpperCase()
     : 'US';
-  const condominioNome = profile?.condominio_atual?.nome || 'Condomínio';
+  const condominioNome =
+    profile?.condominio_atual?.nome ||
+    profile?.condominios?.[0]?.condominio?.nome ||
+    'Sem condomínio';
 
   const isLoading = authLoading || (!dataLoadingTimeout && financialLoading && condominioId);
 
@@ -251,10 +254,6 @@ function HomeContent() {
                 <span className="material-symbols-outlined mr-1 text-sm">location_on</span>
                 <p className="text-sm font-medium">{condominioNome}</p>
               </div>
-              {/* Texto para Playwright: Bem-vindo */}
-              <div className="mt-4 text-lg font-bold text-white" style={{ display: 'block' }}>
-                Bem-vindo
-              </div>
             </div>
 
             {/* Search Bar */}
@@ -267,7 +266,7 @@ function HomeContent() {
             >
               <input
                 className="w-full cursor-pointer rounded-xl border-none bg-white/95 py-3 pl-4 pr-12 text-sm text-gray-700 placeholder-gray-500 shadow-lg backdrop-blur-md transition-all focus:bg-white focus:ring-2 focus:ring-secondary dark:bg-gray-800/95 dark:text-gray-200 dark:placeholder-gray-400 dark:focus:bg-gray-800"
-                placeholder="Pergunte à Norma sobre o regimento..."
+                placeholder="Tire sua dúvida com a Norma"
                 type="text"
                 onClick={() => setShowNormaChat(true)}
                 readOnly

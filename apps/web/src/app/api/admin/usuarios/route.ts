@@ -67,17 +67,72 @@ export async function GET(request: NextRequest) {
       const existingAuthIds = new Set((existingUsuarios || []).map((u: any) => u.auth_id));
 
       const orphans = authListData.users.filter((au) => !existingAuthIds.has(au.id));
+      let orphanSyncErrors = 0;
+
       for (const orphan of orphans) {
-        const meta = orphan.user_metadata || {};
-        await admin.from('usuarios').insert({
-          auth_id: orphan.id,
-          nome: meta.nome || meta.full_name || orphan.email?.split('@')[0] || 'Usuário',
-          email: orphan.email || '',
-          telefone: meta.telefone || null,
-          condominio_id: meta.condominio_id || null,
-          role: 'morador',
-          status: 'pending',
-        } as any);
+        try {
+          const meta = orphan.user_metadata || {};
+          const condominioRaw = typeof meta.condominio_id === 'string' ? meta.condominio_id : null;
+          const condominioId =
+            condominioRaw &&
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+              condominioRaw
+            )
+              ? condominioRaw
+              : null;
+
+          const { data: existingUsuario } = await admin
+            .from('usuarios')
+            .select('id')
+            .eq('auth_id', orphan.id)
+            .maybeSingle();
+
+          let usuarioId = existingUsuario?.id as string | undefined;
+          if (!usuarioId) {
+            const { data: createdUsuario, error: createErr } = await admin
+              .from('usuarios')
+              .insert({
+                auth_id: orphan.id,
+                nome: meta.nome || meta.full_name || orphan.email?.split('@')[0] || 'Usuário',
+                email: orphan.email || '',
+                telefone: meta.telefone || null,
+                role: 'morador',
+                status: 'pending',
+              } as any)
+              .select('id')
+              .single();
+
+            if (createErr) {
+              orphanSyncErrors += 1;
+              console.error('Orphan usuario insert failed:', {
+                auth_id: orphan.id,
+                error: createErr,
+              });
+              continue;
+            }
+
+            usuarioId = createdUsuario.id;
+          }
+
+          if (condominioId && usuarioId) {
+            await admin.from('usuario_condominios' as any).upsert(
+              {
+                usuario_id: usuarioId,
+                condominio_id: condominioId,
+                role: 'morador',
+                status: 'pending',
+              } as any,
+              { onConflict: 'usuario_id,condominio_id' }
+            );
+          }
+        } catch (orphanErr) {
+          orphanSyncErrors += 1;
+          console.error('Orphan sync item error:', { auth_id: orphan.id, error: orphanErr });
+        }
+      }
+
+      if (orphanSyncErrors > 0) {
+        console.warn(`Orphan sync finished with ${orphanSyncErrors} errors`);
       }
     }
   } catch (syncErr) {
@@ -224,7 +279,6 @@ export async function POST(request: NextRequest) {
         telefone: telefone || null,
         role: targetRole,
         status: targetStatus,
-        condominio_id: condominio_id || null,
       } as any)
       .eq('id', usuarioId);
   } else {
@@ -237,7 +291,6 @@ export async function POST(request: NextRequest) {
         telefone: telefone || null,
         role: targetRole,
         status: targetStatus,
-        condominio_id: condominio_id || null,
       } as any)
       .select('id')
       .single();
