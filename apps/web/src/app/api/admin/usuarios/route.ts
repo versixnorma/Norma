@@ -161,56 +161,93 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Nome e email são obrigatórios' }, { status: 400 });
   }
 
-  // 1. Create auth user
+  const targetRole = role || 'morador';
+  const targetStatus = status || 'active';
+
+  // 1. Create auth user (trigger handle_new_user may create usuarios row)
   const { data: authData, error: authError } = await admin.auth.admin.createUser({
     email,
     password: senha || Math.random().toString(36).slice(-12) + 'A1!',
     email_confirm: true,
+    user_metadata: {
+      nome,
+      telefone: telefone || null,
+      condominio_id: condominio_id || null,
+    },
   });
 
   if (authError) {
     return NextResponse.json({ error: authError.message }, { status: 400 });
   }
 
-  // 2. Insert into usuarios table
-  const insertData = {
-    auth_id: authData.user.id,
-    nome,
-    email,
-    telefone: telefone || null,
-    role: role || 'morador',
-    status: status || 'active',
-    condominio_id: condominio_id || null,
-  };
-  const { data: newUser, error: insertError } = await admin
+  const authId = authData.user.id;
+
+  // 2. Check if trigger already created the usuarios row
+  const { data: existingUsuario } = await admin
     .from('usuarios')
-    .insert(insertData as any) // eslint-disable-line @typescript-eslint/no-explicit-any
     .select('id')
+    .eq('auth_id', authId)
     .single();
 
-  if (insertError) {
-    // Rollback: delete auth user if usuarios insert fails
-    await admin.auth.admin.deleteUser(authData.user.id);
-    return NextResponse.json({ error: insertError.message }, { status: 400 });
+  let usuarioId: string;
+
+  if (existingUsuario) {
+    // Trigger created the row — update it with admin-specified values
+    usuarioId = existingUsuario.id;
+    await admin
+      .from('usuarios')
+      .update({
+        nome,
+        telefone: telefone || null,
+        role: targetRole,
+        status: targetStatus,
+        condominio_id: condominio_id || null,
+      } as any)
+      .eq('id', usuarioId);
+  } else {
+    // Trigger failed silently — create manually
+    const { data: newUser, error: insertError } = await admin
+      .from('usuarios')
+      .insert({
+        auth_id: authId,
+        nome,
+        email,
+        telefone: telefone || null,
+        role: targetRole,
+        status: targetStatus,
+        condominio_id: condominio_id || null,
+      } as any)
+      .select('id')
+      .single();
+
+    if (insertError) {
+      await admin.auth.admin.deleteUser(authId);
+      return NextResponse.json({ error: insertError.message }, { status: 400 });
+    }
+
+    usuarioId = newUser.id;
   }
 
-  // 3. If condominio_id provided, insert into usuario_condominios
+  // 3. Ensure usuario_condominios link exists
   if (condominio_id) {
-    const ucInsert = {
-      usuario_id: newUser.id,
-      condominio_id,
-      role: role || 'morador',
-      status: 'active',
-    };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const ucTable = 'usuario_condominios' as any;
-    await admin.from(ucTable).insert(ucInsert as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+    const { data: existingLink } = await admin
+      .from('usuario_condominios' as any)
+      .select('id')
+      .eq('usuario_id', usuarioId)
+      .eq('condominio_id', condominio_id)
+      .single();
+
+    if (!existingLink) {
+      await admin.from('usuario_condominios' as any).insert({
+        usuario_id: usuarioId,
+        condominio_id,
+        role: targetRole,
+        status: targetStatus,
+      } as any);
+    }
   }
 
-  return NextResponse.json(
-    { data: { id: newUser.id, auth_id: authData.user.id } },
-    { status: 201 }
-  );
+  return NextResponse.json({ data: { id: usuarioId, auth_id: authId } }, { status: 201 });
 }
 
 // ============================================
