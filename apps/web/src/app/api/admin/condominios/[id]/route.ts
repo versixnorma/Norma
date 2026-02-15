@@ -41,5 +41,16 @@ export async function GET(
     return NextResponse.json({ error: error.message }, { status: 404 });
   }
 
-  return NextResponse.json({ data });
+  const { data: blocos } = await admin
+    .from('blocos')
+    .select('id, nome')
+    .eq('condominio_id', id)
+    .order('created_at', { ascending: true });
+
+  return NextResponse.json({
+    data: {
+      ...data,
+      blocos: (blocos || []).map((b) => ({ id: b.id, nome: b.nome })),
+    },
+  });
 }

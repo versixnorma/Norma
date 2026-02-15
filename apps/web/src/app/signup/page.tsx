@@ -15,7 +15,7 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [condominios, setCondominios] = useState<{ id: string; nome: string }[]>([]);
   const [unidades, setUnidades] = useState<
-    { id: string; numero: string; bloco_nome: string | null }[]
+    { id: string; numero: string; bloco_id: string | null; bloco_nome: string | null }[]
   >([]);
   const [formData, setFormData] = useState({
     nome: '',
@@ -23,6 +23,7 @@ export default function SignupPage() {
     telefone: '',
     cpf: '',
     data_nascimento: '',
+    bloco_id: '',
     unidade_id: '',
     notificacoes_email: true,
     notificacoes_push: true,
@@ -50,7 +51,7 @@ export default function SignupPage() {
   useEffect(() => {
     if (!formData.condominio_id) {
       setUnidades([]);
-      setFormData((prev) => ({ ...prev, unidade_id: '' }));
+      setFormData((prev) => ({ ...prev, bloco_id: '', unidade_id: '' }));
       return;
     }
 
@@ -62,6 +63,10 @@ export default function SignupPage() {
       })
       .catch(() => setUnidades([]));
   }, [formData.condominio_id]);
+
+  useEffect(() => {
+    setFormData((prev) => ({ ...prev, unidade_id: '' }));
+  }, [formData.bloco_id]);
 
   // Redirect se já autenticado
   useEffect(() => {
@@ -78,6 +83,7 @@ export default function SignupPage() {
       !formData.email ||
       !formData.password ||
       !formData.condominio_id ||
+      !formData.bloco_id ||
       !formData.unidade_id ||
       !formData.cpf ||
       !formData.data_nascimento
@@ -165,6 +171,22 @@ export default function SignupPage() {
       </div>
     );
   }
+
+  const blocoFallbackId = '__sem_bloco__';
+  const blocosDisponiveis = Array.from(
+    new Map(
+      unidades.map((u) => [
+        u.bloco_id || blocoFallbackId,
+        {
+          id: u.bloco_id || blocoFallbackId,
+          nome: u.bloco_nome || 'Bloco Único',
+        },
+      ])
+    ).values()
+  );
+  const unidadesFiltradas = formData.bloco_id
+    ? unidades.filter((u) => (u.bloco_id || blocoFallbackId) === formData.bloco_id)
+    : [];
 
   return (
     <div className="relative flex h-screen w-full flex-col overflow-hidden font-sans">
@@ -287,7 +309,14 @@ export default function SignupPage() {
               </div>
               <select
                 value={formData.condominio_id}
-                onChange={(e) => setFormData({ ...formData, condominio_id: e.target.value })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    condominio_id: e.target.value,
+                    bloco_id: '',
+                    unidade_id: '',
+                  })
+                }
                 className="w-full appearance-none rounded-xl border-none bg-white/95 py-3.5 pl-12 pr-4 text-sm text-gray-700 shadow-lg backdrop-blur-md focus:ring-2 focus:ring-secondary dark:bg-gray-800/95 dark:text-gray-200"
                 required
                 disabled={loading}
@@ -306,24 +335,50 @@ export default function SignupPage() {
               </div>
             </div>
 
-            {/* Unidade Habitacional */}
+            {/* Bloco/Rua */}
             <div className="relative">
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
                 <span className="material-symbols-outlined text-xl text-gray-400">home</span>
+              </div>
+              <select
+                value={formData.bloco_id}
+                onChange={(e) => setFormData({ ...formData, bloco_id: e.target.value })}
+                className="w-full appearance-none rounded-xl border-none bg-white/95 py-3.5 pl-12 pr-4 text-sm text-gray-700 shadow-lg backdrop-blur-md focus:ring-2 focus:ring-secondary dark:bg-gray-800/95 dark:text-gray-200"
+                required
+                disabled={loading || !formData.condominio_id}
+              >
+                <option value="" disabled>
+                  Selecione seu bloco/rua *
+                </option>
+                {blocosDisponiveis.map((bloco) => (
+                  <option key={bloco.id} value={bloco.id}>
+                    {bloco.nome}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
+                <span className="material-symbols-outlined text-lg text-gray-400">expand_more</span>
+              </div>
+            </div>
+
+            {/* Unidade Habitacional */}
+            <div className="relative">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                <span className="material-symbols-outlined text-xl text-gray-400">tag</span>
               </div>
               <select
                 value={formData.unidade_id}
                 onChange={(e) => setFormData({ ...formData, unidade_id: e.target.value })}
                 className="w-full appearance-none rounded-xl border-none bg-white/95 py-3.5 pl-12 pr-4 text-sm text-gray-700 shadow-lg backdrop-blur-md focus:ring-2 focus:ring-secondary dark:bg-gray-800/95 dark:text-gray-200"
                 required
-                disabled={loading || !formData.condominio_id}
+                disabled={loading || !formData.condominio_id || !formData.bloco_id}
               >
                 <option value="" disabled>
-                  Selecione sua unidade *
+                  Selecione sua unidade (número) *
                 </option>
-                {unidades.map((u) => (
+                {unidadesFiltradas.map((u) => (
                   <option key={u.id} value={u.id}>
-                    {u.bloco_nome ? `${u.bloco_nome} - ${u.numero}` : u.numero}
+                    {u.numero}
                   </option>
                 ))}
               </select>

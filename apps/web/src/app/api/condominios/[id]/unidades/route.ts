@@ -18,6 +18,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     .select(
       `
       id,
+      bloco_id,
       numero,
       bloco:bloco_id (
         nome
@@ -78,6 +79,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
           .select(
             `
             id,
+            bloco_id,
             numero,
             bloco:bloco_id (
               nome
@@ -96,6 +98,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   const formatted = (data || []).map((u: any) => ({
     id: u.id,
     numero: u.numero,
+    bloco_id: u.bloco_id || null,
     bloco_nome: u.bloco?.nome || null,
   }));
 

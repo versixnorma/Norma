@@ -25,6 +25,7 @@ export default function EditarCondominioPage() {
     logo_url?: string;
     cor_primaria?: string;
     ativo?: boolean;
+    blocos_ruas?: string;
   };
 
   const [initialValues, setInitialValues] = useState<Condominio | null>(null);
@@ -58,6 +59,9 @@ export default function EditarCondominioPage() {
               logo_url: data.logo_url || '',
               cor_primaria: data.cor_primaria || '#3B82F6',
               ativo: data.ativo ?? true,
+              blocos_ruas: Array.isArray(data.blocos)
+                ? data.blocos.map((b: { nome?: string }) => b?.nome).filter(Boolean).join(', ')
+                : '',
             });
           }
         }

@@ -16,6 +16,7 @@ type FormState = {
   cep: string;
   tier: 'starter' | 'professional' | 'enterprise';
   total_unidades: string;
+  blocos_ruas: string;
   telefone: string;
   email: string;
   logo_url: string;
@@ -35,6 +36,7 @@ const EMPTY_FORM: FormState = {
   cep: '',
   tier: 'starter',
   total_unidades: '',
+  blocos_ruas: '',
   telefone: '',
   email: '',
   logo_url: '',
@@ -207,6 +209,10 @@ export function CondominioForm({ mode, initialValues, condominioId }: Condominio
       toast.error('Informe o total de unidades');
       return;
     }
+    if (!form.blocos_ruas.trim()) {
+      toast.error('Informe os blocos/ruas');
+      return;
+    }
 
     setSaving(true);
     try {
@@ -222,6 +228,7 @@ export function CondominioForm({ mode, initialValues, condominioId }: Condominio
         cep: form.cep.trim(),
         tier: form.tier,
         total_unidades: Number(form.total_unidades),
+        blocos_ruas: form.blocos_ruas,
         telefone: form.telefone || null,
         email: form.email || null,
         logo_url: form.logo_url || null,
@@ -394,6 +401,16 @@ export function CondominioForm({ mode, initialValues, condominioId }: Condominio
               onChange={(e) => setForm({ ...form, cor_primaria: e.target.value })}
               className="mt-1 h-10 w-full rounded-lg border border-gray-200 bg-white px-2 py-1 dark:border-gray-800 dark:bg-gray-950"
             />
+          </div>
+          <div className="md:col-span-3">
+            <label className="text-xs font-medium text-gray-500">Blocos/Ruas *</label>
+            <input
+              value={form.blocos_ruas}
+              onChange={(e) => setForm({ ...form, blocos_ruas: e.target.value })}
+              placeholder="Ex.: A, B, C ou Rua das Palmeiras, Rua Ipê"
+              className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-800 dark:bg-gray-950"
+            />
+            <p className="mt-1 text-xs text-gray-400">Separe por vírgula.</p>
           </div>
           <div className="flex items-center gap-2">
             <input
