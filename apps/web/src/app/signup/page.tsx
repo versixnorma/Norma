@@ -208,14 +208,6 @@ export default function SignupPage() {
     return `${yearStr}-${monthStr}-${dayStr}`;
   };
 
-  if (authLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-primary">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-white border-t-transparent" />
-      </div>
-    );
-  }
-
   const blocoFallbackId = '__sem_bloco__';
   const blocosDisponiveis = useMemo(() => {
     const map = new Map<string, { id: string; nome: string }>();
@@ -239,6 +231,14 @@ export default function SignupPage() {
   const unidadesFiltradas = formData.bloco_id
     ? unidades.filter((u) => (u.bloco_id || blocoFallbackId) === formData.bloco_id)
     : [];
+
+  if (authLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-primary">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-white border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <div className="relative flex h-screen w-full flex-col overflow-hidden font-sans">

@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase';
+import type { Database } from '@/types/database';
 import { NextRequest, NextResponse } from 'next/server';
 
 type UnidadeRow = {
@@ -119,20 +120,15 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       }
 
       if (blocoId) {
-        const novasUnidades: Array<{
-          condominio_id: string;
-          bloco_id: string;
-          numero: string;
-          tipo: string;
-          ativo: boolean;
-        }> = Array.from({ length: totalUnidades }, (_, idx) => ({
-          condominio_id: condominioId,
-          bloco_id: blocoId,
-          numero: String(idx + 1),
-          tipo: 'apartamento',
-          ativo: true,
-        }));
-        await admin.from('unidades_habitacionais').insert(novasUnidades as any);
+        const novasUnidades: Database['public']['Tables']['unidades_habitacionais']['Insert'][] =
+          Array.from({ length: totalUnidades }, (_, idx) => ({
+            condominio_id: condominioId,
+            bloco_id: blocoId,
+            numero: String(idx + 1),
+            tipo: 'apartamento',
+            ativo: true,
+          }));
+        await admin.from('unidades_habitacionais').insert(novasUnidades);
 
         const refreshed = await admin
           .from('unidades_habitacionais')

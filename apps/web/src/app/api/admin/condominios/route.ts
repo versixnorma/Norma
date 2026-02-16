@@ -147,7 +147,9 @@ async function ensureCondominioUnits(
   // reatribui para os blocos configurados em round-robin para evitar "blocos fantasmas".
   if (blockNames.length > 0 && unidadesAtivas.length > 0) {
     const desiredBlocoIds = new Set(orderedBlocos.map((b) => b.id));
-    const unidadesOrfas = unidadesAtivas.filter((u) => !u.bloco_id || !desiredBlocoIds.has(u.bloco_id));
+    const unidadesOrfas = unidadesAtivas.filter(
+      (u) => !u.bloco_id || !desiredBlocoIds.has(u.bloco_id)
+    );
 
     if (unidadesOrfas.length > 0) {
       await Promise.all(
@@ -287,9 +289,10 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json();
   const { blocos_ruas, ...insertPayload } = body as Record<string, unknown>;
+  const condominioInsert = insertPayload as Database['public']['Tables']['condominios']['Insert'];
   const { data, error } = await admin
     .from('condominios')
-    .insert(insertPayload as any)
+    .insert(condominioInsert)
     .select('id')
     .single();
 
