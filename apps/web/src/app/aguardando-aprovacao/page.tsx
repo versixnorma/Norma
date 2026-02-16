@@ -42,11 +42,16 @@ export default function AguardandoAprovacaoPage() {
         <div className="mb-8 flex h-24 w-24 animate-pulse items-center justify-center rounded-full bg-white/10 backdrop-blur-md">
           <span className="material-symbols-outlined text-5xl text-white">hourglass_top</span>
         </div>
-        <h1 className="mb-3 text-center text-2xl font-bold text-white">Aguardando Aprovação</h1>
-        <p className="mb-8 max-w-sm text-center text-blue-100">
-          Seu cadastro foi recebido e está aguardando a aprovação do síndico do condomínio.
+        <h1 className="mb-3 text-center text-2xl font-bold text-white">Estamos quase lá!</h1>
+        <p className="mb-3 max-w-md text-center text-blue-100">
+          Seu cadastro foi recebido com sucesso e está em análise.
         </p>
-        <div className="mb-8 w-full max-w-sm rounded-2xl bg-white/10 p-6 backdrop-blur-md">
+        <p className="mb-8 max-w-md text-center text-blue-100">
+          Aguarde a aprovação do Síndico. Em breve você será aceito e terá acesso completo à
+          plataforma e aos recursos exclusivos do Versix Norma.
+        </p>
+
+        <div className="mb-6 w-full max-w-sm rounded-2xl bg-white/10 p-6 backdrop-blur-md">
           <div className="mb-4 flex items-center gap-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20">
               <span className="text-lg font-bold text-white">
@@ -61,9 +66,21 @@ export default function AguardandoAprovacaoPage() {
           <div className="border-t border-white/10 pt-4">
             <div className="flex items-center gap-2 text-blue-100">
               <span className="material-symbols-outlined text-lg">schedule</span>
-              <span className="text-sm">Status: Pendente</span>
+              <span className="text-sm font-medium">Status atual: Pendente</span>
             </div>
           </div>
+        </div>
+
+        <div className="w-full max-w-sm rounded-2xl bg-white/10 p-4 backdrop-blur-md">
+          <div className="mb-2 flex items-center gap-2 text-white">
+            <span className="material-symbols-outlined text-lg">tips_and_updates</span>
+            <span className="text-sm font-semibold">Próximos passos</span>
+          </div>
+          <ul className="space-y-1 text-sm text-blue-100">
+            <li>• O Síndico valida seu acesso ao condomínio.</li>
+            <li>• Assim que aprovado, seu acesso é liberado automaticamente.</li>
+            <li>• Você poderá entrar e usar todos os recursos da plataforma.</li>
+          </ul>
         </div>
       </div>
       <div className="rounded-t-[2.5rem] bg-white p-6 shadow-2xl dark:bg-card-dark">
@@ -72,7 +89,8 @@ export default function AguardandoAprovacaoPage() {
             onClick={() => window.location.reload()}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-4 font-bold text-white"
           >
-            <span className="material-symbols-outlined">refresh</span>Verificar Status
+            <span className="material-symbols-outlined">refresh</span>
+            Verificar status
           </button>
           <button
             onClick={handleLogout}
