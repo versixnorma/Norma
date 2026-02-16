@@ -44,6 +44,7 @@ const EMPTY_FORM: UserFormData = {
 };
 
 type CondominioOption = { id: string; nome: string };
+type BlocoOption = { id: string; nome: string };
 type UnidadeOption = {
   id: string;
   numero: string;
@@ -150,6 +151,7 @@ export function UserTable({
   const [formData, setFormData] = useState<UserFormData>(EMPTY_FORM);
   const [formLoading, setFormLoading] = useState(false);
   const [condominios, setCondominios] = useState<CondominioOption[]>([]);
+  const [blocos, setBlocos] = useState<BlocoOption[]>([]);
   const [unidades, setUnidades] = useState<UnidadeOption[]>([]);
 
   const displayUsers = searchQuery && searchResults.length > 0 ? searchResults : users;
@@ -227,6 +229,7 @@ export function UserTable({
     setShowUserModal(false);
     setEditingUser(null);
     setFormData(EMPTY_FORM);
+    setBlocos([]);
     setUnidades([]);
   };
 
@@ -250,16 +253,25 @@ export function UserTable({
 
   useEffect(() => {
     if (!formData.condominio_id) {
+      setBlocos([]);
       setUnidades([]);
       return;
     }
-    fetch(`/api/condominios/${formData.condominio_id}/unidades`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) setUnidades(data);
+    Promise.all([
+      fetch(`/api/condominios/${formData.condominio_id}/blocos`).then((res) => res.json()),
+      fetch(`/api/condominios/${formData.condominio_id}/unidades`).then((res) => res.json()),
+    ])
+      .then(([blocosData, unidadesData]) => {
+        if (Array.isArray(blocosData)) setBlocos(blocosData);
+        else setBlocos([]);
+
+        if (Array.isArray(unidadesData)) setUnidades(unidadesData);
         else setUnidades([]);
       })
-      .catch(() => setUnidades([]));
+      .catch(() => {
+        setBlocos([]);
+        setUnidades([]);
+      });
   }, [formData.condominio_id]);
 
   useEffect(() => {
@@ -271,16 +283,22 @@ export function UserTable({
   }, [unidades, formData.unidade_id, formData.bloco_id]);
 
   const blocosDisponiveis = useMemo(
-    () =>
-      Array.from(
-        new Map(
-          unidades.map((u) => [
-            u.bloco_id || '__sem_bloco__',
-            { id: u.bloco_id || '__sem_bloco__', nome: u.bloco_nome || 'Bloco Único' },
-          ])
-        ).values()
-      ),
-    [unidades]
+    () => {
+      const map = new Map<string, { id: string; nome: string }>();
+
+      for (const bloco of blocos) {
+        map.set(bloco.id, { id: bloco.id, nome: bloco.nome });
+      }
+      for (const unidade of unidades) {
+        const id = unidade.bloco_id || '__sem_bloco__';
+        if (!map.has(id)) {
+          map.set(id, { id, nome: unidade.bloco_nome || 'Bloco Único' });
+        }
+      }
+
+      return Array.from(map.values());
+    },
+    [blocos, unidades]
   );
   const unidadesFiltradas = useMemo(
     () =>

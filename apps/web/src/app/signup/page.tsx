@@ -4,7 +4,7 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 export default function SignupPage() {
@@ -14,6 +14,7 @@ export default function SignupPage() {
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [condominios, setCondominios] = useState<{ id: string; nome: string }[]>([]);
+  const [blocos, setBlocos] = useState<{ id: string; nome: string }[]>([]);
   const [unidades, setUnidades] = useState<
     { id: string; numero: string; bloco_id: string | null; bloco_nome: string | null }[]
   >([]);
@@ -50,18 +51,27 @@ export default function SignupPage() {
 
   useEffect(() => {
     if (!formData.condominio_id) {
+      setBlocos([]);
       setUnidades([]);
       setFormData((prev) => ({ ...prev, bloco_id: '', unidade_id: '' }));
       return;
     }
 
-    fetch(`/api/condominios/${formData.condominio_id}/unidades`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) setUnidades(data);
+    Promise.all([
+      fetch(`/api/condominios/${formData.condominio_id}/blocos`).then((res) => res.json()),
+      fetch(`/api/condominios/${formData.condominio_id}/unidades`).then((res) => res.json()),
+    ])
+      .then(([blocosData, unidadesData]) => {
+        if (Array.isArray(blocosData)) setBlocos(blocosData);
+        else setBlocos([]);
+
+        if (Array.isArray(unidadesData)) setUnidades(unidadesData);
         else setUnidades([]);
       })
-      .catch(() => setUnidades([]));
+      .catch(() => {
+        setBlocos([]);
+        setUnidades([]);
+      });
   }, [formData.condominio_id]);
 
   useEffect(() => {
@@ -97,6 +107,12 @@ export default function SignupPage() {
       return;
     }
 
+    const birthDateIso = parseBirthDateToISO(formData.data_nascimento);
+    if (!birthDateIso) {
+      toast.error('Informe uma data de nascimento válida (DD/MM/AAAA)');
+      return;
+    }
+
     if (formData.password.length < 6) {
       toast.error('A senha deve ter pelo menos 6 caracteres');
       return;
@@ -122,7 +138,7 @@ export default function SignupPage() {
       condominio_id: formData.condominio_id,
       unidade_id: formData.unidade_id,
       cpf: formData.cpf,
-      data_nascimento: formData.data_nascimento,
+      data_nascimento: birthDateIso,
       notificacoes_email: formData.notificacoes_email,
       notificacoes_push: formData.notificacoes_push,
       notificacoes_whatsapp: formData.notificacoes_whatsapp,
@@ -164,6 +180,34 @@ export default function SignupPage() {
       .replace(/\.(\d{3})(\d)/, '.$1-$2');
   };
 
+  const formatBirthDate = (value: string) => {
+    const numbers = value.replace(/\D/g, '').slice(0, 8);
+    if (numbers.length <= 2) return numbers;
+    if (numbers.length <= 4) return `${numbers.slice(0, 2)}/${numbers.slice(2)}`;
+    return `${numbers.slice(0, 2)}/${numbers.slice(2, 4)}/${numbers.slice(4)}`;
+  };
+
+  const parseBirthDateToISO = (value: string): string | null => {
+    const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (!match) return null;
+
+    const [, dayStr, monthStr, yearStr] = match;
+    const day = Number(dayStr);
+    const month = Number(monthStr);
+    const year = Number(yearStr);
+    if (!Number.isFinite(day) || !Number.isFinite(month) || !Number.isFinite(year)) return null;
+    if (year < 1900 || year > new Date().getFullYear()) return null;
+
+    const date = new Date(Date.UTC(year, month - 1, day));
+    const valid =
+      date.getUTCFullYear() === year &&
+      date.getUTCMonth() === month - 1 &&
+      date.getUTCDate() === day;
+    if (!valid) return null;
+
+    return `${yearStr}-${monthStr}-${dayStr}`;
+  };
+
   if (authLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-primary">
@@ -173,17 +217,22 @@ export default function SignupPage() {
   }
 
   const blocoFallbackId = '__sem_bloco__';
-  const blocosDisponiveis = Array.from(
-    new Map(
-      unidades.map((u) => [
-        u.bloco_id || blocoFallbackId,
-        {
-          id: u.bloco_id || blocoFallbackId,
-          nome: u.bloco_nome || 'Bloco Único',
-        },
-      ])
-    ).values()
-  );
+  const blocosDisponiveis = useMemo(() => {
+    const map = new Map<string, { id: string; nome: string }>();
+
+    for (const bloco of blocos) {
+      map.set(bloco.id, { id: bloco.id, nome: bloco.nome });
+    }
+
+    for (const unidade of unidades) {
+      const id = unidade.bloco_id || blocoFallbackId;
+      if (!map.has(id)) {
+        map.set(id, { id, nome: unidade.bloco_nome || 'Bloco Único' });
+      }
+    }
+
+    return Array.from(map.values());
+  }, [blocos, unidades]);
   const unidadesFiltradas = formData.bloco_id
     ? unidades.filter((u) => (u.bloco_id || blocoFallbackId) === formData.bloco_id)
     : [];
@@ -293,10 +342,15 @@ export default function SignupPage() {
                 </span>
               </div>
               <input
-                type="date"
+                type="text"
+                inputMode="numeric"
                 value={formData.data_nascimento}
-                onChange={(e) => setFormData({ ...formData, data_nascimento: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, data_nascimento: formatBirthDate(e.target.value) })
+                }
                 className="w-full rounded-xl border-none bg-white/95 py-3.5 pl-12 pr-4 text-sm text-gray-700 shadow-lg backdrop-blur-md focus:ring-2 focus:ring-secondary"
+                placeholder="Data de nascimento (DD/MM/AAAA) *"
+                maxLength={10}
                 required
                 disabled={loading}
               />
