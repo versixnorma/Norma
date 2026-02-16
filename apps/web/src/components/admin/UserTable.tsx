@@ -289,10 +289,14 @@ export function UserTable({
       for (const bloco of blocos) {
         map.set(bloco.id, { id: bloco.id, nome: bloco.nome });
       }
-      for (const unidade of unidades) {
-        const id = unidade.bloco_id || '__sem_bloco__';
-        if (!map.has(id)) {
-          map.set(id, { id, nome: unidade.bloco_nome || 'Bloco Único' });
+
+      // Só usa fallback baseado em unidades quando não existem blocos oficiais configurados.
+      if (blocos.length === 0) {
+        for (const unidade of unidades) {
+          const id = unidade.bloco_id || '__sem_bloco__';
+          if (!map.has(id)) {
+            map.set(id, { id, nome: unidade.bloco_nome || 'Bloco Único' });
+          }
         }
       }
 

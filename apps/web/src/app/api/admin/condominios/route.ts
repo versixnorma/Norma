@@ -93,7 +93,11 @@ async function ensureCondominioUnits(
     });
   }
 
-  const desiredNames = blockNames.length > 0 ? blockNames : ['Bloco Único'];
+  const existingNames = (blocosExistentes || [])
+    .map((bloco) => String(bloco.nome).trim())
+    .filter((name, idx, arr) => name.length > 0 && arr.indexOf(name) === idx);
+  const desiredNames =
+    blockNames.length > 0 ? blockNames : existingNames.length > 0 ? existingNames : ['Bloco Único'];
   const orderedBlocos: BlocoRow[] = [];
 
   for (const name of desiredNames) {
@@ -136,7 +140,35 @@ async function ensureCondominioUnits(
     .eq('condominio_id', condominioId)
     .eq('ativo', true);
 
-  const unidadesAtivas = (unidadesExistentes || []) as UnidadeAtivaRow[];
+  let unidadesAtivas = (unidadesExistentes || []) as UnidadeAtivaRow[];
+
+  // Auto-healing:
+  // Se houver configuração explícita de blocos e unidades vinculadas a blocos inexistentes,
+  // reatribui para os blocos configurados em round-robin para evitar "blocos fantasmas".
+  if (blockNames.length > 0 && unidadesAtivas.length > 0) {
+    const desiredBlocoIds = new Set(orderedBlocos.map((b) => b.id));
+    const unidadesOrfas = unidadesAtivas.filter((u) => !u.bloco_id || !desiredBlocoIds.has(u.bloco_id));
+
+    if (unidadesOrfas.length > 0) {
+      await Promise.all(
+        unidadesOrfas.map((u, idx) =>
+          admin
+            .from('unidades_habitacionais')
+            .update({ bloco_id: orderedBlocos[idx % orderedBlocos.length].id })
+            .eq('id', u.id)
+        )
+      );
+
+      const { data: healedUnits } = await admin
+        .from('unidades_habitacionais')
+        .select('id, bloco_id, numero')
+        .eq('condominio_id', condominioId)
+        .eq('ativo', true);
+
+      unidadesAtivas = (healedUnits || []) as UnidadeAtivaRow[];
+    }
+  }
+
   const existingCount = unidadesAtivas.length;
   if (existingCount >= totalUnidades) return;
 

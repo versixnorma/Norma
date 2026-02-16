@@ -41,6 +41,52 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   }
   let data = (initialData || []) as UnidadeRow[];
 
+  // Auto-healing:
+  // Se houver unidades apontando para blocos inexistentes, reatribui para blocos válidos
+  // para evitar exibir "bloco fantasma" no cadastro.
+  if (data.length > 0) {
+    const { data: blocos } = await admin
+      .from('blocos')
+      .select('id')
+      .eq('condominio_id', condominioId)
+      .order('created_at', { ascending: true });
+
+    const blocoIds = (blocos || []).map((b) => b.id);
+    if (blocoIds.length > 0) {
+      const validBlocos = new Set(blocoIds);
+      const unidadesOrfas = data.filter((u) => !u.bloco_id || !validBlocos.has(u.bloco_id));
+
+      if (unidadesOrfas.length > 0) {
+        await Promise.all(
+          unidadesOrfas.map((u, idx) =>
+            admin
+              .from('unidades_habitacionais')
+              .update({ bloco_id: blocoIds[idx % blocoIds.length] })
+              .eq('id', u.id)
+          )
+        );
+
+        const refreshed = await admin
+          .from('unidades_habitacionais')
+          .select(
+            `
+            id,
+            bloco_id,
+            numero,
+            bloco:bloco_id (
+              nome
+            )
+          `
+          )
+          .eq('condominio_id', condominioId)
+          .eq('ativo', true)
+          .order('numero', { ascending: true });
+
+        data = (refreshed.data || []) as UnidadeRow[];
+      }
+    }
+  }
+
   // Auto-healing para condomínios legados sem unidades cadastradas.
   if (!data || data.length === 0) {
     const { data: condominio } = await admin
