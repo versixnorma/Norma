@@ -1,11 +1,13 @@
 'use client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 export default function AguardandoAprovacaoPage() {
-  const { profile, isAuthenticated, loading, logout } = useAuthContext();
+  const { profile, isAuthenticated, loading, logout, refreshProfile } = useAuthContext();
   const router = useRouter();
+  const [checkingStatus, setCheckingStatus] = useState(false);
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -27,6 +29,18 @@ export default function AguardandoAprovacaoPage() {
   const handleLogout = async () => {
     await logout();
     router.push('/login');
+  };
+
+  const handleCheckStatus = async () => {
+    setCheckingStatus(true);
+    try {
+      await refreshProfile();
+      toast.info('Status atualizado. Se aprovado, o acesso será liberado automaticamente.');
+    } catch {
+      toast.error('Não foi possível verificar agora. Tente novamente em instantes.');
+    } finally {
+      setCheckingStatus(false);
+    }
   };
 
   if (loading)
@@ -86,11 +100,21 @@ export default function AguardandoAprovacaoPage() {
       <div className="rounded-t-[2.5rem] bg-white p-6 shadow-2xl dark:bg-card-dark">
         <div className="flex flex-col gap-3">
           <button
-            onClick={() => window.location.reload()}
+            onClick={handleCheckStatus}
+            disabled={checkingStatus}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-4 font-bold text-white"
           >
-            <span className="material-symbols-outlined">refresh</span>
-            Verificar status
+            {checkingStatus ? (
+              <>
+                <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                Verificando...
+              </>
+            ) : (
+              <>
+                <span className="material-symbols-outlined">refresh</span>
+                Verificar status
+              </>
+            )}
           </button>
           <button
             onClick={handleLogout}
