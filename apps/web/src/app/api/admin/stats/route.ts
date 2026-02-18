@@ -1,31 +1,7 @@
-import { createAdminClient } from '@/lib/supabase';
-import { createClient } from '@/lib/supabase/server';
-import { cookies } from 'next/headers';
+import { withAdminAuth } from '@/lib/api-helpers';
 import { NextResponse } from 'next/server';
 
-export async function GET() {
-  const authClient = createClient(await cookies());
-  const {
-    data: { user },
-    error: authError,
-  } = await authClient.auth.getUser();
-
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const admin = createAdminClient();
-
-  const { data: usuario } = await admin
-    .from('usuarios')
-    .select('id, role')
-    .eq('auth_id', user.id)
-    .single();
-
-  if (!usuario || usuario.role !== 'superadmin') {
-    return NextResponse.json({ error: 'Forbidden - requer superadmin' }, { status: 403 });
-  }
-
+export const GET = withAdminAuth(async ({ admin }) => {
   const [
     { count: totalCondominios },
     { count: totalUsuarios },
@@ -49,4 +25,4 @@ export async function GET() {
       total_unidades: totalUnidades || 0,
     },
   });
-}
+});

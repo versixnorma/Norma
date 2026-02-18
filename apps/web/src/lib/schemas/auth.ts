@@ -1,5 +1,20 @@
 import { z } from 'zod';
 
+// Password validation schema — shared across signup, reset-password, and API routes
+export const passwordSchema = z
+  .string()
+  .min(8, 'Senha deve ter no mínimo 8 caracteres')
+  .regex(/[A-Z]/, 'Senha deve conter pelo menos 1 letra maiúscula')
+  .regex(/[0-9]/, 'Senha deve conter pelo menos 1 número')
+  .regex(/[^A-Za-z0-9]/, 'Senha deve conter pelo menos 1 caractere especial');
+
+export const PASSWORD_RULES = [
+  { test: (v: string) => v.length >= 8, label: 'Mínimo 8 caracteres' },
+  { test: (v: string) => /[A-Z]/.test(v), label: '1 letra maiúscula' },
+  { test: (v: string) => /[0-9]/.test(v), label: '1 número' },
+  { test: (v: string) => /[^A-Za-z0-9]/.test(v), label: '1 caractere especial' },
+] as const;
+
 // Role hierarchy: superadmin (system-level) > admin_condo (condominium-level) > others
 // Note: admin_master was consolidated into superadmin on 2026-02-06
 export const RoleSchema = z.enum([

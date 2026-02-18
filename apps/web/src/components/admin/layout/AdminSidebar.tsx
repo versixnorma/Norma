@@ -100,6 +100,7 @@ export function AdminSidebar({ collapsed = false, onToggleCollapse }: AdminSideb
 
   return (
     <aside
+      aria-label="Menu de administração"
       className={`fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-gray-200 bg-white transition-all dark:border-gray-800 dark:bg-gray-900 ${collapsed ? 'w-20' : 'w-64'} `}
     >
       {/* Logo / Header */}
@@ -129,6 +130,7 @@ export function AdminSidebar({ collapsed = false, onToggleCollapse }: AdminSideb
           <button
             onClick={onToggleCollapse}
             className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+            aria-label={collapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'}
           >
             <span className="material-symbols-outlined text-xl">
               {collapsed ? 'chevron_right' : 'chevron_left'}

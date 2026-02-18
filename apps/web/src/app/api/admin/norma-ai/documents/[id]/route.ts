@@ -17,8 +17,7 @@ export async function PUT(
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
   const { data, error } = await supabase
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- table not in generated types
-    .from('documents' as any)
+    .from('documents')
     .update(payload)
     .eq('id', id)
     .select('*')
@@ -40,12 +39,12 @@ export async function DELETE(
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
   await supabase
-    .from('document_chunks' as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    .from('document_chunks')
     .delete()
     .eq('document_id', id);
 
   const { error } = await supabase
-    .from('documents' as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    .from('documents')
     .delete()
     .eq('id', id);
 

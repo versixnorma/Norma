@@ -30,6 +30,7 @@ export function AdminHeader({ sidebarCollapsed, onToggleSidebar }: AdminHeaderPr
         <button
           onClick={onToggleSidebar}
           className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 lg:hidden"
+          aria-label="Abrir menu lateral"
         >
           <span className="material-symbols-outlined">menu</span>
         </button>
@@ -63,12 +64,12 @@ export function AdminHeader({ sidebarCollapsed, onToggleSidebar }: AdminHeaderPr
       {/* Right: Actions */}
       <div className="flex items-center gap-3">
         {/* Search */}
-        <button className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800">
+        <button className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800" aria-label="Buscar">
           <span className="material-symbols-outlined">search</span>
         </button>
 
         {/* Notifications */}
-        <button className="relative rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800">
+        <button className="relative rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800" aria-label="Notificações">
           <span className="material-symbols-outlined">notifications</span>
           <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500"></span>
         </button>
@@ -78,6 +79,8 @@ export function AdminHeader({ sidebarCollapsed, onToggleSidebar }: AdminHeaderPr
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
             className="flex items-center gap-2 rounded-lg p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800"
+            aria-label="Menu do usuário"
+            aria-expanded={showUserMenu}
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
               {profile?.avatar_url ? (

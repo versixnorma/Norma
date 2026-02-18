@@ -69,7 +69,7 @@ const ADMIN_NAVIGATION: NavSection[] = [
         children: [
           {
             id: 'marketplace-overview',
-            label: 'VisÃ£o Geral',
+            label: 'Visão Geral',
             href: '/admin/marketplace',
             icon: 'dashboard',
           },

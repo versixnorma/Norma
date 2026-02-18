@@ -1,6 +1,7 @@
 'use client';
 
 import { createClient } from '@/lib/supabase';
+import { PASSWORD_RULES, passwordSchema } from '@/lib/schemas/auth';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -46,8 +47,9 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    if (password.length < 6) {
-      toast.error('A senha deve ter pelo menos 6 caracteres');
+    const pwResult = passwordSchema.safeParse(password);
+    if (!pwResult.success) {
+      toast.error(pwResult.error.issues[0].message);
       return;
     }
 
@@ -136,7 +138,7 @@ export default function ResetPasswordPage() {
                 placeholder="Nova senha"
                 required
                 disabled={loading}
-                minLength={6}
+                minLength={8}
               />
               <button
                 type="button"
@@ -148,6 +150,22 @@ export default function ResetPasswordPage() {
                 </span>
               </button>
             </div>
+            {password && (
+              <div className="grid grid-cols-2 gap-1 px-1">
+                {PASSWORD_RULES.map((rule) => (
+                  <div key={rule.label} className="flex items-center gap-1.5">
+                    <span
+                      className={`material-symbols-outlined text-xs ${rule.test(password) ? 'text-green-400' : 'text-white/40'}`}
+                    >
+                      {rule.test(password) ? 'check_circle' : 'circle'}
+                    </span>
+                    <span className={`text-[10px] ${rule.test(password) ? 'text-green-300' : 'text-white/50'}`}>
+                      {rule.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Confirm Password */}
             <div className="relative">
@@ -162,7 +180,7 @@ export default function ResetPasswordPage() {
                 placeholder="Confirme a nova senha"
                 required
                 disabled={loading}
-                minLength={6}
+                minLength={8}
               />
               <button
                 type="button"
@@ -198,7 +216,7 @@ export default function ResetPasswordPage() {
           {/* Info */}
           <div className="mt-6 p-3 bg-white/10 backdrop-blur-md rounded-lg border border-white/10 max-w-sm">
             <p className="text-xs text-blue-200 text-center">
-              Digite sua nova senha. Ela deve ter pelo menos 6 caracteres.
+              Sua senha deve ter no mínimo 8 caracteres, incluindo 1 maiúscula, 1 número e 1 especial.
             </p>
           </div>
         </div>

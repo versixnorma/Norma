@@ -25,17 +25,14 @@ export async function GET() {
   const thirtyDaysAgoISO = thirtyDaysAgo.toISOString();
 
   const [documentsRes, chunksRes, conversationsRes, trainingRes] = await Promise.all([
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- table not in generated types
-    supabase.from('documents' as any).select('source_type, id', { count: 'exact' }),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- table not in generated types
-    supabase.from('document_chunks' as any).select('id', { count: 'exact' }),
-
+    supabase.from('documents').select('source_type, id', { count: 'exact' }),
+    supabase.from('document_chunks').select('id', { count: 'exact' }),
     supabase
-      .from('norma_chat_logs' as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+      .from('norma_chat_logs')
       .select('id, created_at', { count: 'exact' })
       .gte('created_at', thirtyDaysAgoISO),
     supabase
-      .from('norma_training_logs' as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+      .from('norma_training_logs' as any) // eslint-disable-line @typescript-eslint/no-explicit-any -- table not yet in generated types
       .select('user_feedback, response_time_ms, created_at')
       .not('user_feedback', 'is', null),
   ]);

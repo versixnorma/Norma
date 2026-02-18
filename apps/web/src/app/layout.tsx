@@ -120,7 +120,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className={`${inter.variable} ${montserrat.variable} antialiased`}>
-        <ClientProviders>{children}</ClientProviders>
+        <ClientProviders>
+          <main id="main-content">{children}</main>
+        </ClientProviders>
       </body>
     </html>
   );

@@ -1,8 +1,7 @@
-import { createAdminClient } from '@/lib/supabase';
-import { createClient } from '@/lib/supabase/server';
+import { withAdminAuth } from '@/lib/api-helpers';
+import { adminUsuarioCreateSchema, adminUsuarioUpdateSchema } from '@/lib/schemas/api';
 import type { Database } from '@/types/database';
-import { cookies } from 'next/headers';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 type UserRole = Database['public']['Enums']['user_role'];
 type UserStatus = Database['public']['Enums']['user_status'];
@@ -55,61 +54,9 @@ function normalizeStatus(status: string | undefined, fallback: UserStatus = 'act
 }
 
 // ============================================
-// Helper: verify superadmin
-// ============================================
-async function verifySuperadmin() {
-  const authClient = createClient(await cookies());
-  const {
-    data: { user },
-    error: authError,
-  } = await authClient.auth.getUser();
-
-  if (authError || !user) {
-    return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
-  }
-
-  const admin = createAdminClient();
-  const { data: usuario } = await admin
-    .from('usuarios')
-    .select('id, role')
-    .eq('auth_id', user.id)
-    .single();
-
-  if (!usuario || usuario.role !== 'superadmin') {
-    return {
-      error: NextResponse.json({ error: 'Forbidden - requer superadmin' }, { status: 403 }),
-    };
-  }
-
-  return { admin, usuario };
-}
-
-// ============================================
 // GET - List users (with orphan sync)
 // ============================================
-export async function GET(request: NextRequest) {
-  const authClient = createClient(await cookies());
-  const {
-    data: { user },
-    error: authError,
-  } = await authClient.auth.getUser();
-
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const admin = createAdminClient();
-
-  const { data: currentUser } = await admin
-    .from('usuarios')
-    .select('id, role')
-    .eq('auth_id', user.id)
-    .single();
-
-  if (!currentUser || currentUser.role !== 'superadmin') {
-    return NextResponse.json({ error: 'Forbidden - requer superadmin' }, { status: 403 });
-  }
-
+export const GET = withAdminAuth(async ({ admin }, req) => {
   // Sync orphaned auth users (in auth.users but missing from public.usuarios)
   try {
     const { data: authListData } = await admin.auth.admin.listUsers({ perPage: 200 });
@@ -194,7 +141,7 @@ export async function GET(request: NextRequest) {
     console.error('Orphan sync error (non-fatal):', syncErr);
   }
 
-  const { searchParams } = new URL(request.url);
+  const { searchParams } = new URL(req.url);
   const status = (searchParams.get('status') || undefined) as
     | 'pending'
     | 'active'
@@ -281,17 +228,20 @@ export async function GET(request: NextRequest) {
   }));
 
   return NextResponse.json({ data: formatted });
-}
+});
 
 // ============================================
 // POST - Create user (auth + usuarios + usuario_condominios)
 // ============================================
-export async function POST(request: NextRequest) {
-  const result = await verifySuperadmin();
-  if ('error' in result) return result.error;
-  const { admin } = result;
-
-  const body = await request.json();
+export const POST = withAdminAuth(async ({ admin }, req) => {
+  const body = await req.json();
+  const parsed = adminUsuarioCreateSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'Dados inválidos', details: parsed.error.flatten() },
+      { status: 400 }
+    );
+  }
   const {
     nome,
     email,
@@ -306,25 +256,7 @@ export async function POST(request: NextRequest) {
     notificacoes_push,
     notificacoes_whatsapp,
     senha,
-  } = body as {
-    nome: string;
-    email: string;
-    telefone?: string;
-    role?: string;
-    status?: string;
-    condominio_id?: string;
-    unidade_id?: string;
-    cpf?: string;
-    data_nascimento?: string;
-    notificacoes_email?: boolean;
-    notificacoes_push?: boolean;
-    notificacoes_whatsapp?: boolean;
-    senha?: string;
-  };
-
-  if (!nome || !email) {
-    return NextResponse.json({ error: 'Nome e email são obrigatórios' }, { status: 400 });
-  }
+  } = parsed.data;
 
   const targetRole = normalizeRole(role);
   const targetStatus = normalizeStatus(status);
@@ -429,17 +361,20 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({ data: { id: usuarioId, auth_id: authId } }, { status: 201 });
-}
+});
 
 // ============================================
 // PUT - Update user (usuarios + usuario_condominios role sync)
 // ============================================
-export async function PUT(request: NextRequest) {
-  const result = await verifySuperadmin();
-  if ('error' in result) return result.error;
-  const { admin } = result;
-
-  const body = await request.json();
+export const PUT = withAdminAuth(async ({ admin }, req) => {
+  const body = await req.json();
+  const parsed = adminUsuarioUpdateSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'Dados inválidos', details: parsed.error.flatten() },
+      { status: 400 }
+    );
+  }
   const {
     id,
     nome,
@@ -454,25 +389,7 @@ export async function PUT(request: NextRequest) {
     notificacoes_email,
     notificacoes_push,
     notificacoes_whatsapp,
-  } = body as {
-    id: string;
-    nome?: string;
-    email?: string;
-    telefone?: string;
-    role?: string;
-    status?: string;
-    condominio_id?: string;
-    unidade_id?: string;
-    cpf?: string;
-    data_nascimento?: string;
-    notificacoes_email?: boolean;
-    notificacoes_push?: boolean;
-    notificacoes_whatsapp?: boolean;
-  };
-
-  if (!id) {
-    return NextResponse.json({ error: 'ID do usuário é obrigatório' }, { status: 400 });
-  }
+  } = parsed.data;
 
   // Build update object with only provided fields
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
@@ -556,4 +473,4 @@ export async function PUT(request: NextRequest) {
   }
 
   return NextResponse.json({ data: { id } });
-}
+});

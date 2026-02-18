@@ -3,8 +3,9 @@
 import { type AdminUser } from '@/hooks/useAdmin';
 import { useImpersonate } from '@/hooks/useImpersonate';
 import type { Database } from '@/types/database';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import Image from 'next/image';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 type StatusType = Database['public']['Enums']['user_status'];
@@ -154,7 +155,23 @@ export function UserTable({
   const [blocos, setBlocos] = useState<BlocoOption[]>([]);
   const [unidades, setUnidades] = useState<UnidadeOption[]>([]);
 
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+
   const displayUsers = searchQuery && searchResults.length > 0 ? searchResults : users;
+
+  const filteredUsers = useMemo(
+    () => displayUsers.filter((u) => !selectedStatus || u.status === selectedStatus),
+    [displayUsers, selectedStatus]
+  );
+
+  const ROW_HEIGHT = 72;
+
+  const rowVirtualizer = useVirtualizer({
+    count: filteredUsers.length,
+    getScrollElement: () => tableContainerRef.current,
+    estimateSize: () => ROW_HEIGHT,
+    overscan: 5,
+  });
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
@@ -452,167 +469,161 @@ export function UserTable({
       )}
 
       <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-card-dark">
+        {/* Sticky header */}
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-800/50">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                  Usuario
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                  Condominio
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                  Hierarquia
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                  Status
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                  Cadastro
-                </th>
-                <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">
-                  Acoes
-                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Usuario</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Condominio</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Hierarquia</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Status</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Cadastro</th>
+                <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Acoes</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {loading && displayUsers.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
-                    <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
-                    <p className="mt-2 text-sm text-gray-500">Carregando usuarios...</p>
-                  </td>
-                </tr>
-              )}
-              {displayUsers
-                .filter((u) => !selectedStatus || u.status === selectedStatus)
-                .map((user) => (
-                  <tr
-                    key={user.id}
-                    className="transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/30"
-                  >
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary/10">
-                          {user.avatar_url ? (
-                            <Image
-                              src={user.avatar_url}
-                              alt={`Foto de perfil de ${user.nome}`}
-                              width={40}
-                              height={40}
-                              className="h-10 w-10 rounded-full object-cover"
-                            />
-                          ) : (
-                            <span
-                              className="font-bold text-primary"
-                              aria-label={`Iniciais de ${user.nome}`}
-                            >
-                              {user.nome.charAt(0).toUpperCase()}
-                            </span>
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-800 dark:text-white">{user.nome}</p>
-                          <p className="max-w-[200px] truncate text-sm text-gray-500">
-                            {user.email}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {user.condominios.length > 0 ? (
-                        <div className="space-y-1">
-                          {user.condominios.slice(0, 2).map((c, i) => (
-                            <div key={i} className="text-sm">
-                              <span className="text-gray-800 dark:text-white">
-                                {c.condominio_nome}
-                              </span>
-                            </div>
-                          ))}
-                          {user.condominios.length > 2 && (
-                            <span className="text-xs text-primary">
-                              +{user.condominios.length - 2} mais
-                            </span>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-sm text-gray-400">Sem condominio</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      {user.role === 'superadmin' ? (
-                        <span className="inline-flex rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-700">
-                          Super Admin
-                        </span>
-                      ) : (
-                        <select
-                          value={user.role}
-                          onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                          disabled={processing === user.id}
-                          className="rounded-lg border-none bg-gray-100 px-2 py-1.5 text-xs font-medium focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:text-white"
-                        >
-                          {ASSIGNABLE_ROLES.map((r) => (
-                            <option key={r} value={r}>
-                              {ROLE_LABELS[r]}
-                            </option>
-                          ))}
-                        </select>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_CONFIG[user.status]?.color || 'bg-gray-100 text-gray-700'}`}
-                      >
-                        {STATUS_CONFIG[user.status]?.label || user.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {formatDate(user.created_at)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => openEditModal(user)}
-                          className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20"
-                          title="Editar usuario"
-                        >
-                          <span className="material-symbols-outlined text-lg">edit</span>
-                        </button>
-                        <select
-                          value={user.status}
-                          onChange={(e) =>
-                            handleStatusChange(user.id, e.target.value as StatusType)
-                          }
-                          disabled={processing === user.id}
-                          className="rounded-lg border-none bg-gray-100 px-2 py-1 text-xs focus:ring-2 focus:ring-primary dark:bg-gray-800"
-                        >
-                          <option value="active">Ativar</option>
-                          <option value="inactive">Inativar</option>
-                          <option value="suspended">Suspender</option>
-                          <option value="removed">Bloquear</option>
-                        </select>
-                        <button
-                          onClick={() => setShowImpersonateModal(user)}
-                          className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-primary/10 hover:text-primary"
-                          title="Impersonar usuario"
-                        >
-                          <span className="material-symbols-outlined text-lg">
-                            admin_panel_settings
-                          </span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-            </tbody>
           </table>
         </div>
-        {displayUsers.length === 0 && !loading && (
+
+        {/* Virtualized body */}
+        <div
+          ref={tableContainerRef}
+          className="overflow-y-auto overflow-x-auto"
+          style={{ maxHeight: '600px' }}
+        >
+          {loading && filteredUsers.length === 0 ? (
+            <div className="px-6 py-12 text-center">
+              <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
+              <p className="mt-2 text-sm text-gray-500">Carregando usuarios...</p>
+            </div>
+          ) : (
+            <table className="w-full">
+              <tbody
+                style={{ height: `${rowVirtualizer.getTotalSize()}px`, position: 'relative' }}
+              >
+                {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                  const user = filteredUsers[virtualRow.index];
+                  return (
+                    <tr
+                      key={user.id}
+                      data-index={virtualRow.index}
+                      ref={rowVirtualizer.measureElement}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        transform: `translateY(${virtualRow.start}px)`,
+                      }}
+                      className="flex w-full border-b border-gray-200 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800/30"
+                    >
+                      <td className="flex flex-1 items-center px-6 py-4" style={{ minWidth: 260 }}>
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary/10">
+                            {user.avatar_url ? (
+                              <Image
+                                src={user.avatar_url}
+                                alt={`Foto de perfil de ${user.nome}`}
+                                width={40}
+                                height={40}
+                                className="h-10 w-10 rounded-full object-cover"
+                              />
+                            ) : (
+                              <span
+                                className="font-bold text-primary"
+                                aria-label={`Iniciais de ${user.nome}`}
+                              >
+                                {user.nome.charAt(0).toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-800 dark:text-white">{user.nome}</p>
+                            <p className="max-w-[200px] truncate text-sm text-gray-500">{user.email}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="flex items-center px-6 py-4" style={{ minWidth: 160 }}>
+                        {user.condominios.length > 0 ? (
+                          <div className="space-y-1">
+                            {user.condominios.slice(0, 2).map((c, i) => (
+                              <div key={i} className="text-sm">
+                                <span className="text-gray-800 dark:text-white">{c.condominio_nome}</span>
+                              </div>
+                            ))}
+                            {user.condominios.length > 2 && (
+                              <span className="text-xs text-primary">+{user.condominios.length - 2} mais</span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-400">Sem condominio</span>
+                        )}
+                      </td>
+                      <td className="flex items-center px-6 py-4" style={{ minWidth: 140 }}>
+                        {user.role === 'superadmin' ? (
+                          <span className="inline-flex rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-700">Super Admin</span>
+                        ) : (
+                          <select
+                            value={user.role}
+                            onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                            disabled={processing === user.id}
+                            className="rounded-lg border-none bg-gray-100 px-2 py-1.5 text-xs font-medium focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:text-white"
+                          >
+                            {ASSIGNABLE_ROLES.map((r) => (
+                              <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+                            ))}
+                          </select>
+                        )}
+                      </td>
+                      <td className="flex items-center px-6 py-4" style={{ minWidth: 110 }}>
+                        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_CONFIG[user.status]?.color || 'bg-gray-100 text-gray-700'}`}>
+                          {STATUS_CONFIG[user.status]?.label || user.status}
+                        </span>
+                      </td>
+                      <td className="flex items-center px-6 py-4 text-sm text-gray-500" style={{ minWidth: 100 }}>
+                        {formatDate(user.created_at)}
+                      </td>
+                      <td className="ml-auto flex items-center px-6 py-4">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => openEditModal(user)}
+                            className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20"
+                            aria-label={`Editar ${user.nome}`}
+                          >
+                            <span className="material-symbols-outlined text-lg">edit</span>
+                          </button>
+                          <select
+                            value={user.status}
+                            onChange={(e) => handleStatusChange(user.id, e.target.value as StatusType)}
+                            disabled={processing === user.id}
+                            className="rounded-lg border-none bg-gray-100 px-2 py-1 text-xs focus:ring-2 focus:ring-primary dark:bg-gray-800"
+                            aria-label={`Alterar status de ${user.nome}`}
+                          >
+                            <option value="active">Ativar</option>
+                            <option value="inactive">Inativar</option>
+                            <option value="suspended">Suspender</option>
+                            <option value="removed">Bloquear</option>
+                          </select>
+                          <button
+                            onClick={() => setShowImpersonateModal(user)}
+                            className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-primary/10 hover:text-primary"
+                            aria-label={`Impersonar ${user.nome}`}
+                          >
+                            <span className="material-symbols-outlined text-lg">admin_panel_settings</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {filteredUsers.length === 0 && !loading && (
           <div className="py-12 text-center">
-            <span className="material-symbols-outlined mb-2 text-4xl text-gray-400">
-              person_off
-            </span>
+            <span className="material-symbols-outlined mb-2 text-4xl text-gray-400">person_off</span>
             <p className="text-gray-500">Nenhum usuario encontrado</p>
           </div>
         )}

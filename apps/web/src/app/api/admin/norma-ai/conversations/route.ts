@@ -22,8 +22,7 @@ export async function GET(request: Request) {
   const limit = parseInt(searchParams.get('limit') || '50');
 
   let query = supabase
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- table not in generated types
-    .from('norma_chat_logs' as any)
+    .from('norma_chat_logs')
     .select(
       '*, usuarios!norma_chat_logs_user_id_fkey(nome), condominios!norma_chat_logs_condominio_id_fkey(nome)'
     )

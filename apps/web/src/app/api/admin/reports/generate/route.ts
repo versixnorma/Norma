@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { reportConfigSchema } from '@/lib/schemas/api';
 import {
   getExecutiveKPIs,
   getUnifiedMetrics,
@@ -18,19 +19,19 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const {
-      reportType,
-      format,
-      title,
-      filters: rawFilters,
-    } = body as {
-      reportType: string;
-      format: 'pdf' | 'excel' | 'csv';
-      title?: string;
-      filters?: AnalyticsFilters;
-    };
+    const parsed = reportConfigSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Dados inválidos', details: parsed.error.flatten() },
+        { status: 400 }
+      );
+    }
+    const { reportType, format, title, filters: rawFilters } = parsed.data;
 
-    const filters: AnalyticsFilters = rawFilters || { timeRange: '30d' };
+    const filters: AnalyticsFilters = {
+      timeRange: rawFilters?.timeRange || '30d',
+      ...rawFilters,
+    };
     const reportTitle = title || `Relatório ${reportType}`;
     const generatedAt = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 

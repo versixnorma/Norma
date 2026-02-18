@@ -19,6 +19,57 @@ export function ClientProviders({ children }: ClientProvidersProps) {
     initSentry();
   }, []);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const RELOAD_GUARD_KEY = 'norma:chunk-reload-once';
+    const CHUNK_ERROR_PATTERNS = [
+      /ChunkLoadError/i,
+      /Loading chunk [\d]+ failed/i,
+      /Failed to fetch dynamically imported module/i,
+      /Importing a module script failed/i,
+    ];
+
+    const shouldHandle = (message: string) =>
+      CHUNK_ERROR_PATTERNS.some((pattern) => pattern.test(message));
+
+    const reloadOnce = () => {
+      const alreadyReloaded = sessionStorage.getItem(RELOAD_GUARD_KEY) === '1';
+      if (alreadyReloaded) return;
+      sessionStorage.setItem(RELOAD_GUARD_KEY, '1');
+      window.location.reload();
+    };
+
+    const onError = (event: ErrorEvent) => {
+      const message = String(event.message || event.error?.message || '');
+      if (shouldHandle(message)) reloadOnce();
+    };
+
+    const onUnhandledRejection = (event: PromiseRejectionEvent) => {
+      const reason = event.reason;
+      const message =
+        typeof reason === 'string'
+          ? reason
+          : String((reason as { message?: string } | null)?.message || '');
+      if (shouldHandle(message)) reloadOnce();
+    };
+
+    // Limpa trava após navegação bem-sucedida.
+    const onPageShow = () => {
+      sessionStorage.removeItem(RELOAD_GUARD_KEY);
+    };
+
+    window.addEventListener('error', onError);
+    window.addEventListener('unhandledrejection', onUnhandledRejection);
+    window.addEventListener('pageshow', onPageShow);
+
+    return () => {
+      window.removeEventListener('error', onError);
+      window.removeEventListener('unhandledrejection', onUnhandledRejection);
+      window.removeEventListener('pageshow', onPageShow);
+    };
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="light">

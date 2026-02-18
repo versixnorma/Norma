@@ -1,6 +1,7 @@
 // SPRINT 10: Uptime Check (Cron: a cada 5 minutos)
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { captureException } from '../_shared/sentry.ts';
 
 // ============================================
 // TYPE DEFINITIONS
@@ -58,10 +59,23 @@ serve(async () => {
     });
 
     if (status !== 'ok' && ep.critico) {
-      await supabase.rpc('criar_alerta', {
-        p_tipo: 'endpoint_indisponivel', p_severidade: 'critical',
-        p_titulo: `Endpoint ${ep.nome} indisponível`, p_descricao: erro,
-      });
+      // Criar alerta no Supabase e reportar ao Sentry simultaneamente
+      await Promise.all([
+        supabase.rpc('criar_alerta', {
+          p_tipo: 'endpoint_indisponivel',
+          p_severidade: 'critical',
+          p_titulo: `Endpoint ${ep.nome} indisponível`,
+          p_descricao: erro,
+        }),
+        captureException(new Error(`Endpoint crítico indisponível: ${ep.nome} — ${erro}`), {
+          function: 'uptime-check',
+          endpoint: ep.nome,
+          url: ep.url,
+          status,
+          statusCode,
+          latencia_ms: latencia,
+        }),
+      ]);
     }
   }
 

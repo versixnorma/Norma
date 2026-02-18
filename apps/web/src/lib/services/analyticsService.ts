@@ -82,6 +82,34 @@ export interface UnifiedMetrics {
 }
 
 // ---------------------------------------------------------------------------
+// Row types for materialized views (not in generated Supabase types)
+// ---------------------------------------------------------------------------
+
+interface MvExecutiveKpisRow {
+  total_users: number;
+  active_users: number;
+  active_users_30d: number;
+  total_condominios: number;
+  custo_mes_centavos: number;
+  gmv_mes: number;
+  conversas_ia_30d: number;
+  satisfacao_ia_30d: number;
+  total_documents: number;
+  total_chunks: number;
+  refreshed_at: string;
+}
+
+interface AuditLogRow {
+  usuario_id: string;
+  created_at: string;
+}
+
+interface UserRow {
+  id: string;
+  created_at: string;
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
@@ -120,8 +148,7 @@ export async function getExecutiveKPIs(supabase: SupabaseClient): Promise<Execut
     .limit(1)
     .single();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const row = (data as any) || {};
+  const row = (data as unknown as MvExecutiveKpisRow | null) || ({} as Partial<MvExecutiveKpisRow>);
   return {
     totalUsers: row.total_users ?? 0,
     activeUsers: row.active_users ?? 0,
@@ -188,14 +215,13 @@ export async function getFunnelData(
     .gte('created_at', start)
     .lte('created_at', end);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const uniqueActive = new Set(((activatedData as any[]) || []).map((r: any) => r.usuario_id));
+  const auditRows = (activatedData || []) as unknown as AuditLogRow[];
+  const uniqueActive = new Set(auditRows.map((r) => r.usuario_id));
   const activated = uniqueActive.size;
 
   // Engaged: users with > 5 actions
   const actionCounts: Record<string, number> = {};
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ((activatedData as any[]) || []).forEach((r: any) => {
+  auditRows.forEach((r) => {
     if (r.usuario_id) actionCounts[r.usuario_id] = (actionCounts[r.usuario_id] || 0) + 1;
   });
   const engaged = Object.values(actionCounts).filter((c) => c > 5).length;
@@ -217,10 +243,12 @@ export async function getFunnelData(
       .lte('created_at', end),
   ]);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const firstSet = new Set(((firstHalf.data as any[]) || []).map((r: any) => r.usuario_id));
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const secondSet = new Set(((secondHalf.data as any[]) || []).map((r: any) => r.usuario_id));
+  const firstSet = new Set(
+    ((firstHalf.data || []) as unknown as AuditLogRow[]).map((r) => r.usuario_id)
+  );
+  const secondSet = new Set(
+    ((secondHalf.data || []) as unknown as AuditLogRow[]).map((r) => r.usuario_id)
+  );
   let retained = 0;
   firstSet.forEach((uid) => {
     if (secondSet.has(uid)) retained++;
@@ -273,10 +301,9 @@ export async function getCohortData(
     .gte('created_at', startDate.toISOString());
 
   // Group users by signup month
-
+  const userRows = (users || []) as unknown as UserRow[];
   const userCohorts: Record<string, string[]> = {};
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ((users || []) as any[]).forEach((u) => {
+  userRows.forEach((u) => {
     const month = u.created_at?.substring(0, 7); // YYYY-MM
     if (month) {
       if (!userCohorts[month]) userCohorts[month] = [];
@@ -285,10 +312,9 @@ export async function getCohortData(
   });
 
   // Group activity by user+month
-
+  const logRows = (logs || []) as unknown as AuditLogRow[];
   const activityByUserMonth: Record<string, Set<string>> = {};
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ((logs || []) as any[]).forEach((l) => {
+  logRows.forEach((l) => {
     const uid = l.usuario_id;
     const month = l.created_at?.substring(0, 7);
     if (uid && month) {
@@ -340,8 +366,7 @@ export async function getRetentionData(
 
   // Find week 0 users (first week)
   const week0End = new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const allLogs = (logs || []) as any[];
+  const allLogs = (logs || []) as unknown as AuditLogRow[];
   const week0Users = new Set(
     allLogs.filter((l) => new Date(l.created_at) < week0End).map((l) => l.usuario_id)
   );

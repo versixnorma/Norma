@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuthContext } from '@/contexts/AuthContext';
+import { PASSWORD_RULES, passwordSchema } from '@/lib/schemas/auth';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -113,8 +114,9 @@ export default function SignupPage() {
       return;
     }
 
-    if (formData.password.length < 6) {
-      toast.error('A senha deve ter pelo menos 6 caracteres');
+    const pwResult = passwordSchema.safeParse(formData.password);
+    if (!pwResult.success) {
+      toast.error(pwResult.error.issues[0].message);
       return;
     }
 
@@ -454,12 +456,28 @@ export default function SignupPage() {
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 className="w-full rounded-xl border-none bg-white/95 py-3.5 pl-12 pr-4 text-sm text-gray-700 placeholder-gray-500 shadow-lg backdrop-blur-md focus:ring-2 focus:ring-secondary"
-                placeholder="Senha (mín. 6 caracteres) *"
+                placeholder="Senha *"
                 required
-                minLength={6}
+                minLength={8}
                 disabled={loading}
               />
             </div>
+            {formData.password && (
+              <div className="grid grid-cols-2 gap-1 px-1">
+                {PASSWORD_RULES.map((rule) => (
+                  <div key={rule.label} className="flex items-center gap-1.5">
+                    <span
+                      className={`material-symbols-outlined text-xs ${rule.test(formData.password) ? 'text-green-400' : 'text-white/40'}`}
+                    >
+                      {rule.test(formData.password) ? 'check_circle' : 'circle'}
+                    </span>
+                    <span className={`text-[10px] ${rule.test(formData.password) ? 'text-green-300' : 'text-white/50'}`}>
+                      {rule.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Confirm Password */}
             <div className="relative">

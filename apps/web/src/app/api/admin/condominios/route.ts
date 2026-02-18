@@ -1,8 +1,8 @@
 import { createAdminClient } from '@/lib/supabase';
-import { createClient } from '@/lib/supabase/server';
+import { withAdminAuth } from '@/lib/api-helpers';
+import { condominioCreateSchema, condominioUpdateSchema } from '@/lib/schemas/api';
 import type { Database } from '@/types/database';
-import { cookies } from 'next/headers';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 type BlocoRow = { id: string; nome: string };
 type UnidadeAtivaRow = { id: string; bloco_id: string | null; numero: string | number | null };
@@ -22,33 +22,6 @@ type BlocoComUnidadesRow = {
   condominio_id: string;
   unidades_habitacionais?: Array<{ id: string }> | null;
 };
-
-async function verifySuperadmin() {
-  const authClient = createClient(await cookies());
-  const {
-    data: { user },
-    error: authError,
-  } = await authClient.auth.getUser();
-
-  if (authError || !user) {
-    return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
-  }
-
-  const admin = createAdminClient();
-  const { data: usuario } = await admin
-    .from('usuarios')
-    .select('id, role')
-    .eq('auth_id', user.id)
-    .single();
-
-  if (!usuario || usuario.role !== 'superadmin') {
-    return {
-      error: NextResponse.json({ error: 'Forbidden - requer superadmin' }, { status: 403 }),
-    };
-  }
-
-  return { admin, usuario };
-}
 
 function parseBlockNames(input: unknown): string[] {
   if (Array.isArray(input)) {
@@ -210,12 +183,7 @@ async function ensureCondominioUnits(
 }
 
 // GET - List condominios
-export async function GET() {
-  const result = await verifySuperadmin();
-  if ('error' in result) return result.error;
-  const { admin } = result;
-
-  // Fetch condominios with related data
+export const GET = withAdminAuth(async ({ admin }) => {
   const { data: condominios, error } = await admin
     .from('condominios')
     .select(
@@ -233,23 +201,19 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  // For each condominio, get user count and sindico
   const condominioRows = (condominios || []) as CondominioListRow[];
   const condominioIds = condominioRows.map((c) => c.id);
 
-  // Get users per condominio via usuario_condominios
   const { data: ucData } = await admin
     .from('usuario_condominios')
     .select('condominio_id, role, usuario:usuario_id (id, nome)')
     .in('condominio_id', condominioIds.length > 0 ? condominioIds : ['__none__']);
 
-  // Get unit counts via blocos -> unidades_habitacionais
   const { data: blocos } = await admin
     .from('blocos')
     .select('condominio_id, unidades_habitacionais (id)')
     .in('condominio_id', condominioIds.length > 0 ? condominioIds : ['__none__']);
 
-  // Build lookup maps
   const userCountMap: Record<string, number> = {};
   const sindicoMap: Record<string, string | null> = {};
   for (const uc of (ucData || []) as UsuarioCondominioRow[]) {
@@ -279,16 +243,19 @@ export async function GET() {
   }));
 
   return NextResponse.json({ data: formatted });
-}
+});
 
 // POST - Create condominio
-export async function POST(request: NextRequest) {
-  const result = await verifySuperadmin();
-  if ('error' in result) return result.error;
-  const { admin } = result;
-
-  const body = await request.json();
-  const { blocos_ruas, ...insertPayload } = body as Record<string, unknown>;
+export const POST = withAdminAuth(async ({ admin }, req) => {
+  const body = await req.json();
+  const parsed = condominioCreateSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'Dados inválidos', details: parsed.error.flatten() },
+      { status: 400 }
+    );
+  }
+  const { blocos_ruas, ...insertPayload } = parsed.data;
   const condominioInsert = insertPayload as Database['public']['Tables']['condominios']['Insert'];
   const { data, error } = await admin
     .from('condominios')
@@ -304,24 +271,19 @@ export async function POST(request: NextRequest) {
   await ensureCondominioUnits(admin, data.id, totalUnidades, parseBlockNames(blocos_ruas));
 
   return NextResponse.json({ data: { id: data.id } }, { status: 201 });
-}
+});
 
 // PUT - Update condominio
-export async function PUT(request: NextRequest) {
-  const result = await verifySuperadmin();
-  if ('error' in result) return result.error;
-  const { admin } = result;
-
-  const body = await request.json();
-  const { id, blocos_ruas, ...updates } = body as {
-    id: string;
-    blocos_ruas?: unknown;
-    [key: string]: unknown;
-  };
-
-  if (!id) {
-    return NextResponse.json({ error: 'ID do condominio e obrigatorio' }, { status: 400 });
+export const PUT = withAdminAuth(async ({ admin }, req) => {
+  const body = await req.json();
+  const parsed = condominioUpdateSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'Dados inválidos', details: parsed.error.flatten() },
+      { status: 400 }
+    );
   }
+  const { id, blocos_ruas, ...updates } = parsed.data;
 
   const { error } = await admin.from('condominios').update(updates).eq('id', id);
 
@@ -343,4 +305,4 @@ export async function PUT(request: NextRequest) {
   }
 
   return NextResponse.json({ data: { id } });
-}
+});

@@ -31,8 +31,24 @@ export function initSentry() {
     // Tunelamento para evitar bloqueio por AdBlockers
     tunnel: '/api/sentry-tunnel',
 
-    // Performance
-    tracesSampleRate: ENVIRONMENT === 'production' ? 0.1 : 1.0,
+    // Amostragem granular — exclui rotas internas e health checks para reduzir ruído
+    tracesSampler: ({ name, parentSampled }: { name: string; parentSampled?: boolean }) => {
+      if (
+        name.includes('/api/health') ||
+        name.includes('/_next/') ||
+        name.includes('/api/sentry-tunnel')
+      )
+        return 0;
+
+      // Propagar decisão do span pai (distributed tracing)
+      if (parentSampled !== undefined) return parentSampled ? 1 : 0;
+
+      if (ENVIRONMENT === 'production') {
+        // 5% para API routes (já têm logging próprio), 10% para páginas
+        return name.startsWith('/api/') ? 0.05 : 0.1;
+      }
+      return 1.0; // 100% em desenvolvimento
+    },
     profilesSampleRate: 0.1,
 
     // Session Replay
@@ -257,8 +273,11 @@ export function measureSync<T>(name: string, operation: string, fn: () => T): T 
 // =====================================================
 
 export function setCustomMetric(name: string, value: number, unit?: string) {
-  // Sentry.setMeasurement accepts string units - just pass directly
-  Sentry.setMeasurement(name, value, unit as any);
+  Sentry.setMeasurement(
+    name,
+    value,
+    (unit ?? '') as Parameters<typeof Sentry.setMeasurement>[2]
+  );
 }
 
 // =====================================================

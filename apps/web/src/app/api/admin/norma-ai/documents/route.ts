@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { documentUploadSchema } from '@/lib/schemas/api';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
@@ -26,8 +27,7 @@ export async function GET(request: Request) {
   const status = searchParams.get('status');
 
   let query = supabase
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- table not in generated types
-    .from('documents' as any)
+    .from('documents')
     .select('*, document_chunks(count)')
     .order('created_at', { ascending: false });
 
@@ -53,7 +53,15 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const supabase = createClient(await cookies());
-  const payload = await request.json();
+  const body = await request.json();
+  const parsed = documentUploadSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'Dados inválidos', details: parsed.error.flatten() },
+      { status: 400 }
+    );
+  }
+  const payload = parsed.data;
 
   const {
     data: { session },

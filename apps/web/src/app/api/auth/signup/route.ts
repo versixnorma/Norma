@@ -1,5 +1,7 @@
 import { createAdminClient } from '@/lib/supabase';
-import { NextRequest, NextResponse } from 'next/server';
+import { withValidation } from '@/lib/api-helpers';
+import { signupSchema, type SignupInput } from '@/lib/schemas/api';
+import { NextResponse } from 'next/server';
 
 /**
  * POST /api/auth/signup
@@ -7,9 +9,8 @@ import { NextRequest, NextResponse } from 'next/server';
  * Uses service role to bypass RLS. Trigger handle_new_user may or may not
  * create the usuarios row — this route guarantees it exists either way.
  */
-export async function POST(request: NextRequest) {
+export const POST = withValidation(signupSchema, async (data: SignupInput) => {
   try {
-    const body = await request.json();
     const {
       nome,
       email,
@@ -22,29 +23,7 @@ export async function POST(request: NextRequest) {
       notificacoes_email,
       notificacoes_push,
       notificacoes_whatsapp,
-    } = body;
-
-    if (!nome || !email || !password || !condominio_id || !unidade_id || !cpf || !data_nascimento) {
-      return NextResponse.json(
-        {
-          error:
-            'Nome, email, senha, condomínio, unidade, CPF e data de nascimento são obrigatórios',
-        },
-        { status: 400 }
-      );
-    }
-
-    if (password.length < 6) {
-      return NextResponse.json(
-        { error: 'A senha deve ter pelo menos 6 caracteres' },
-        { status: 400 }
-      );
-    }
-
-    const cpfDigits = String(cpf).replace(/\D/g, '');
-    if (cpfDigits.length !== 11) {
-      return NextResponse.json({ error: 'CPF inválido' }, { status: 400 });
-    }
+    } = data;
 
     const admin = createAdminClient();
 
@@ -131,8 +110,6 @@ export async function POST(request: NextRequest) {
 
       if (insertError) {
         console.error('Fallback usuario insert error:', insertError);
-        // Race condition comum: trigger criou logo após a checagem inicial.
-        // Tentamos recuperar pelo auth_id antes de falhar.
         const { data: recoveredUsuario } = await admin
           .from('usuarios')
           .select('id')
@@ -140,7 +117,6 @@ export async function POST(request: NextRequest) {
           .maybeSingle();
 
         if (!recoveredUsuario) {
-          // Evita usuário órfão no auth sem linha correspondente em public.usuarios
           await admin.auth.admin.deleteUser(authId);
           return NextResponse.json(
             { error: 'Conta não pôde ser finalizada. Tente novamente em instantes.' },
@@ -181,4 +157,4 @@ export async function POST(request: NextRequest) {
     console.error('Signup route error:', err);
     return NextResponse.json({ error: 'Erro interno ao criar conta' }, { status: 500 });
   }
-}
+});

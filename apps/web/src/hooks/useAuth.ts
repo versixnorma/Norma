@@ -239,11 +239,13 @@ export function useAuth() {
         }
       } catch (error) {
         logger.error('Auth initialization error:', error);
-        setState((prev) => ({
-          ...prev,
+        setState({
+          user: null,
+          profile: null,
+          session: null,
           loading: false,
           error: error as Error,
-        }));
+        });
       }
     };
 
