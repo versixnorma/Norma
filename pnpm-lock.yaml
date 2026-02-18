@@ -319,6 +319,9 @@ importers:
 
   packages/shared:
     dependencies:
+      '@supabase/supabase-js':
+        specifier: ^2.57.4
+        version: 2.89.0
       zod:
         specifier: ^3.22.0
         version: 3.25.76
