@@ -1,10 +1,12 @@
+'use client';
+
 import dynamic from 'next/dynamic';
 
 const ExecutiveDashboard = dynamic(
   () =>
-    import('@/components/admin/analytics/ExecutiveDashboard').then(
-      (mod) => ({ default: mod.ExecutiveDashboard })
-    ),
+    import('@/components/admin/analytics/ExecutiveDashboard').then((mod) => ({
+      default: mod.ExecutiveDashboard,
+    })),
   {
     loading: () => (
       <div className="flex h-64 items-center justify-center">

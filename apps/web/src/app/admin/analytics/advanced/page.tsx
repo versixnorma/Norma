@@ -1,10 +1,12 @@
+'use client';
+
 import dynamic from 'next/dynamic';
 
 const AdvancedAnalytics = dynamic(
   () =>
-    import('@/components/admin/analytics/AdvancedAnalytics').then(
-      (mod) => ({ default: mod.AdvancedAnalytics })
-    ),
+    import('@/components/admin/analytics/AdvancedAnalytics').then((mod) => ({
+      default: mod.AdvancedAnalytics,
+    })),
   {
     loading: () => (
       <div className="flex h-64 items-center justify-center">
