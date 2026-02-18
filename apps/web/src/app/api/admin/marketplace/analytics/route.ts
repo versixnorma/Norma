@@ -1,9 +1,7 @@
-import { createClient } from '@/lib/supabase/server';
-import { cookies } from 'next/headers';
+import { withAdminAuth } from '@/lib/api-helpers';
 import { NextResponse } from 'next/server';
 
-export async function GET() {
-  const supabase = createClient(await cookies());
+export const GET = withAdminAuth(async ({ admin }) => {
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
   const lastSixMonths = new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString();
@@ -15,20 +13,20 @@ export async function GET() {
     { data: transactionsData },
     { data: discountCategories },
   ] = await Promise.all([
-    supabase.from('marketplace_partners').select('*', { count: 'exact', head: true }),
-    supabase
+    admin.from('marketplace_partners').select('*', { count: 'exact', head: true }),
+    admin
       .from('marketplace_discounts')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'active'),
-    supabase
+    admin
       .from('marketplace_transactions')
       .select('*', { count: 'exact', head: true })
       .gte('transaction_date', startOfMonth),
-    supabase
+    admin
       .from('marketplace_transactions')
       .select('transaction_date, final_amount')
       .gte('transaction_date', lastSixMonths),
-    supabase.from('marketplace_discounts').select(
+    admin.from('marketplace_discounts').select(
       `
         id,
         partner:partner_id (category)
@@ -80,4 +78,4 @@ export async function GET() {
       monthlyTrend,
     },
   });
-}
+});

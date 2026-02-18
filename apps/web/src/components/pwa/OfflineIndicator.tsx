@@ -4,10 +4,24 @@ import { useOnlineStatus } from '@/lib/pwa';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
+import { useEffect } from 'react';
 
 export function OfflineIndicator() {
   const isOnline = useOnlineStatus();
   const { syncing, lastSync, pendingCount } = useOfflineSync();
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const customEvent = event as CustomEvent<{ message?: string }>;
+      const message =
+        customEvent.detail?.message || 'Houve conflito na sincronizacao offline.';
+      toast.warning(message, { duration: 5000 });
+    };
+
+    window.addEventListener('offline-sync-conflict', handler);
+    return () => window.removeEventListener('offline-sync-conflict', handler);
+  }, []);
 
   // Não mostrar nada se online e sincronizado
   if (isOnline && pendingCount === 0 && !syncing) return null;

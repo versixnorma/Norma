@@ -1,9 +1,7 @@
-import { createClient } from '@/lib/supabase/server';
-import { cookies } from 'next/headers';
+import { withAdminAuth } from '@/lib/api-helpers';
 import { NextResponse } from 'next/server';
 
-export async function GET(request: Request) {
-  const supabase = createClient(await cookies());
+export const GET = withAdminAuth(async ({ admin }, request) => {
   const { searchParams } = new URL(request.url);
 
   const page = parseInt(searchParams.get('page') || '1');
@@ -11,7 +9,7 @@ export async function GET(request: Request) {
   const offset = (page - 1) * limit;
 
   try {
-    const { data, error, count } = await supabase
+    const { data, error, count } = await admin
       .from('generated_reports' as never)
       .select('*', { count: 'exact' })
       .order('created_at', { ascending: false })
@@ -32,4 +30,4 @@ export async function GET(request: Request) {
     const message = error instanceof Error ? error.message : 'Erro ao buscar histórico';
     return NextResponse.json({ error: message }, { status: 500 });
   }
-}
+});

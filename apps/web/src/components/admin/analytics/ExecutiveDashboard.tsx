@@ -16,6 +16,7 @@ import {
 } from 'recharts';
 import { useExecutiveDashboard } from '@/hooks/useExecutiveDashboard';
 import { MetricCard } from './MetricCard';
+import { ExecutiveAlerts } from './ExecutiveAlerts';
 import { TimeRangeSelector } from './TimeRangeSelector';
 
 const COLORS = ['#3b82f6', '#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'];
@@ -27,6 +28,7 @@ export function ExecutiveDashboard() {
     condominioHealth,
     loading,
     error,
+    alerts,
     timeRange,
     setTimeRange,
     refreshViews,
@@ -109,6 +111,14 @@ export function ExecutiveDashboard() {
           value={kpis ? `${kpis.satisfacaoIA30d.toFixed(1)}/5` : '-'}
           loading={loading}
         />
+      </div>
+
+      {/* Real-time alerts */}
+      <div>
+        <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+          Alertas em Tempo Real
+        </h3>
+        <ExecutiveAlerts alerts={alerts} loading={loading} />
       </div>
 
       {/* Charts Row */}

@@ -1,7 +1,7 @@
 // SPRINT 10: Collect Metrics (Cron: a cada hora)
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { captureException } from '../_shared/sentry.ts';
+import { notifyError } from '../_shared/notify-error.ts';
 
 serve(async () => {
   const supabase = createClient(
@@ -57,12 +57,7 @@ serve(async () => {
 
     return Response.json({ success: true, timestamp: agora.toISOString() });
   } catch (error) {
-    // Reportar falha crítica do cron ao Sentry para alertas proativos
-    await captureException(error, {
-      function: 'collect-metrics',
-      timestamp: agora.toISOString(),
-      periodo: hoje,
-    });
+    await notifyError('collect-metrics', error);
 
     return Response.json(
       { success: false, error: String(error), timestamp: agora.toISOString() },

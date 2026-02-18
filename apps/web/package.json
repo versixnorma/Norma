@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "postbuild": "node ./scripts/generate-sw-entry.mjs",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",

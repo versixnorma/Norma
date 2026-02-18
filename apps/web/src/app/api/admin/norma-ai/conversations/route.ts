@@ -1,5 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
-import { cookies } from 'next/headers';
+import { withAdminAuth } from '@/lib/api-helpers';
 import { NextResponse } from 'next/server';
 
 interface ChatLogRow {
@@ -14,14 +13,13 @@ interface ChatLogRow {
   condominios?: { nome: string };
 }
 
-export async function GET(request: Request) {
-  const supabase = createClient(await cookies());
+export const GET = withAdminAuth(async ({ admin }, request) => {
   const { searchParams } = new URL(request.url);
 
   const condominioId = searchParams.get('condominio_id');
   const limit = parseInt(searchParams.get('limit') || '50');
 
-  let query = supabase
+  let query = admin
     .from('norma_chat_logs')
     .select(
       '*, usuarios!norma_chat_logs_user_id_fkey(nome), condominios!norma_chat_logs_condominio_id_fkey(nome)'
@@ -52,4 +50,4 @@ export async function GET(request: Request) {
   }));
 
   return NextResponse.json({ data: conversations });
-}
+});

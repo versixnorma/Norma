@@ -12,6 +12,7 @@ import type {
   UpdateOcorrenciaInput,
 } from '@versix/shared';
 import { Database } from '@versix/shared';
+import { rpcSetAppUserId } from '@versix/shared/rpc-overrides';
 import { useCallback, useState } from 'react';
 import { useOcorrenciasStats } from './useOcorrenciasStats';
 
@@ -184,7 +185,7 @@ export function useOcorrencias() {
         // Setar user_id para o trigger de histórico
         if (userId) {
           try {
-            await supabase.rpc('set_app_user_id' as any, { user_id: userId } as any);
+            await rpcSetAppUserId(supabase, userId);
           } catch {
             // Ignore error
           }

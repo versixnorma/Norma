@@ -1,10 +1,9 @@
-import { createClient } from '@/lib/supabase/server';
-import { cookies } from 'next/headers';
+import { withAdminAuth } from '@/lib/api-helpers';
+import { discountSchema } from '@/lib/schemas/marketplace';
 import { NextResponse } from 'next/server';
 
-export async function GET() {
-  const supabase = createClient(await cookies());
-  const { data, error } = await supabase
+export const GET = withAdminAuth(async ({ admin }) => {
+  const { data, error } = await admin
     .from('marketplace_discounts')
     .select(
       `
@@ -18,14 +17,20 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
   return NextResponse.json({ data });
-}
+});
 
-export async function POST(request: Request) {
-  const supabase = createClient(await cookies());
-  const payload = await request.json();
-  const { data, error } = await supabase
+export const POST = withAdminAuth(async ({ admin }, request) => {
+  const body = await request.json();
+  const parsed = discountSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'Dados inválidos', details: parsed.error.flatten() },
+      { status: 400 }
+    );
+  }
+  const { data, error } = await admin
     .from('marketplace_discounts')
-    .insert(payload)
+    .insert(parsed.data)
     .select(
       `
       *,
@@ -38,4 +43,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
   return NextResponse.json({ data });
-}
+});

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sanitizeSearchQuery, sanitizeUUID } from '../../../src/lib/sanitize';
+import { sanitizeSearchQuery, sanitizeUUID } from '@/lib/sanitize';
 
 describe('sanitize', () => {
   describe('sanitizeSearchQuery', () => {

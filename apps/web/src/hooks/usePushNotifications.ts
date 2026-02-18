@@ -3,6 +3,7 @@
 import { logger } from '@/lib/logger';
 import { registerServiceWorker, requestNotificationPermission, subscribeToPush } from '@/lib/pwa';
 import { getSupabaseClient } from '@/lib/supabase';
+import { rpcRegistrarPushToken, rpcRemoverPushToken } from '@versix/shared/rpc-overrides';
 import { useCallback, useEffect, useState } from 'react';
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
@@ -61,13 +62,10 @@ export function usePushNotifications() {
       setSubscription(sub);
 
       // 4. Salvar subscription no servidor
-      const { error } = await supabase.rpc(
-        'registrar_fcm_token' as any,
-        {
-          p_token: JSON.stringify(sub.toJSON()),
-          p_provider: 'webpush',
-        } as any
-      );
+      const { error } = await rpcRegistrarPushToken(supabase, {
+        p_token: JSON.stringify(sub.toJSON()),
+        p_provider: 'webpush',
+      });
 
       if (error) throw error;
 
@@ -90,13 +88,7 @@ export function usePushNotifications() {
       await subscription.unsubscribe();
 
       // 2. Remover do servidor
-      // 2. Remover do servidor
-      await supabase.rpc(
-        'remover_fcm_token' as any,
-        {
-          p_token: JSON.stringify(subscription.toJSON()),
-        } as any
-      );
+      await rpcRemoverPushToken(supabase, JSON.stringify(subscription.toJSON()));
 
       setSubscription(null);
       return true;

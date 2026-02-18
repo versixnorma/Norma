@@ -1,5 +1,5 @@
-import { createClient } from '@/lib/supabase/server';
-import { cookies } from 'next/headers';
+import { withAdminAuth } from '@/lib/api-helpers';
+import { reportConfigurationSchema } from '@/lib/schemas/reports';
 import { NextResponse } from 'next/server';
 
 interface ReportConfigRow {
@@ -19,11 +19,9 @@ interface ReportConfigRow {
   updated_at: string;
 }
 
-export async function GET() {
-  const supabase = createClient(await cookies());
-
+export const GET = withAdminAuth(async ({ admin }) => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await admin
       .from('report_configurations' as never)
       .select('*')
       .order('created_at', { ascending: false });
@@ -34,27 +32,28 @@ export async function GET() {
     const message = error instanceof Error ? error.message : 'Erro ao buscar configurações';
     return NextResponse.json({ error: message }, { status: 500 });
   }
-}
+});
 
-export async function POST(request: Request) {
-  const supabase = createClient(await cookies());
-
+export const POST = withAdminAuth(async ({ admin, usuario }, request) => {
   try {
-    const body = await request.json();
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    const rawBody = await request.json();
+    const parsed = reportConfigurationSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Dados inválidos', details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
+    const body = parsed.data;
 
-    // Get usuario id from auth id
-    const { data: usuarioData } = await supabase
+    const { data: usuarioData } = await admin
       .from('usuarios')
-      .select('id, condominio_id')
-      .eq('auth_id', userData.user.id)
+      .select('id, condominio_id, role')
+      .eq('id', usuario.id)
       .single();
 
-    const usuario = usuarioData as unknown as { id: string; condominio_id: string | null } | null;
-    if (!usuario) {
+    const usuarioAtual = usuarioData as unknown as { id: string; condominio_id: string | null } | null;
+    if (!usuarioAtual) {
       return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
     }
 
@@ -66,11 +65,11 @@ export async function POST(request: Request) {
       format: body.format || 'pdf',
       schedule: body.schedule || null,
       recipients: body.recipients || [],
-      condominio_id: body.condominioId || usuario.condominio_id,
-      created_by: usuario.id,
+      condominio_id: body.condominioId || usuarioAtual.condominio_id,
+      created_by: usuarioAtual.id,
     };
 
-    const { data, error } = await supabase
+    const { data, error } = await admin
       .from('report_configurations' as never)
       .insert(config as never)
       .select()
@@ -82,10 +81,9 @@ export async function POST(request: Request) {
     const message = error instanceof Error ? error.message : 'Erro ao criar configuração';
     return NextResponse.json({ error: message }, { status: 500 });
   }
-}
+});
 
-export async function DELETE(request: Request) {
-  const supabase = createClient(await cookies());
+export const DELETE = withAdminAuth(async ({ admin }, request) => {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
 
@@ -94,7 +92,7 @@ export async function DELETE(request: Request) {
   }
 
   try {
-    const { error } = await supabase
+    const { error } = await admin
       .from('report_configurations' as never)
       .delete()
       .eq('id', id);
@@ -105,4 +103,4 @@ export async function DELETE(request: Request) {
     const message = error instanceof Error ? error.message : 'Erro ao excluir configuração';
     return NextResponse.json({ error: message }, { status: 500 });
   }
-}
+});

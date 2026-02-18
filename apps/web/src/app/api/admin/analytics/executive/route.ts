@@ -1,11 +1,9 @@
-import { createClient } from '@/lib/supabase/server';
+import { withAdminAuth } from '@/lib/api-helpers';
 import { apiCache } from '@/lib/cache';
 import { getExecutiveKPIs, type ExecutiveKPIs } from '@/lib/services/analyticsService';
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
-export async function GET() {
-  const supabase = createClient(await cookies());
+export const GET = withAdminAuth(async ({ admin }) => {
 
   const cacheKey = 'analytics:executive';
   const cached = apiCache.get<ExecutiveKPIs>(cacheKey);
@@ -14,11 +12,11 @@ export async function GET() {
   }
 
   try {
-    const data = await getExecutiveKPIs(supabase);
+    const data = await getExecutiveKPIs(admin);
     apiCache.set(cacheKey, data, 600); // 10 min cache
     return NextResponse.json({ data });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Erro ao buscar KPIs';
     return NextResponse.json({ error: message }, { status: 500 });
   }
-}
+});

@@ -2,6 +2,7 @@
 
 import { getSupabaseClient } from '@/lib/supabase';
 import type { ApiLog, ApiLogsFilters, WebhookEntrega } from '@versix/shared';
+import { rpcRetentarWebhook } from '@versix/shared/rpc-overrides';
 import { useCallback, useState } from 'react';
 
 export function useWebhooksLog() {
@@ -66,12 +67,7 @@ export function useWebhooksLog() {
   const retentarWebhook = useCallback(
     async (entregaId: string): Promise<string | null> => {
       try {
-        const { data, error: rpcError } = await supabase.rpc(
-          'retentar_webhook' as any,
-          {
-            p_entrega_id: entregaId,
-          } as any
-        );
+        const { data, error: rpcError } = await rpcRetentarWebhook(supabase, entregaId);
         if (rpcError) throw rpcError;
         return data;
       } catch (err) {

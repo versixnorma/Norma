@@ -1,6 +1,5 @@
-import { createClient } from '@/lib/supabase/server';
+import { withAdminAuth } from '@/lib/api-helpers';
 import { documentUploadSchema } from '@/lib/schemas/api';
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 interface DocumentRow {
@@ -18,15 +17,14 @@ interface DocumentRow {
   document_chunks?: { count: number }[];
 }
 
-export async function GET(request: Request) {
-  const supabase = createClient(await cookies());
+export const GET = withAdminAuth(async ({ admin }, request) => {
   const { searchParams } = new URL(request.url);
 
   const sourceType = searchParams.get('source_type');
   const category = searchParams.get('category');
   const status = searchParams.get('status');
 
-  let query = supabase
+  let query = admin
     .from('documents')
     .select('*, document_chunks(count)')
     .order('created_at', { ascending: false });
@@ -49,10 +47,9 @@ export async function GET(request: Request) {
   }));
 
   return NextResponse.json({ data: documents });
-}
+});
 
-export async function POST(request: Request) {
-  const supabase = createClient(await cookies());
+export const POST = withAdminAuth(async ({ admin }, request) => {
   const body = await request.json();
   const parsed = documentUploadSchema.safeParse(body);
   if (!parsed.success) {
@@ -63,34 +60,13 @@ export async function POST(request: Request) {
   }
   const payload = parsed.data;
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (!session?.access_token) {
-    return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+  const { data, error } = await admin.functions.invoke('process-manual-knowledge', {
+    body: payload,
+  });
+
+  if (error) {
+    return NextResponse.json({ error: error.message || 'Falha ao processar' }, { status: 500 });
   }
 
-  // Call edge function for manual knowledge processing
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/process-manual-knowledge`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    }
-  );
-
-  const result = await response.json();
-
-  if (!response.ok) {
-    return NextResponse.json(
-      { error: result.error || 'Falha ao processar' },
-      { status: response.status }
-    );
-  }
-
-  return NextResponse.json(result);
-}
+  return NextResponse.json(data);
+});

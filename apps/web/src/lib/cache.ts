@@ -28,10 +28,27 @@ class InMemoryCache {
     });
   }
 
+  async getOrSet<T>(key: string, ttlSeconds: number, loader: () => Promise<T>): Promise<T> {
+    const cached = this.get<T>(key);
+    if (cached !== null) return cached;
+
+    const data = await loader();
+    this.set(key, data, ttlSeconds);
+    return data;
+  }
+
   invalidate(pattern: string): void {
     const regex = new RegExp(pattern.replace(/\*/g, '.*'));
     for (const key of this.store.keys()) {
       if (regex.test(key)) {
+        this.store.delete(key);
+      }
+    }
+  }
+
+  invalidatePrefix(prefix: string): void {
+    for (const key of this.store.keys()) {
+      if (key.startsWith(prefix)) {
         this.store.delete(key);
       }
     }

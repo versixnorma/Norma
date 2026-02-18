@@ -1,12 +1,12 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { InstallPrompt } from '../../../src/components/pwa/InstallPrompt';
+import { InstallPrompt } from '@/components/pwa/InstallPrompt';
 
 // Mock do hook useInstallPrompt
 const mockPromptInstall = vi.fn();
 const mockUseInstallPrompt = vi.fn();
 
-vi.mock('../../../src/lib/pwa', () => ({
+vi.mock('@/lib/pwa', () => ({
   useInstallPrompt: () => mockUseInstallPrompt(),
 }));
 

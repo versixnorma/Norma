@@ -1,5 +1,6 @@
-import { createClient } from '@/lib/supabase/server';
+import { withAdminAuth } from '@/lib/api-helpers';
 import { reportConfigSchema } from '@/lib/schemas/api';
+import { createAdminClient } from '@/lib/supabase';
 import {
   getExecutiveKPIs,
   getUnifiedMetrics,
@@ -11,12 +12,9 @@ import {
   generateCSVReport,
   type ReportData,
 } from '@/lib/services/reportGenerators';
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
-export async function POST(request: Request) {
-  const supabase = createClient(await cookies());
-
+export const POST = withAdminAuth(async ({ admin }, request) => {
   try {
     const body = await request.json();
     const parsed = reportConfigSchema.safeParse(body);
@@ -37,7 +35,7 @@ export async function POST(request: Request) {
 
     // Build report data based on type
     const reportData = await buildReportData(
-      supabase,
+      admin,
       reportType,
       reportTitle,
       generatedAt,
@@ -81,10 +79,10 @@ export async function POST(request: Request) {
     const message = error instanceof Error ? error.message : 'Erro ao gerar relatório';
     return NextResponse.json({ error: message }, { status: 500 });
   }
-}
+});
 
 async function buildReportData(
-  supabase: ReturnType<typeof createClient>,
+  admin: ReturnType<typeof createAdminClient>,
   reportType: string,
   title: string,
   generatedAt: string,
@@ -93,7 +91,7 @@ async function buildReportData(
   const sections: ReportData['sections'] = [];
 
   if (reportType === 'executive' || reportType === 'custom') {
-    const kpis = await getExecutiveKPIs(supabase);
+    const kpis = await getExecutiveKPIs(admin);
     sections.push({
       title: 'KPIs Executivos',
       type: 'kpis',
@@ -109,7 +107,7 @@ async function buildReportData(
   }
 
   if (reportType === 'operational' || reportType === 'executive' || reportType === 'custom') {
-    const metrics = await getUnifiedMetrics(supabase, filters);
+    const metrics = await getUnifiedMetrics(admin, filters);
     if (metrics.condominioHealth.length > 0) {
       sections.push({
         title: 'Saúde dos Condominios',
@@ -161,7 +159,7 @@ async function buildReportData(
   }
 
   if (reportType === 'financial' || reportType === 'custom') {
-    const kpis = await getExecutiveKPIs(supabase);
+    const kpis = await getExecutiveKPIs(admin);
     sections.push({
       title: 'Resumo Financeiro',
       type: 'kpis',

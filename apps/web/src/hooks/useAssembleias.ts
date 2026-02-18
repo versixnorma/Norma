@@ -10,6 +10,11 @@ import type {
   UpdateAssembleiaInput,
 } from '@versix/shared';
 import { Database } from '@versix/shared';
+import {
+  rpcConvocarAssembleia,
+  rpcEncerrarAssembleia,
+  rpcIniciarAssembleia,
+} from '@versix/shared/rpc-overrides';
 import { useCallback, useState } from 'react';
 
 type AssembleiaRow = Database['public']['Tables']['assembleias']['Row'];
@@ -182,11 +187,7 @@ export function useAssembleias() {
   const convocarAssembleia = useCallback(
     async (id: string): Promise<boolean> => {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const rpcName = 'convocar_assembleia' as any;
-        const { data, error: rpcError } = await supabase.rpc(rpcName, {
-          p_assembleia_id: id,
-        });
+        const { data, error: rpcError } = await rpcConvocarAssembleia(supabase, id);
         if (rpcError) throw rpcError;
         const status: Database['public']['Enums']['assembleia_status'] = 'convocada';
         setAssembleias((prev) => prev.map((a) => (a.id === id ? { ...a, status } : a)));
@@ -203,11 +204,7 @@ export function useAssembleias() {
   const iniciarAssembleia = useCallback(
     async (id: string): Promise<boolean> => {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const rpcName = 'iniciar_assembleia' as any;
-        const { data, error: rpcError } = await supabase.rpc(rpcName, {
-          p_assembleia_id: id,
-        });
+        const { data, error: rpcError } = await rpcIniciarAssembleia(supabase, id);
         if (rpcError) throw rpcError;
         const status: Database['public']['Enums']['assembleia_status'] = 'em_andamento';
         setAssembleias((prev) => prev.map((a) => (a.id === id ? { ...a, status } : a)));
@@ -224,11 +221,7 @@ export function useAssembleias() {
   const encerrarAssembleia = useCallback(
     async (id: string): Promise<boolean> => {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const rpcName = 'encerrar_assembleia' as any;
-        const { data, error: rpcError } = await supabase.rpc(rpcName, {
-          p_assembleia_id: id,
-        });
+        const { data, error: rpcError } = await rpcEncerrarAssembleia(supabase, id);
         if (rpcError) throw rpcError;
         const status: Database['public']['Enums']['assembleia_status'] = 'encerrada';
         setAssembleias((prev) => prev.map((a) => (a.id === id ? { ...a, status } : a)));

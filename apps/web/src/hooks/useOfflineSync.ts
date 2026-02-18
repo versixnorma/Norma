@@ -216,6 +216,17 @@ export function useOfflineSync() {
         if (response.ok) {
           await removePendingAction(action.id);
           processed++;
+        } else if (response.status === 409) {
+          await removePendingAction(action.id);
+          window.dispatchEvent(
+            new CustomEvent('offline-sync-conflict', {
+              detail: {
+                action: action.url,
+                message: 'Dados atualizados por outro usuario enquanto voce estava offline.',
+              },
+            })
+          );
+          failed++;
         } else {
           await incrementActionRetry(action.id);
           failed++;

@@ -16,6 +16,44 @@ sw.addEventListener('activate', (event) => {
 });
 
 // ============================================
+// CACHE STRATEGIES (NetworkFirst + precache)
+// ============================================
+const NETWORK_FIRST_HANDLER = 'NetworkFirst';
+const HTTP_CACHE_NAME = 'https-calls';
+const PRECACHE_NAME = 'precache-v1';
+const PRECACHE_URLS = ['/', '/offline', '/manifest.json'];
+
+sw.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(PRECACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS)).catch(() => undefined)
+  );
+});
+
+sw.addEventListener('fetch', (event) => {
+  const request = event.request;
+  if (request.method !== 'GET') return;
+
+  const url = new URL(request.url);
+  if (!url.protocol.startsWith('http')) return;
+
+  event.respondWith(
+    (async () => {
+      try {
+        const networkResponse = await fetch(request);
+        const cache = await caches.open(HTTP_CACHE_NAME);
+        cache.put(request, networkResponse.clone()).catch(() => undefined);
+        return networkResponse;
+      } catch {
+        const cached = await caches.match(request);
+        if (cached) return cached;
+        const offline = await caches.match('/offline');
+        return offline || Response.error();
+      }
+    })()
+  );
+});
+
+// ============================================
 // BACKGROUND SYNC
 // ============================================
 sw.addEventListener('sync', (event) => {

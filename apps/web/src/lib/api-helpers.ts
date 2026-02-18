@@ -47,10 +47,10 @@ export type AdminAuthContext = {
  * Wrapper DRY para rotas admin que requerem superadmin.
  * Verifica autenticação + role superadmin e injeta admin client.
  */
-export function withAdminAuth(
-  handler: (ctx: AdminAuthContext, req: NextRequest) => Promise<NextResponse>
+export function withAdminAuth<TArgs extends unknown[] = []>(
+  handler: (ctx: AdminAuthContext, req: NextRequest, ...args: TArgs) => Promise<NextResponse>
 ) {
-  return async (req: NextRequest) => {
+  return async (req: NextRequest, ...args: TArgs) => {
     const authClient = createClient(await cookies());
     const {
       data: { user },
@@ -72,6 +72,6 @@ export function withAdminAuth(
       return NextResponse.json({ error: 'Forbidden - requer superadmin' }, { status: 403 });
     }
 
-    return handler({ admin, usuario }, req);
+    return handler({ admin, usuario }, req, ...args);
   };
 }

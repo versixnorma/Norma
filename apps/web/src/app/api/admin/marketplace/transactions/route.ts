@@ -1,10 +1,8 @@
-import { createClient } from '@/lib/supabase/server';
-import { cookies } from 'next/headers';
+import { withAdminAuth } from '@/lib/api-helpers';
 import { NextResponse } from 'next/server';
 
-export async function GET() {
-  const supabase = createClient(await cookies());
-  const { data, error } = await supabase
+export const GET = withAdminAuth(async ({ admin }) => {
+  const { data, error } = await admin
     .from('marketplace_transactions')
     .select(
       `
@@ -22,4 +20,4 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
   return NextResponse.json({ data });
-}
+});

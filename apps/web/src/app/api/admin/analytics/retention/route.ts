@@ -1,15 +1,13 @@
-import { createClient } from '@/lib/supabase/server';
+import { withAdminAuth } from '@/lib/api-helpers';
 import { apiCache } from '@/lib/cache';
 import {
   getRetentionData,
   type AnalyticsFilters,
   type RetentionPoint,
 } from '@/lib/services/analyticsService';
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
-export async function GET(request: Request) {
-  const supabase = createClient(await cookies());
+export const GET = withAdminAuth(async ({ admin }, request) => {
   const { searchParams } = new URL(request.url);
 
   const filters: AnalyticsFilters = {
@@ -25,11 +23,11 @@ export async function GET(request: Request) {
   }
 
   try {
-    const data = await getRetentionData(supabase, filters);
+    const data = await getRetentionData(admin, filters);
     apiCache.set(cacheKey, data, 900);
     return NextResponse.json({ data });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Erro ao buscar retenção';
     return NextResponse.json({ error: message }, { status: 500 });
   }
-}
+});

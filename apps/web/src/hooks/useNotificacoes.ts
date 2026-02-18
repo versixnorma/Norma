@@ -7,14 +7,14 @@ import type {
   NotificacaoDashboard,
   NotificacaoUsuario,
 } from '@versix/shared/types/comunicacao';
+import {
+  queryNotificacoesDashboard,
+  rpcConfirmarLeitura,
+  rpcContarNaoLidas,
+  rpcEnviarNotificacao,
+  rpcMarcarTodasLidas,
+} from '@versix/shared/rpc-overrides';
 import { useCallback, useState } from 'react';
-
-type SupabaseError = {
-  message: string;
-  details?: string;
-  hint?: string;
-  code?: string;
-};
 
 export function useNotificacoes() {
   const supabase = getSupabaseClient();
@@ -56,12 +56,7 @@ export function useNotificacoes() {
 
       if (!userId) return 0;
 
-      const { data, error: rpcError } = (await supabase.rpc(
-        'get_contagem_nao_lidas' as any,
-        {
-          p_usuario_id: userId,
-        } as any
-      )) as { data: number | null; error: SupabaseError | null };
+      const { data, error: rpcError } = await rpcContarNaoLidas(supabase, userId);
 
       if (rpcError) throw rpcError;
 
@@ -82,13 +77,7 @@ export function useNotificacoes() {
 
         if (!userId) return false;
 
-        const { data, error: rpcError } = (await supabase.rpc(
-          'confirmar_leitura' as any,
-          {
-            p_notificacao_id: notificacaoId,
-            p_usuario_id: userId,
-          } as any
-        )) as { data: boolean; error: SupabaseError | null };
+        const { data, error: rpcError } = await rpcConfirmarLeitura(supabase, notificacaoId, userId);
 
         if (rpcError) throw rpcError;
 
@@ -119,12 +108,7 @@ export function useNotificacoes() {
 
       if (!userId) return 0;
 
-      const { data, error: rpcError } = (await supabase.rpc(
-        'marcar_todas_lidas' as any,
-        {
-          p_usuario_id: userId,
-        } as any
-      )) as { data: number | null; error: SupabaseError | null };
+      const { data, error: rpcError } = await rpcMarcarTodasLidas(supabase, userId);
 
       if (rpcError) throw rpcError;
 
@@ -151,22 +135,19 @@ export function useNotificacoes() {
 
         if (!userId) throw new Error('Usuário não autenticado');
 
-        const { data, error: rpcError } = (await supabase.rpc(
-          'enviar_notificacao' as any,
-          {
-            p_condominio_id: condominioId,
-            p_tipo: input.tipo,
-            p_titulo: input.titulo,
-            p_corpo: input.corpo,
-            p_prioridade: input.prioridade || 'normal',
-            p_destinatarios_tipo: input.destinatarios_tipo || 'todos',
-            p_destinatarios_filtro: input.destinatarios_filtro || undefined,
-            p_referencia_tipo: input.referencia_tipo || undefined,
-            p_referencia_id: input.referencia_id || undefined,
-            p_gerar_mural: input.gerar_mural || false,
-            p_criado_por: userId,
-          } as any
-        )) as { data: string | null; error: SupabaseError | null };
+        const { data, error: rpcError } = await rpcEnviarNotificacao(supabase, {
+          p_condominio_id: condominioId,
+          p_tipo: input.tipo,
+          p_titulo: input.titulo,
+          p_corpo: input.corpo,
+          p_prioridade: input.prioridade || 'normal',
+          p_destinatarios_tipo: input.destinatarios_tipo || 'todos',
+          p_destinatarios_filtro: input.destinatarios_filtro || undefined,
+          p_referencia_tipo: input.referencia_tipo || undefined,
+          p_referencia_id: input.referencia_id || undefined,
+          p_gerar_mural: input.gerar_mural || false,
+          p_criado_por: userId,
+        });
 
         if (rpcError) throw rpcError;
         return data;
@@ -185,10 +166,7 @@ export function useNotificacoes() {
   const fetchDashboard = useCallback(
     async (condominioId: string): Promise<NotificacaoDashboard[]> => {
       try {
-        const { data, error: fetchError } = await supabase
-          .from('v_notificacoes_dashboard' as any)
-          .select('*')
-          .eq('condominio_id', condominioId)
+        const { data, error: fetchError } = await queryNotificacoesDashboard(supabase, condominioId)
           .order('created_at', { ascending: false })
           .limit(20);
 

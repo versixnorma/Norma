@@ -1,7 +1,8 @@
 'use client';
 
 import { useAuditLogs, type AuditLog, type AuditLogFilters } from '@/hooks/useAuditLogs';
-import { useEffect, useState } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 const ACTION_ICONS: Record<string, { icon: string; color: string }> = { USER_APPROVED: { icon: 'check_circle', color: 'text-green-500' }, USER_REJECTED: { icon: 'cancel', color: 'text-red-500' }, USER_CREATED: { icon: 'person_add', color: 'text-blue-500' }, USER_UPDATED: { icon: 'edit', color: 'text-amber-500' }, IMPERSONATE_START: { icon: 'admin_panel_settings', color: 'text-amber-500' }, IMPERSONATE_END: { icon: 'logout', color: 'text-gray-500' }, ATA_APPROVED: { icon: 'verified', color: 'text-green-500' }, LOGIN: { icon: 'login', color: 'text-blue-500' }, LOGOUT: { icon: 'logout', color: 'text-gray-500' }, default: { icon: 'history', color: 'text-gray-500' } };
@@ -12,8 +13,15 @@ export function AuditLogViewer() {
   const [filters, setFilters] = useState<AuditLogFilters>({});
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const [exporting, setExporting] = useState(false);
+  const parentRef = useRef<HTMLDivElement>(null);
   const pageSize = 50;
   const totalPages = Math.ceil(totalCount / pageSize);
+  const rowVirtualizer = useVirtualizer({
+    count: logs.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 64,
+    overscan: 12,
+  });
 
   useEffect(() => { fetchLogs(filters, page, pageSize); }, [fetchLogs, filters, page]);
 
@@ -33,21 +41,51 @@ export function AuditLogViewer() {
         </div>
       </div>
       <div className="bg-white dark:bg-card-dark rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-800/50"><tr><th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Data/Hora</th><th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Usuário</th><th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Ação</th><th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Tabela</th><th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Detalhes</th></tr></thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {logs.map((log) => { const actionInfo = getActionInfo(log.acao); return (
-                <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30">
-                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">{formatDate(log.created_at)}</td>
-                  <td className="px-4 py-3"><p className="text-sm font-medium text-gray-800 dark:text-white">{log.usuario_nome || 'Sistema'}</p><p className="text-xs text-gray-500 truncate max-w-[150px]">{log.usuario_email}</p></td>
-                  <td className="px-4 py-3"><div className="flex items-center gap-2"><span className={`material-symbols-outlined ${actionInfo.color}`}>{actionInfo.icon}</span><span className="text-sm text-gray-800 dark:text-white">{log.acao.replace(/_/g, ' ')}</span></div></td>
-                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{log.tabela}</td>
-                  <td className="px-4 py-3 text-center"><button onClick={() => setSelectedLog(log)} className="p-1.5 text-gray-500 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"><span className="material-symbols-outlined text-lg">info</span></button></td>
-                </tr>
-              ); })}
-            </tbody>
-          </table>
+        <div className="grid grid-cols-[200px_220px_1fr_140px_80px] bg-gray-50 dark:bg-gray-800/50 px-4 py-3 text-left text-xs font-semibold uppercase text-gray-500">
+          <div>Data/Hora</div>
+          <div>Usuário</div>
+          <div>Ação</div>
+          <div>Tabela</div>
+          <div className="text-center">Detalhes</div>
+        </div>
+        <div ref={parentRef} className="h-[600px] overflow-auto">
+          <div
+            style={{
+              height: `${rowVirtualizer.getTotalSize()}px`,
+              position: 'relative',
+            }}
+          >
+            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+              const log = logs[virtualRow.index];
+              const actionInfo = getActionInfo(log.acao);
+              return (
+                <div
+                  key={log.id}
+                  className="absolute left-0 top-0 w-full border-b border-gray-200 px-4 py-3 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800/30"
+                  style={{
+                    height: `${virtualRow.size}px`,
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                >
+                  <div className="grid grid-cols-[200px_220px_1fr_140px_80px] items-center gap-0">
+                    <div className="text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">{formatDate(log.created_at)}</div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-800 dark:text-white">{log.usuario_nome || 'Sistema'}</p>
+                      <p className="text-xs text-gray-500 truncate max-w-[180px]">{log.usuario_email}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`material-symbols-outlined ${actionInfo.color}`}>{actionInfo.icon}</span>
+                      <span className="text-sm text-gray-800 dark:text-white">{log.acao.replace(/_/g, ' ')}</span>
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-300">{log.tabela}</div>
+                    <div className="text-center">
+                      <button onClick={() => setSelectedLog(log)} className="p-1.5 text-gray-500 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"><span className="material-symbols-outlined text-lg">info</span></button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
         {logs.length === 0 && !loading && (<div className="text-center py-12"><span className="material-symbols-outlined text-4xl text-gray-400 mb-2">history</span><p className="text-gray-500">Nenhum log encontrado</p></div>)}
         {loading && (<div className="flex items-center justify-center py-12"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>)}

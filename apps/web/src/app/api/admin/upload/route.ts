@@ -1,20 +1,7 @@
-import { createAdminClient } from '@/lib/supabase';
-import { createClient } from '@/lib/supabase/server';
-import { cookies } from 'next/headers';
+import { withAdminAuth } from '@/lib/api-helpers';
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function POST(request: NextRequest) {
-  // Auth check - any logged-in user can upload
-  const authClient = createClient(await cookies());
-  const {
-    data: { user },
-    error: authError,
-  } = await authClient.auth.getUser();
-
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
+export const POST = withAdminAuth(async ({ admin }, request: NextRequest) => {
   const formData = await request.formData();
   const file = formData.get('file') as File | null;
   const bucket = (formData.get('bucket') as string) || 'anexos';
@@ -28,8 +15,6 @@ export async function POST(request: NextRequest) {
   if (file.size > 5 * 1024 * 1024) {
     return NextResponse.json({ error: 'Arquivo muito grande. Maximo 5MB.' }, { status: 400 });
   }
-
-  const admin = createAdminClient();
 
   // Ensure bucket exists (auto-create if missing)
   const { data: buckets } = await admin.storage.listBuckets();
@@ -65,4 +50,4 @@ export async function POST(request: NextRequest) {
   const { data: urlData } = admin.storage.from(bucket).getPublicUrl(path);
 
   return NextResponse.json({ data: { url: urlData.publicUrl } });
-}
+});

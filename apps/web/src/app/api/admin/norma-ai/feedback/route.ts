@@ -1,18 +1,21 @@
-import { createClient } from '@/lib/supabase/server';
-import { cookies } from 'next/headers';
+import { withAdminAuth } from '@/lib/api-helpers';
+import { normaFeedbackSchema } from '@/lib/schemas/norma-ai';
 import { NextResponse } from 'next/server';
 
-export async function POST(request: Request) {
-  const supabase = createClient(await cookies());
-  const { conversationId, userId, condominioId, rating, feedbackText } = await request.json();
-
-  if (!userId || !rating || rating < 1 || rating > 5) {
-    return NextResponse.json({ error: 'Rating (1-5) e userId são obrigatórios' }, { status: 400 });
+export const POST = withAdminAuth(async ({ admin }, request) => {
+  const body = await request.json();
+  const parsed = normaFeedbackSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'Dados inválidos', details: parsed.error.flatten() },
+      { status: 400 }
+    );
   }
+  const { conversationId, userId, condominioId, rating, feedbackText } = parsed.data;
 
-  const { data, error } = await supabase
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- table not in generated types
-    .from('norma_training_logs' as any)
+  const { data, error } = await admin
+    // tabela ainda nao exposta no generated types
+    .from('norma_training_logs' as never)
     .insert({
       session_id: conversationId || crypto.randomUUID(),
       operation_type: 'feedback',
@@ -20,7 +23,7 @@ export async function POST(request: Request) {
       condominio_id: condominioId || null,
       user_feedback: rating,
       feedback_text: feedbackText || null,
-    })
+    } as never)
     .select()
     .single();
 
@@ -29,4 +32,4 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({ data });
-}
+});

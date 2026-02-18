@@ -1,7 +1,8 @@
 'use client';
 
 import { useApproveUser } from '@/hooks/useApproveUser';
-import { useEffect, useState } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 interface ApprovalListProps { condominioId: string; onUserApproved?: () => void; }
@@ -12,6 +13,13 @@ export function ApprovalList({ condominioId, onUserApproved }: ApprovalListProps
   const [showRejectModal, setShowRejectModal] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [processingUser, setProcessingUser] = useState<string | null>(null);
+  const parentRef = useRef<HTMLDivElement>(null);
+  const rowVirtualizer = useVirtualizer({
+    count: pendingUsers.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 120,
+    overscan: 8,
+  });
 
   useEffect(() => { fetchPendingUsers(condominioId); }, [condominioId, fetchPendingUsers]);
 
@@ -58,28 +66,47 @@ export function ApprovalList({ condominioId, onUserApproved }: ApprovalListProps
         </div>
         {selectedUsers.length > 0 && (<button onClick={handleBatchApprove} disabled={loading} className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"><span className="material-symbols-outlined text-lg">done_all</span>Aprovar selecionados</button>)}
       </div>
-      <div className="space-y-3">
-        {pendingUsers.map((user) => (
-          <div key={user.id} className={`bg-white dark:bg-card-dark rounded-xl border ${selectedUsers.includes(user.id) ? 'border-primary ring-2 ring-primary/20' : 'border-gray-200 dark:border-gray-700'} p-4 transition-all`}>
-            <div className="flex items-start gap-4">
-              <input type="checkbox" checked={selectedUsers.includes(user.id)} onChange={() => toggleSelectUser(user.id)} className="mt-1 w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary" />
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0"><span className="text-primary font-bold text-lg">{user.nome.charAt(0).toUpperCase()}</span></div>
-              <div className="flex-1 min-w-0">
-                <h4 className="font-semibold text-gray-800 dark:text-white">{user.nome}</h4>
-                <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
-                <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-                  {user.telefone && <span className="flex items-center gap-1"><span className="material-symbols-outlined text-sm">phone</span>{user.telefone}</span>}
-                  <span className="flex items-center gap-1"><span className="material-symbols-outlined text-sm">schedule</span>{formatDate(user.created_at)}</span>
-                  {user.unidade_numero && <span className="flex items-center gap-1"><span className="material-symbols-outlined text-sm">home</span>{user.bloco_nome && `${user.bloco_nome} - `}{user.unidade_numero}</span>}
+      <div ref={parentRef} className="h-[600px] overflow-auto rounded-xl">
+        <div
+          style={{
+            height: `${rowVirtualizer.getTotalSize()}px`,
+            position: 'relative',
+          }}
+        >
+          {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+            const user = pendingUsers[virtualRow.index];
+            return (
+              <div
+                key={user.id}
+                className={`absolute left-0 top-0 w-full pb-3`}
+                style={{
+                  height: `${virtualRow.size}px`,
+                  transform: `translateY(${virtualRow.start}px)`,
+                }}
+              >
+                <div className={`bg-white dark:bg-card-dark rounded-xl border ${selectedUsers.includes(user.id) ? 'border-primary ring-2 ring-primary/20' : 'border-gray-200 dark:border-gray-700'} p-4 transition-all`}>
+                  <div className="flex items-start gap-4">
+                    <input type="checkbox" checked={selectedUsers.includes(user.id)} onChange={() => toggleSelectUser(user.id)} className="mt-1 w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary" />
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0"><span className="text-primary font-bold text-lg">{user.nome.charAt(0).toUpperCase()}</span></div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-gray-800 dark:text-white">{user.nome}</h4>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
+                      <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                        {user.telefone && <span className="flex items-center gap-1"><span className="material-symbols-outlined text-sm">phone</span>{user.telefone}</span>}
+                        <span className="flex items-center gap-1"><span className="material-symbols-outlined text-sm">schedule</span>{formatDate(user.created_at)}</span>
+                        {user.unidade_numero && <span className="flex items-center gap-1"><span className="material-symbols-outlined text-sm">home</span>{user.bloco_nome && `${user.bloco_nome} - `}{user.unidade_numero}</span>}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => handleApprove(user.id)} disabled={processingUser === user.id} className="flex items-center gap-1.5 px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50">{processingUser === user.id ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <span className="material-symbols-outlined text-lg">check</span>}Aprovar</button>
+                      <button onClick={() => setShowRejectModal(user.id)} disabled={processingUser === user.id} className="flex items-center gap-1.5 px-3 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"><span className="material-symbols-outlined text-lg">close</span>Rejeitar</button>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button onClick={() => handleApprove(user.id)} disabled={processingUser === user.id} className="flex items-center gap-1.5 px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50">{processingUser === user.id ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <span className="material-symbols-outlined text-lg">check</span>}Aprovar</button>
-                <button onClick={() => setShowRejectModal(user.id)} disabled={processingUser === user.id} className="flex items-center gap-1.5 px-3 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"><span className="material-symbols-outlined text-lg">close</span>Rejeitar</button>
-              </div>
-            </div>
-          </div>
-        ))}
+            );
+          })}
+        </div>
       </div>
       {showRejectModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">

@@ -1,9 +1,22 @@
 'use client';
 
-import { DashboardKPIs, CondominiosHealth, ActivityChart } from '@/components/admin';
+import { DashboardKPIs, CondominiosHealth } from '@/components/admin';
 import { useAdminDashboard } from '@/hooks/useAdminDashboard';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useEffect } from 'react';
+
+const ActivityChartDynamic = dynamic(
+  () => import('@/components/admin/charts/ActivityChart').then((mod) => ({ default: mod.ActivityChart })),
+  {
+    loading: () => (
+      <div className="flex h-[300px] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    ),
+    ssr: false,
+  }
+);
 
 export default function AdminDashboardPage() {
   const { stats, activityData, condominiosHealth, loading, fetchAll } = useAdminDashboard();
@@ -43,7 +56,7 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
             </div>
-            <ActivityChart data={activityData} loading={loading} />
+            <ActivityChartDynamic data={activityData} loading={loading} />
           </div>
         </div>
 

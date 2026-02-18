@@ -1,7 +1,3 @@
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import ExcelJS from 'exceljs';
-
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -27,6 +23,10 @@ export interface ReportSection {
 // ---------------------------------------------------------------------------
 
 export async function generatePDFReport(data: ReportData): Promise<Buffer> {
+  const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+    import('jspdf'),
+    import('jspdf-autotable'),
+  ]);
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
 
@@ -94,8 +94,10 @@ export async function generatePDFReport(data: ReportData): Promise<Buffer> {
         headStyles: { fillColor: [59, 130, 246] },
         margin: { left: 14, right: 14 },
       });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      yPos = (doc as any).lastAutoTable?.finalY + 10 || yPos + 30;
+      type AutoTableDoc = { lastAutoTable?: { finalY?: number } };
+      yPos = (doc as unknown as AutoTableDoc).lastAutoTable?.finalY
+        ? (doc as unknown as AutoTableDoc).lastAutoTable!.finalY! + 10
+        : yPos + 30;
     }
 
     if (section.type === 'summary' && section.text) {
@@ -129,6 +131,7 @@ export async function generatePDFReport(data: ReportData): Promise<Buffer> {
 // ---------------------------------------------------------------------------
 
 export async function generateExcelReport(data: ReportData): Promise<Buffer> {
+  const { default: ExcelJS } = await import('exceljs');
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'Versix Norma';
   workbook.created = new Date();
