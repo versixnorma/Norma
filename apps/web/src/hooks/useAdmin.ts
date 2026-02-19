@@ -7,7 +7,7 @@ import type { Database } from '@/types/database';
 type RoleType = Database['public']['Enums']['user_role'];
 type StatusType = Database['public']['Enums']['user_status'];
 
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useRef } from 'react';
 
 // ============================================
 // TIPOS
@@ -71,10 +71,27 @@ export function useAdmin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Guards to avoid overlapping and too-frequent requests
+  const inFlightUsersRef = useRef(false);
+  const lastFetchUsersAtRef = useRef<number | null>(null);
+
+  const inFlightCondominiosRef = useRef(false);
+  const lastFetchCondominiosAtRef = useRef<number | null>(null);
+
+  const inFlightStatsRef = useRef(false);
+  const lastFetchStatsAtRef = useRef<number | null>(null);
+
   // ============================================
   // FETCH USERS - via API route (service role bypassa RLS/404)
   // ============================================
   const fetchUsers = useCallback(async (filters?: FetchUsersFilters) => {
+    // prevent overlapping requests
+    if (inFlightUsersRef.current) return;
+    const now = Date.now();
+    if (lastFetchUsersAtRef.current && now - lastFetchUsersAtRef.current < 2000) return;
+
+    inFlightUsersRef.current = true;
+    lastFetchUsersAtRef.current = now;
     setLoading(true);
     setError(null);
     try {
@@ -96,6 +113,7 @@ export function useAdmin() {
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
+      inFlightUsersRef.current = false;
       setLoading(false);
     }
   }, []);
@@ -104,6 +122,12 @@ export function useAdmin() {
   // FETCH CONDOMINIOS - via API route (service role bypassa RLS)
   // ============================================
   const fetchCondominios = useCallback(async () => {
+    if (inFlightCondominiosRef.current) return;
+    const now = Date.now();
+    if (lastFetchCondominiosAtRef.current && now - lastFetchCondominiosAtRef.current < 2000) return;
+
+    inFlightCondominiosRef.current = true;
+    lastFetchCondominiosAtRef.current = now;
     setLoading(true);
     setError(null);
     try {
@@ -121,6 +145,7 @@ export function useAdmin() {
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
+      inFlightCondominiosRef.current = false;
       setLoading(false);
     }
   }, []);
@@ -129,6 +154,12 @@ export function useAdmin() {
   // FETCH STATS - via API route (service role bypassa RLS)
   // ============================================
   const fetchStats = useCallback(async () => {
+    if (inFlightStatsRef.current) return;
+    const now = Date.now();
+    if (lastFetchStatsAtRef.current && now - lastFetchStatsAtRef.current < 2000) return;
+
+    inFlightStatsRef.current = true;
+    lastFetchStatsAtRef.current = now;
     setLoading(true);
     setError(null);
     try {
@@ -146,6 +177,7 @@ export function useAdmin() {
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
+      inFlightStatsRef.current = false;
       setLoading(false);
     }
   }, []);
