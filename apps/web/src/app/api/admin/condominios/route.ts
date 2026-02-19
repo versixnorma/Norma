@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/lib/supabase';
 import { withAdminAuth } from '@/lib/api-helpers';
 import { condominioCreateSchema, condominioUpdateSchema } from '@/lib/schemas/api';
+import { condominioFormSchema } from '@/lib/schemas/condominioForm';
 import type { Database } from '@/types/database';
 import { NextResponse } from 'next/server';
 
@@ -248,13 +249,95 @@ export const GET = withAdminAuth(async ({ admin }) => {
 // POST - Create condominio
 export const POST = withAdminAuth(async ({ admin }, req) => {
   const body = await req.json();
-  const parsed = condominioCreateSchema.safeParse(body);
+
+  // Prefer the new form schema, but fallback to legacy create schema for compatibility
+  const parsedForm = condominioFormSchema.safeParse(body);
+  let parsed: ReturnType<(typeof condominioCreateSchema)['safeParse']>;
+  if (parsedForm.success) {
+    // Map form input to insert payload
+    const form = parsedForm.data;
+
+    // Enrich CNPJ via BrasilAPI if possible and missing fields
+    const cnpjDigits = String(form.cnpj || '').replace(/\D/g, '');
+    if (cnpjDigits.length === 14) {
+      try {
+        const resp = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjDigits}`, {
+          method: 'GET',
+        });
+        if (resp.ok) {
+          const info = await resp.json();
+          // Fill missing values if not provided
+          if (!form.razao_social && info.nome) form.razao_social = info.nome;
+          if (!form.nome && info.fantasia) form.nome = info.fantasia;
+          // Note: API may not provide administrative email/phone
+        }
+      } catch {
+        // best-effort
+      }
+    }
+
+    // Enrich CEP via ViaCEP if logradouro missing
+    const cepDigits = String(form.cep || '').replace(/\D/g, '');
+    if (cepDigits.length === 8 && !form.logradouro) {
+      try {
+        const r = await fetch(`https://viacep.com.br/ws/${cepDigits}/json/`);
+        if (r.ok) {
+          const v = await r.json();
+          if (!v.erro) {
+            form.logradouro = form.logradouro || v.logradouro || '';
+            form.bairro = form.bairro || v.bairro || '';
+            form.cidade = form.cidade || v.localidade || '';
+            form.estado = form.estado || v.uf || '';
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    const areas = (form.areas_comuns_string || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const total_unidades =
+      Number(form.quantidade_blocos || 0) * Number(form.unidades_por_bloco || 0);
+
+    const insertPayload: Record<string, unknown> = {
+      nome: form.nome,
+      cnpj: cnpjDigits || null,
+      razao_social: form.razao_social || null,
+      email_administrativo: form.email_administrativo || null,
+      telefone: form.telefone || null,
+      cep: cepDigits || null,
+      logradouro: form.logradouro || null,
+      numero: form.numero || null,
+      complemento: form.complemento || null,
+      bairro: form.bairro || null,
+      cidade: form.cidade || null,
+      estado: form.estado || null,
+      dia_vencimento: form.dia_vencimento || 10,
+      total_unidades: total_unidades || null,
+      areas_comuns: areas.length > 0 ? areas : null,
+      modules: form.modules || null,
+      blocos_ruas: form.quantidade_blocos
+        ? Array.from({ length: form.quantidade_blocos }).map((_, i) => `Bloco ${i + 1}`)
+        : undefined,
+    };
+
+    // Validate minimally against existing create schema
+    parsed = condominioCreateSchema.safeParse(insertPayload);
+  } else {
+    parsed = condominioCreateSchema.safeParse(body);
+  }
+
   if (!parsed.success) {
     return NextResponse.json(
       { error: 'Dados inválidos', details: parsed.error.flatten() },
       { status: 400 }
     );
   }
+
   const { blocos_ruas, ...insertPayload } = parsed.data;
   const condominioInsert = insertPayload as Database['public']['Tables']['condominios']['Insert'];
   const { data, error } = await admin
