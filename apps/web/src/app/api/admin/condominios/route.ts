@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/lib/supabase';
 import { withAdminAuth } from '@/lib/api-helpers';
 import { condominioCreateSchema, condominioUpdateSchema } from '@/lib/schemas/api';
+import type { CondominioFormInput } from '@/lib/schemas/condominioForm';
 import { condominioFormSchema } from '@/lib/schemas/condominioForm';
 import type { Database } from '@/types/database';
 import { NextResponse } from 'next/server';
@@ -295,7 +296,7 @@ export const POST = withAdminAuth(async ({ admin }, req) => {
       }
     }
 
-    const areas = (form.areas_comuns_string || '')
+    const areas = String((form as Partial<CondominioFormInput>).areas_comuns_string || '')
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean);
