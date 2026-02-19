@@ -28,8 +28,8 @@ export const condominioFormSchema = z.object({
   logo_url: z.string().url().optional(),
   primary_color: z
     .string()
-    .optional()
-    .regex(/^#([0-9A-Fa-f]{6})$/, 'Cor inválida (formato hex)'),
+    .regex(/^#([0-9A-Fa-f]{6})$/, 'Cor inválida (formato hex)')
+    .optional(),
 
   modules: z.object({
     financeiro: z.boolean().default(true),
