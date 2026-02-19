@@ -31,11 +31,13 @@ export default function AdminLoginPage() {
       } else {
         // Usuário sem permissão admin -> sign out to avoid stale session and loops
         setLoading(false);
-        try {
-          await logout?.();
-        } catch {
-          // best-effort
-        }
+        (async () => {
+          try {
+            await logout?.();
+          } catch {
+            // best-effort
+          }
+        })();
         if (!shownRestrictedRef.current) {
           setLoginError('Acesso restrito a administradores do sistema. Sessão encerrada.');
           toast.error('Acesso restrito a administradores. Sessão encerrada.');
