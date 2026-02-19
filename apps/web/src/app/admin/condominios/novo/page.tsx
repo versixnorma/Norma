@@ -75,6 +75,33 @@ export default function NovoCondominioPage() {
     // For now, no-op.
   };
 
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+
+  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('path', `condominios/logos/${Date.now()}-${file.name}`);
+      const resp = await fetch('/api/admin/upload', { method: 'POST', body: fd });
+      const json = await resp.json();
+      if (json?.data?.url) {
+        setValue('logo_url', json.data.url);
+        setLogoPreview(json.data.url);
+        toast.success('Logo enviado');
+      } else {
+        toast.error(json?.error || 'Erro ao enviar logo');
+      }
+    } catch {
+      toast.error('Erro ao enviar logo');
+    } finally {
+      setLogoUploading(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-3xl py-8">
       <h1 className="mb-4 text-2xl font-bold">Novo Condomínio</h1>
@@ -107,6 +134,28 @@ export default function NovoCondominioPage() {
             <div>
               <label className="text-sm">Telefone</label>
               <input {...register('telefone')} className="input mt-1 w-full" />
+            </div>
+            <div>
+              <label className="text-sm">Logo</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleLogoChange}
+                className="mt-1 w-full"
+              />
+              {logoUploading && <p className="text-xs text-gray-500">Enviando...</p>}
+              <input type="hidden" {...register('logo_url')} />
+              {logoPreview && (
+                <img src={logoPreview} alt="Logo preview" className="mt-2 h-12 w-auto rounded" />
+              )}
+            </div>
+            <div>
+              <label className="text-sm">Cor Principal</label>
+              <input
+                type="color"
+                {...register('primary_color')}
+                className="mt-1 h-8 w-12 border-none p-0"
+              />
             </div>
           </div>
         </section>

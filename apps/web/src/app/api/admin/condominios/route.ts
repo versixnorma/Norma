@@ -307,6 +307,8 @@ export const POST = withAdminAuth(async ({ admin }, req) => {
       nome: form.nome,
       cnpj: cnpjDigits || null,
       razao_social: form.razao_social || null,
+      logo_url: form.logo_url || null,
+      primary_color: form.primary_color || null,
       email_administrativo: form.email_administrativo || null,
       telefone: form.telefone || null,
       cep: cepDigits || null,
