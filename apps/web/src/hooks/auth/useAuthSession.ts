@@ -46,7 +46,18 @@ export function useAuthSession({
 
         if (session?.user) {
           const profile = await fetchProfile(session.user.id);
-          onSignedIn({ user: session.user, profile, session });
+          if (!profile) {
+            // No profile found for this authenticated user -> treat as signed out for app flows
+            onSignedOut();
+            // Redirect to login to avoid inconsistent state (routerPush provided by caller)
+            try {
+              routerPush('/login');
+            } catch {
+              // best-effort
+            }
+          } else {
+            onSignedIn({ user: session.user, profile, session });
+          }
         } else {
           onSignedOut();
         }
@@ -75,7 +86,11 @@ export function useAuthSession({
         onSignedIn({ user: session.user, profile, session });
       } else if (event === 'SIGNED_OUT') {
         onSignedOut();
-        routerPush('/login');
+        try {
+          routerPush('/login');
+        } catch {
+          // ignore
+        }
       }
     });
 
