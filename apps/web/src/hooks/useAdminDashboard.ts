@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useRef } from 'react';
 
 export interface DashboardStats {
   // Basic counts
@@ -45,8 +45,21 @@ export function useAdminDashboard() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Guards to avoid overlapping / too-frequent requests
+  const inFlightRef = useRef(false);
+  const lastFetchAtRef = useRef<number | null>(null);
+
   // Fetch all dashboard data via API route (service role bypasses RLS)
   const fetchAll = useCallback(async () => {
+    // Prevent overlapping requests
+    if (inFlightRef.current) return;
+
+    // Simple throttle: ignore calls within 3 seconds
+    const now = Date.now();
+    if (lastFetchAtRef.current && now - lastFetchAtRef.current < 3000) return;
+
+    inFlightRef.current = true;
+    lastFetchAtRef.current = now;
     setLoading(true);
     setError(null);
     try {
@@ -66,6 +79,7 @@ export function useAdminDashboard() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar dashboard');
     } finally {
+      inFlightRef.current = false;
       setLoading(false);
     }
   }, []);
