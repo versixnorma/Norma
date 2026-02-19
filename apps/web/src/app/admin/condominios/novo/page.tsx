@@ -22,7 +22,7 @@ export default function NovoCondominioPage() {
       dia_vencimento: 10,
       quantidade_blocos: 2,
       unidades_por_bloco: 40,
-      areas_comuns: ['Piscina', 'Salão de Festas', 'Academia', 'Churrasqueira'],
+      areas_comuns_string: 'Piscina, Salão de Festas, Academia, Churrasqueira',
       modules: {
         financeiro: true,
         assembleias: true,
