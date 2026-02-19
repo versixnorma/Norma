@@ -323,9 +323,10 @@ export const POST = withAdminAuth(async ({ admin }, req) => {
       total_unidades: total_unidades || null,
       areas_comuns: areas.length > 0 ? areas : null,
       modules: form.modules || null,
-      blocos_ruas: form.quantidade_blocos
-        ? Array.from({ length: form.quantidade_blocos }).map((_, i) => `Bloco ${i + 1}`)
-        : undefined,
+      blocos_ruas:
+        Number(form.quantidade_blocos) > 0
+          ? Array.from({ length: Number(form.quantidade_blocos) }).map((_, i) => `Bloco ${i + 1}`)
+          : undefined,
     };
 
     // Validate minimally against existing create schema
