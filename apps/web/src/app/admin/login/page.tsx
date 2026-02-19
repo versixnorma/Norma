@@ -15,6 +15,7 @@ export default function AdminLoginPage() {
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const shownRestrictedRef = useRef(false);
 
   useEffect(() => {
     setTimeout(() => setMounted(true), 50);
@@ -30,8 +31,11 @@ export default function AdminLoginPage() {
       } else {
         // Usuário sem permissão admin
         setLoading(false);
-        setLoginError('Acesso restrito a administradores do sistema.');
-        toast.error('Acesso restrito a administradores.');
+        if (!shownRestrictedRef.current) {
+          setLoginError('Acesso restrito a administradores do sistema.');
+          toast.error('Acesso restrito a administradores.');
+          shownRestrictedRef.current = true;
+        }
       }
     }
   }, [isAuthenticated, authLoading, profile, router]);
