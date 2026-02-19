@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const { login, isAuthenticated, loading: authLoading, profile } = useAuthContext();
+  const { login, logout, isAuthenticated, loading: authLoading, profile } = useAuthContext();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,11 +29,16 @@ export default function AdminLoginPage() {
       if (role === 'superadmin' || condoRole === 'admin_condo') {
         router.push('/admin/dashboard');
       } else {
-        // Usuário sem permissão admin
+        // Usuário sem permissão admin -> sign out to avoid stale session and loops
         setLoading(false);
+        try {
+          await logout?.();
+        } catch {
+          // best-effort
+        }
         if (!shownRestrictedRef.current) {
-          setLoginError('Acesso restrito a administradores do sistema.');
-          toast.error('Acesso restrito a administradores.');
+          setLoginError('Acesso restrito a administradores do sistema. Sessão encerrada.');
+          toast.error('Acesso restrito a administradores. Sessão encerrada.');
           shownRestrictedRef.current = true;
         }
       }
