@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 // Rotas públicas que não requerem autenticação
 const PUBLIC_ROUTES = [
   '/login',
+  '/admin/login',
   '/register',
   '/reset-password',
   '/auth/callback',
