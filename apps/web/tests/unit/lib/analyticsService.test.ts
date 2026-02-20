@@ -175,8 +175,7 @@ describe('analyticsService helpers and queries', () => {
         }
         if (table === 'audit_logs') {
           return {
-            select: () => Promise.resolve({ data: logs }),
-            gte: () => Promise.resolve({ data: logs }),
+            select: () => ({ gte: () => Promise.resolve({ data: logs }) }),
           };
         }
         return { select: () => Promise.resolve({ data: [] }) };
