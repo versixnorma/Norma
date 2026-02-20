@@ -19,6 +19,10 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<AuthError | Error | null>(null);
 
+  // Destructure stable references (useState setters and useCallback fns) from profileState
+  // to avoid using the profileState object itself as a dependency (new ref every render).
+  const { setProfile, fetchProfile } = profileState;
+
   const setAuthState = useCallback(
     (payload: {
       user: User | null;
@@ -28,41 +32,71 @@ export function useAuth() {
       error?: AuthError | Error | null;
     }) => {
       setUser(payload.user);
-      profileState.setProfile(payload.profile);
+      setProfile(payload.profile);
       setSession(payload.session);
       if (payload.loading !== undefined) setLoading(payload.loading);
       if (payload.error !== undefined) setError(payload.error);
     },
-    [profileState]
+    [setProfile]
+  );
+
+  // Stable callbacks for useAuthSession — must be wrapped in useCallback so that
+  // useAuthSession's useEffect dependency array stays stable across renders and
+  // does not re-run initAuth() on every render (which causes the infinite
+  // usuarios-table fetch loop seen in the network console).
+  const onSignedIn = useCallback(
+    ({
+      user: nextUser,
+      profile,
+      session: nextSession,
+    }: {
+      user: User;
+      profile: UsuarioWithCondominios | null;
+      session: Session;
+    }) =>
+      setAuthState({ user: nextUser, profile, session: nextSession, loading: false, error: null }),
+    [setAuthState]
+  );
+
+  const onSignedOut = useCallback(
+    () => setAuthState({ user: null, profile: null, session: null, loading: false, error: null }),
+    [setAuthState]
+  );
+
+  const onSessionUpdated = useCallback((nextSession: Session) => setSession(nextSession), []);
+
+  const onError = useCallback(
+    (nextError: AuthError | Error) =>
+      setAuthState({ user: null, profile: null, session: null, loading: false, error: nextError }),
+    [setAuthState]
   );
 
   useAuthSession({
     supabase,
-    fetchProfile: profileState.fetchProfile,
+    fetchProfile,
     setLoading,
     routerPush: router.push,
-    onSignedIn: ({ user: nextUser, profile, session: nextSession }) =>
-      setAuthState({ user: nextUser, profile, session: nextSession, loading: false, error: null }),
-    onSignedOut: () => setAuthState({ user: null, profile: null, session: null, loading: false, error: null }),
-    onSessionUpdated: (nextSession) => setSession(nextSession),
-    onError: (nextError) =>
-      setAuthState({ user: null, profile: null, session: null, loading: false, error: nextError }),
+    onSignedIn,
+    onSignedOut,
+    onSessionUpdated,
+    onError,
   });
 
   const methods = useAuthMethods({
     supabase,
     currentUser: user,
     currentProfile: profileState.profile,
-    fetchProfile: profileState.fetchProfile,
+    fetchProfile,
     setAuthState,
     setLoading,
     setError,
-    setProfile: profileState.setProfile,
+    setProfile,
     routerRefresh: router.refresh,
   });
 
   const isAuthenticated = !!user && !!session;
-  const isSuperAdmin = profileState.profile?.role === 'superadmin' && profileState.profile?.status === 'active';
+  const isSuperAdmin =
+    profileState.profile?.role === 'superadmin' && profileState.profile?.status === 'active';
   const isAdmin =
     isSuperAdmin ||
     (profileState.profile?.status === 'active' &&
