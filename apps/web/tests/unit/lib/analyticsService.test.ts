@@ -123,15 +123,26 @@ describe('analyticsService helpers and queries', () => {
     const supabase = {
       from: (table: string) => {
         if (table === 'usuarios') {
-          return { select: vi.fn(() => Promise.resolve({ data: null, count: usersCount })) };
-        }
-        if (table === 'audit_logs') {
           return {
-            select: vi.fn(() => Promise.resolve({ data: auditRows })),
-            gte: vi.fn(() => ({ select: vi.fn(() => Promise.resolve({ data: auditRows })) })),
+            select: () => ({
+              gte: () => ({
+                lte: async () => ({ count: usersCount }),
+              }),
+            }),
           };
         }
-        return { select: vi.fn(() => Promise.resolve({ data: [] })) };
+
+        if (table === 'audit_logs') {
+          return {
+            select: () => ({
+              gte: () => ({
+                lte: async () => ({ data: auditRows }),
+              }),
+            }),
+          };
+        }
+
+        return { select: () => ({ gte: () => ({ lte: async () => ({ data: [] }) }) }) };
       },
     } as any;
 
@@ -152,10 +163,19 @@ describe('analyticsService helpers and queries', () => {
       { usuario_id: 'u3', created_at: '2026-02-10T00:00:00Z' },
     ];
 
-    const supabase = makeSupabaseStub({
-      usuarios: () => ({ select: vi.fn(() => Promise.resolve({ data: users })) }),
-      audit_logs: () => ({ select: vi.fn(() => Promise.resolve({ data: logs })) }),
-    });
+    const supabase = {
+      from: (table: string) => {
+        if (table === 'usuarios') {
+          return {
+            select: () => ({ gte: () => ({ is: () => Promise.resolve({ data: users }) }) }),
+          };
+        }
+        if (table === 'audit_logs') {
+          return { select: () => Promise.resolve({ data: logs }) };
+        }
+        return { select: () => Promise.resolve({ data: [] }) };
+      },
+    } as any;
 
     const cohorts = await getCohortData(supabase as any, { timeRange: '90d' as any });
     expect(cohorts.length).toBeGreaterThan(0);
@@ -167,9 +187,14 @@ describe('analyticsService helpers and queries', () => {
       { usuario_id: 'u1', created_at: new Date().toISOString() },
       { usuario_id: 'u2', created_at: new Date().toISOString() },
     ];
-    const supabase = makeSupabaseStub({
-      audit_logs: () => ({ select: vi.fn(() => Promise.resolve({ data: logs })) }),
-    });
+    const supabase = {
+      from: (table: string) => {
+        if (table === 'audit_logs') {
+          return { select: () => ({ gte: () => ({ lte: async () => ({ data: logs }) }) }) };
+        }
+        return { select: () => Promise.resolve({ data: [] }) };
+      },
+    } as any;
 
     const points = await getRetentionData(supabase as any, { timeRange: '7d' as any });
     expect(Array.isArray(points)).toBe(true);
