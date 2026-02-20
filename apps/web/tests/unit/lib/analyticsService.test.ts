@@ -137,7 +137,10 @@ describe('analyticsService helpers and queries', () => {
             select: () => ({
               gte: () => ({
                 lte: async () => ({ data: auditRows }),
+                lt: async () => ({ data: auditRows }),
               }),
+              lte: async () => ({ data: auditRows }),
+              order: () => ({ gte: () => ({ lte: async () => ({ data: auditRows }) }) }),
             }),
           };
         }
@@ -171,7 +174,10 @@ describe('analyticsService helpers and queries', () => {
           };
         }
         if (table === 'audit_logs') {
-          return { select: () => Promise.resolve({ data: logs }) };
+          return {
+            select: () => Promise.resolve({ data: logs }),
+            gte: () => Promise.resolve({ data: logs }),
+          };
         }
         return { select: () => Promise.resolve({ data: [] }) };
       },
