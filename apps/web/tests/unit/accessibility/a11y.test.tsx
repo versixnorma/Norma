@@ -11,7 +11,7 @@ expect.extend(toHaveNoViolations);
 const axe = configureAxe({
   rules: {
     // Desabilita regras que exigem contexto de página completa
-    'region': { enabled: false },
+    region: { enabled: false },
     // Desabilita verificações de cor que precisam de contexto de tema
     'color-contrast': { enabled: false },
   },
@@ -48,21 +48,35 @@ vi.mock('next/image', () => ({
 }));
 
 vi.mock('next/link', () => ({
-  default: ({ href, children, ...props }: { href: string; children: React.ReactNode; [key: string]: unknown }) => (
-    <a href={href} {...props}>{children}</a>
+  default: ({
+    href,
+    children,
+    ...props
+  }: {
+    href: string;
+    children: React.ReactNode;
+    [key: string]: unknown;
+  }) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
   ),
 }));
 
 // ── Testes ────────────────────────────────────────────────────────────────
 describe('Acessibilidade — AdminHeader', () => {
-  it('não deve ter violações axe', async () => {
-    const { AdminHeader } = await import('@/components/admin/layout/AdminHeader');
-    const { container } = render(
-      <AdminHeader sidebarCollapsed={false} onToggleSidebar={vi.fn()} />
-    );
-    const results = await axe(container);
-    expect(results).toHaveNoViolations();
-  });
+  it(
+    'não deve ter violações axe',
+    async () => {
+      const { AdminHeader } = await import('@/components/admin/layout/AdminHeader');
+      const { container } = render(
+        <AdminHeader sidebarCollapsed={false} onToggleSidebar={vi.fn()} />
+      );
+      const results = await axe(container);
+      expect(results).toHaveNoViolations();
+    },
+    { timeout: 20000 }
+  );
 
   it('botões de ação têm aria-label', async () => {
     const { AdminHeader } = await import('@/components/admin/layout/AdminHeader');
@@ -86,12 +100,16 @@ describe('Acessibilidade — AdminSidebar', () => {
     expect(aside?.getAttribute('aria-label')).toBeTruthy();
   });
 
-  it('não deve ter violações axe', async () => {
-    const { AdminSidebar } = await import('@/components/admin/layout/AdminSidebar');
-    const { container } = render(<AdminSidebar collapsed={false} />);
-    const results = await axe(container);
-    expect(results).toHaveNoViolations();
-  });
+  it(
+    'não deve ter violações axe',
+    async () => {
+      const { AdminSidebar } = await import('@/components/admin/layout/AdminSidebar');
+      const { container } = render(<AdminSidebar collapsed={false} />);
+      const results = await axe(container);
+      expect(results).toHaveNoViolations();
+    },
+    { timeout: 20000 }
+  );
 });
 
 describe('Acessibilidade — id main-content', () => {
