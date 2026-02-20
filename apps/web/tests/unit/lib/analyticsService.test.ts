@@ -53,29 +53,34 @@ describe('analyticsService helpers and queries', () => {
   });
 
   it('getExecutiveKPIs maps row correctly', async () => {
-    const supabase = makeSupabaseStub({
-      mv_executive_kpis: () => ({
-        select: vi.fn(() => ({
-          limit: vi.fn(() => ({
-            single: vi.fn(async () => ({
-              data: {
-                total_users: 10,
-                active_users: 8,
-                active_users_30d: 5,
-                total_condominios: 2,
-                custo_mes_centavos: 1000,
-                gmv_mes: '200.5',
-                conversas_ia_30d: 12,
-                satisfacao_ia_30d: '4.5',
-                total_documents: 20,
-                total_chunks: 100,
-                refreshed_at: '2026-01-01T00:00:00Z',
-              },
-            })),
-          })),
-        })),
+    const supabase = {
+      from: (table: string) => {
+        if (table === 'mv_executive_kpis') {
+          return {
+            select: () => ({
+              limit: () => ({
+                single: async () => ({
+                  data: {
+                    total_users: 10,
+                    active_users: 8,
+                    active_users_30d: 5,
+                    total_condominios: 2,
+                    custo_mes_centavos: 1000,
+                    gmv_mes: '200.5',
+                    conversas_ia_30d: 12,
+                    satisfacao_ia_30d: '4.5',
+                    total_documents: 20,
+                    total_chunks: 100,
+                    refreshed_at: '2026-01-01T00:00:00Z',
+                  },
+                }),
+              }),
+            }),
+          };
+        }
+        return { select: () => ({ limit: () => ({ single: async () => ({ data: null }) }) }) };
       },
-    });
+    } as any;
 
     const kpis = await getExecutiveKPIs(supabase as any);
     expect(kpis.totalUsers).toBe(10);
@@ -170,4 +175,3 @@ describe('analyticsService helpers and queries', () => {
     expect(Array.isArray(points)).toBe(true);
   });
 });
-
