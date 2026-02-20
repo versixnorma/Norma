@@ -120,6 +120,14 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  // Redirect root /admin to the admin login or dashboard depending on session
+  if (pathname === '/admin' || pathname === '/admin/') {
+    if (user) {
+      return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+    }
+    return NextResponse.redirect(new URL('/admin/login', request.url));
+  }
+
   // Permitir acesso a rotas públicas
   if (PUBLIC_ROUTES.some((route) => pathname.startsWith(route))) {
     return response;
