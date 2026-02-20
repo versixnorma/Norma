@@ -7,8 +7,40 @@ const withPWA = require('next-pwa')({
   skipWaiting: true,
   // Custom Service Worker path
   sw: 'sw.js',
+  // Injetar código de src/worker/ no SW gerado
+  customWorkerDir: 'src/worker',
+  // Fallback para offline
+  fallbacks: {
+    document: '/offline',
+  },
   // Custom runtime caching rules (opcional, mas bom para Next.js)
   runtimeCaching: [
+    {
+      urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'supabase-api',
+        networkTimeoutSeconds: 10,
+        expiration: { maxEntries: 50, maxAgeSeconds: 24 * 60 * 60 },
+        cacheableResponse: { statuses: [0, 200] },
+      },
+    },
+    {
+      urlPattern: /\/_next\/static\/.*/i,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'next-static',
+        expiration: { maxEntries: 200, maxAgeSeconds: 365 * 24 * 60 * 60 },
+      },
+    },
+    {
+      urlPattern: /\/_next\/image\?.*/i,
+      handler: 'StaleWhileRevalidate',
+      options: {
+        cacheName: 'next-images',
+        expiration: { maxEntries: 100, maxAgeSeconds: 7 * 24 * 60 * 60 },
+      },
+    },
     {
       urlPattern: /^https?.*/,
       handler: 'NetworkFirst',

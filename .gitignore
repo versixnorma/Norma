@@ -45,7 +45,10 @@ coverage
 
 # PWA generated
 public/workbox-*.js
+public/sw.js
 public/sw.js.map
+public/worker-*.js
+public/fallback-*.js
 
 # Turbo
 .turbo
@@ -55,16 +58,3 @@ public/sw.js.map
 .env*.local
 
 .vercel
-.env*.local
-
-# PWA
-public/sw.js
-public/workbox-*.js
-public/worker-*.js
-public/fallback-*.js
-
-# PWA
-public/sw.js
-public/workbox-*.js
-public/worker-*.js
-public/fallback-*.js

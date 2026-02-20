@@ -25,7 +25,11 @@ serve(async () => {
 
     return new Response(JSON.stringify({ success: true, refreshedAt: new Date().toISOString() }), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'public, max-age=600, stale-while-revalidate=300',
+        // 10 min cache, serve stale por 5 min enquanto revalida
+      },
     });
   } catch (err) {
     await notifyError('refresh-analytics', err);
