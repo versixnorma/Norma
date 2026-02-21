@@ -92,8 +92,25 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
 
 // Forçar atualização do SW
 export function updateServiceWorker(registration: ServiceWorkerRegistration): void {
-  registration.waiting?.postMessage({ type: 'SKIP_WAITING' });
-  window.location.reload();
+  if (!registration) return;
+  if (registration.waiting) {
+    try {
+      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    } catch {
+      // best-effort
+    }
+
+    const onControllerChange = () => {
+      window.removeEventListener('controllerchange', onControllerChange);
+      window.location.reload();
+    };
+
+    // Some browsers expose controllerchange on navigator.serviceWorker
+    navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
+  } else {
+    // fallback: force reload
+    window.location.reload();
+  }
 }
 
 // ============================================

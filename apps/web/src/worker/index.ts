@@ -25,7 +25,10 @@ const PRECACHE_URLS = ['/', '/offline', '/manifest.json'];
 
 sw.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(PRECACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS)).catch(() => undefined)
+    caches
+      .open(PRECACHE_NAME)
+      .then((cache) => cache.addAll(PRECACHE_URLS))
+      .catch(() => undefined)
   );
 });
 
@@ -131,4 +134,17 @@ sw.addEventListener('notificationclick', (event) => {
       return sw.clients.openWindow('/');
     })
   );
+});
+
+// Listen for client messages (e.g., SKIP_WAITING) to apply updates promptly
+sw.addEventListener('message', (event: ExtendableMessageEvent) => {
+  try {
+    const data = event.data || {};
+    if (data && data.type === 'SKIP_WAITING') {
+      // Activate this worker immediately
+      sw.skipWaiting().catch(() => undefined);
+    }
+  } catch (err) {
+    console.error('[Worker] Error handling message:', err);
+  }
 });
