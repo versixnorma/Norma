@@ -1,4 +1,4 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { createServerClient } from '@supabase/ssr';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
@@ -35,80 +35,54 @@ const PROTECTED_ROUTES = [
   '/aguardando-validacao-ata',
 ];
 
+// CSP Policy - Relaxed for Next.js compatibility
+// Note: 'unsafe-eval' is required for Next.js in production
+const CSP_HEADER = `
+  default-src 'self';
+  script-src 'self' 'unsafe-inline' 'unsafe-eval' https:;
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  img-src 'self' data: blob: https: https://*.supabase.co https://images.unsplash.com;
+  font-src 'self' data: https://fonts.gstatic.com;
+  connect-src 'self' https://*.supabase.co https://api.groq.com https://api.openai.com wss://*.supabase.co;
+  frame-src 'self';
+  object-src 'none';
+  base-uri 'self';
+  form-action 'self';
+  frame-ancestors 'none';
+  upgrade-insecure-requests;
+`
+  .replace(/\s{2,}/g, ' ')
+  .trim();
+
 /**
  * Middleware Next.js para validação de sessão
  * Protege rotas autenticadas e redireciona usuários não autenticados
  */
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  });
-
-  // CSP Policy - Relaxed for Next.js compatibility
-  // Note: 'unsafe-eval' is required for Next.js in production
-  const cspHeader = `
-    default-src 'self';
-    script-src 'self' 'unsafe-inline' 'unsafe-eval' https:;
-    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-    img-src 'self' data: blob: https: https://*.supabase.co https://images.unsplash.com;
-    font-src 'self' data: https://fonts.gstatic.com;
-    connect-src 'self' https://*.supabase.co https://api.groq.com https://api.openai.com wss://*.supabase.co;
-    frame-src 'self';
-    object-src 'none';
-    base-uri 'self';
-    form-action 'self';
-    frame-ancestors 'none';
-    upgrade-insecure-requests;
-  `
-    .replace(/\s{2,}/g, ' ')
-    .trim();
-
-  // Set Response Header
-  response.headers.set('Content-Security-Policy', cspHeader);
+  let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value;
+        // getAll/setAll é o padrão moderno do @supabase/ssr (v0.4+).
+        // O padrão antigo get/set/remove chamava set() individualmente para cada
+        // cookie chunk, e cada chamada criava um NextResponse.next() novo —
+        // sobrescrevendo os cookies anteriores. Quando a sessão JWT é dividida em
+        // múltiplos chunks (ex.: auth-token.0, .1, .2), apenas o último chunk
+        // chegava ao browser, causando getSession() → null → loop auth/login.
+        getAll() {
+          return request.cookies.getAll();
         },
-        set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value,
-            ...options,
-          });
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          });
-          response.cookies.set({
-            name,
-            value,
-            ...options,
-          });
-        },
-        remove(name: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value: '',
-            ...options,
-          });
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          });
-          response.cookies.set({
-            name,
-            value: '',
-            ...options,
-          });
+        setAll(cookiesToSet) {
+          // Propaga os novos cookies para o request (leituras subsequentes no middleware)
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          // Cria UM ÚNICO response novo com TODOS os cookies de uma vez
+          response = NextResponse.next({ request });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          );
         },
       },
     }
@@ -117,6 +91,9 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // Aplica CSP no response final (após possível troca de response pelo setAll acima)
+  response.headers.set('Content-Security-Policy', CSP_HEADER);
 
   const { pathname } = request.nextUrl;
 
