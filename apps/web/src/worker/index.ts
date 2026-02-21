@@ -8,8 +8,32 @@ const sw = self as unknown as ServiceWorkerGlobalScope;
 // ============================================
 // Nota: skipWaiting já é gerenciado pelo next-pwa (skipWaiting: true no next.config.mjs).
 // O activate com clients.claim() garante que o novo SW assume o controle imediatamente.
+// Caches gerenciados pela versão atual do SW.
+// Qualquer cache fora desta lista é resíduo de versões antigas e será removido.
+const EXPECTED_CACHES = ['next-static', 'images', 'supabase-api', 'workbox-precache-v2'];
+
 sw.addEventListener('activate', (event) => {
-  event.waitUntil(sw.clients.claim());
+  event.waitUntil(
+    Promise.all([
+      sw.clients.claim(),
+      // Remover caches de versões antigas do SW (ex.: 'https-calls' do fallback sw.js,
+      // 'others', 'apis', 'cross-origin' do cache.js padrão do next-pwa).
+      // Isso garante que respostas HTML obsoletas não sejam servidas.
+      caches.keys().then((cacheNames) =>
+        Promise.all(
+          cacheNames
+            .filter(
+              (name) =>
+                !EXPECTED_CACHES.some((expected) => name === expected || name.startsWith(expected))
+            )
+            .map((name) => {
+              console.log('[SW] Removendo cache antigo:', name);
+              return caches.delete(name);
+            })
+        )
+      ),
+    ])
+  );
 });
 
 // ============================================

@@ -8,6 +8,10 @@ const withPWA = withPWAInit({
   disable: process.env.NODE_ENV === 'development' || process.env.DISABLE_PWA === 'true',
   register: true,
   skipWaiting: true,
+  // Desabilitar o cache dinâmico da start URL para evitar que o next-pwa injete
+  // uma rota NetworkFirst para '/' que pode interferir no fluxo de auth SSR.
+  dynamicStartUrl: false,
+  cacheStartUrl: false,
   fallbacks: {
     document: '/offline',
   },
