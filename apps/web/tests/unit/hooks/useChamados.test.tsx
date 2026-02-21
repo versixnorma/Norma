@@ -46,7 +46,10 @@ describe('useChamados', () => {
 
     const { useChamados } = await import('@/hooks/useChamados');
     const { result } = renderHook(() => useChamados());
-    const res = await result.current.fetchChamados('cond-1', {});
+    let res;
+    await act(async () => {
+      res = await result.current.fetchChamados('cond-1', {});
+    });
     expect(res.data).toEqual([]);
     expect(result.current.error).toBeTruthy();
   });
