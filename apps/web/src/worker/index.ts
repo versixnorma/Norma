@@ -41,12 +41,27 @@ sw.addEventListener('fetch', (event) => {
 
   event.respondWith(
     (async () => {
+      // Bypass handling for navigation/document requests to avoid accidental interception loops
+      if (request.mode === 'navigate' || request.destination === 'document') {
+        try {
+          const navResp = await fetch(request);
+          return navResp;
+        } catch {
+          const offline = await caches.match('/offline');
+          return offline || Response.error();
+        }
+      }
+
       try {
         const networkResponse = await fetch(request);
-        const cache = await caches.open(HTTP_CACHE_NAME);
-        cache.put(request, networkResponse.clone()).catch(() => undefined);
+        // Only cache successful GET responses
+        if (networkResponse && networkResponse.ok) {
+          const cache = await caches.open(HTTP_CACHE_NAME);
+          cache.put(request, networkResponse.clone()).catch(() => undefined);
+        }
         return networkResponse;
-      } catch {
+      } catch (err) {
+        // Network failed — try cache fallback
         const cached = await caches.match(request);
         if (cached) return cached;
         const offline = await caches.match('/offline');
