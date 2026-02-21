@@ -65,6 +65,23 @@ const nextConfig = {
 
   async headers() {
     return [
+      // Admin pages: always fetch fresh HTML (no-store) to avoid stale admin UI served from CDN or SW
+      {
+        source: '/admin/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'no-store' },
+        ],
+      },
+      {
+        source: '/admin',
+        headers: [{ key: 'Cache-Control', value: 'no-store' }],
+      },
+      // Admin API routes: allow CDN but force revalidation immediately (no stale HTML)
+      {
+        source: '/api/admin/:path*',
+        headers: [{ key: 'Cache-Control', value: 's-maxage=0, stale-while-revalidate=59' }],
+      },
+      // Global security headers (fallback)
       {
         source: '/(.*)',
         headers: [
