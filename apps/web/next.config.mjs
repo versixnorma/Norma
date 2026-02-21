@@ -21,6 +21,15 @@ const withPWA = withPWAInit({
   customWorkerDir: 'src/worker',
   runtimeCaching: [
     {
+      // Painel admin: NetworkOnly — o SW é transparente para /admin/*.
+      // O admin é uma ferramenta back-office sem necessidade de offline,
+      // e qualquer caching aqui pode interferir com o fluxo de autenticação
+      // SSR (middleware + cookie chunking). Sempre buscar da rede garante
+      // que o middleware valide a sessão corretamente a cada request.
+      urlPattern: /\/admin\/.*/,
+      handler: 'NetworkOnly',
+    },
+    {
       urlPattern: /^https:\/\/.*\/_next\/static\/.*/,
       handler: 'CacheFirst',
       options: {
