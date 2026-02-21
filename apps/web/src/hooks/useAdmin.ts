@@ -49,7 +49,7 @@ export interface AdminCondominio {
   nome: string;
   slug: string;
   endereco: string;
-  status: StatusType;
+  status: string;
   created_at: string;
   total_usuarios: number;
   total_unidades: number;
