@@ -23,6 +23,9 @@ export function ClientProviders({ children }: ClientProvidersProps) {
     if (typeof window === 'undefined') return;
 
     const RELOAD_GUARD_KEY = 'norma:chunk-reload-once';
+    // Armazena a URL onde ocorreu o erro para detectar se estamos no mesmo reload
+    // ou em uma navegação genuína para outra página.
+    const RELOAD_GUARD_URL_KEY = 'norma:chunk-reload-url';
     const CHUNK_ERROR_PATTERNS = [
       /ChunkLoadError/i,
       /Loading chunk [\d]+ failed/i,
@@ -37,6 +40,8 @@ export function ClientProviders({ children }: ClientProvidersProps) {
       const alreadyReloaded = sessionStorage.getItem(RELOAD_GUARD_KEY) === '1';
       if (alreadyReloaded) return;
       sessionStorage.setItem(RELOAD_GUARD_KEY, '1');
+      // Guarda a URL corrente para distinguir reload vs navegação na limpeza do guard.
+      sessionStorage.setItem(RELOAD_GUARD_URL_KEY, window.location.href);
       window.location.reload();
     };
 
@@ -54,9 +59,15 @@ export function ClientProviders({ children }: ClientProvidersProps) {
       if (shouldHandle(message)) reloadOnce();
     };
 
-    // Limpa trava após navegação bem-sucedida.
+    // Limpa a trava SOMENTE quando o usuário navega para uma URL diferente da
+    // que originou o erro. Isso impede o loop: chunk error → reload → pageshow
+    // limpa trava → chunk error novamente → reload → loop infinito.
     const onPageShow = () => {
-      sessionStorage.removeItem(RELOAD_GUARD_KEY);
+      const guardUrl = sessionStorage.getItem(RELOAD_GUARD_URL_KEY);
+      if (guardUrl && guardUrl !== window.location.href) {
+        sessionStorage.removeItem(RELOAD_GUARD_KEY);
+        sessionStorage.removeItem(RELOAD_GUARD_URL_KEY);
+      }
     };
 
     window.addEventListener('error', onError);

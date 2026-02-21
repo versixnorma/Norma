@@ -3,73 +3,28 @@
 // Utilizar 'self' com type assertion para evitar conflito de variáveis globais
 const sw = self as unknown as ServiceWorkerGlobalScope;
 
-// Importar utilitários se necessário (aqui mantemos simples para evitar deps complexas no worker)
-
-sw.addEventListener('install', (event) => {
-  console.log('[Worker] Instalando Service Worker customizado...');
-  event.waitUntil(sw.skipWaiting());
-});
-
+// ============================================
+// INSTALL / ACTIVATE
+// ============================================
+// Nota: skipWaiting já é gerenciado pelo next-pwa (skipWaiting: true no next.config.mjs).
+// O activate com clients.claim() garante que o novo SW assume o controle imediatamente.
 sw.addEventListener('activate', (event) => {
-  console.log('[Worker] Ativando Service Worker customizado...');
   event.waitUntil(sw.clients.claim());
 });
 
 // ============================================
-// CACHE STRATEGIES (NetworkFirst + precache)
+// FETCH — Delegado ao Workbox (next-pwa)
 // ============================================
-const NETWORK_FIRST_HANDLER = 'NetworkFirst';
-const HTTP_CACHE_NAME = 'https-calls';
-const PRECACHE_NAME = 'precache-v1';
-const PRECACHE_URLS = ['/', '/offline', '/manifest.json'];
-
-sw.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches
-      .open(PRECACHE_NAME)
-      .then((cache) => cache.addAll(PRECACHE_URLS))
-      .catch(() => undefined)
-  );
-});
-
-sw.addEventListener('fetch', (event) => {
-  const request = event.request;
-  if (request.method !== 'GET') return;
-
-  const url = new URL(request.url);
-  if (!url.protocol.startsWith('http')) return;
-
-  event.respondWith(
-    (async () => {
-      // Bypass handling for navigation/document requests to avoid accidental interception loops
-      if (request.mode === 'navigate' || request.destination === 'document') {
-        try {
-          const navResp = await fetch(request);
-          return navResp;
-        } catch {
-          const offline = await caches.match('/offline');
-          return offline || Response.error();
-        }
-      }
-
-      try {
-        const networkResponse = await fetch(request);
-        // Only cache successful GET responses
-        if (networkResponse && networkResponse.ok) {
-          const cache = await caches.open(HTTP_CACHE_NAME);
-          cache.put(request, networkResponse.clone()).catch(() => undefined);
-        }
-        return networkResponse;
-      } catch (err) {
-        // Network failed — try cache fallback
-        const cached = await caches.match(request);
-        if (cached) return cached;
-        const offline = await caches.match('/offline');
-        return offline || Response.error();
-      }
-    })()
-  );
-});
+// O handler fetch customizado foi removido intencionalmente.
+//
+// Motivo: o next-pwa gera automaticamente handlers Workbox para todas as rotas
+// configuradas em runtimeCaching (next.config.mjs). Ter um segundo raw listener
+// que também chama event.respondWith() causava conflito (dupla tentativa de
+// responder ao mesmo FetchEvent), tornando o comportamento do cache imprevisível
+// e potencialmente quebrando requests de chunks JS após redeploys.
+//
+// O fallback para /offline em modo offline é tratado pelo workbox via:
+//   fallbacks: { document: '/offline' }  ← next.config.mjs
 
 // ============================================
 // BACKGROUND SYNC

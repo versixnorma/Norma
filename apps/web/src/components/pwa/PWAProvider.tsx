@@ -46,15 +46,10 @@ export function PWAProvider({ children }: PWAProviderProps) {
       return;
     }
 
-    // Registrar service worker apenas em produção
-    navigator.serviceWorker
-      .register('/sw.js')
-      .then((registration) => {
-        console.log('[PWA] Service Worker registrado:', registration);
-      })
-      .catch((error) => {
-        console.error('[PWA] Erro ao registrar Service Worker:', error);
-      });
+    // O next-pwa (register: true em next.config.mjs) já registra /sw.js automaticamente.
+    // Registrar novamente aqui causava double registration: dois chamados concorrentes a
+    // navigator.serviceWorker.register() disparam updatefound com mais frequência e podem
+    // interromper o fluxo de autenticação com clients.claim() inesperado.
 
     // Detectar se está rodando como PWA
     const navigatorWithStandalone = window.navigator as NavigatorWithStandalone;

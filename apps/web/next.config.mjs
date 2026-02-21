@@ -43,15 +43,19 @@ const withPWA = withPWAInit({
       },
     },
     {
-      urlPattern: /^https:\/\/.*\.supabase\.co\/.*/,
+      // Cacheia apenas REST e Storage do Supabase.
+      // Rotas /auth/v1/* são excluídas intencionalmente — nunca cachear tokens
+      // ou respostas de sessão para evitar servir credenciais expiradas do cache,
+      // o que causaria o loop auth → login → dashboard em produção.
+      urlPattern: /^https:\/\/.*\.supabase\.co\/(rest|storage)\/.*/,
       handler: 'NetworkFirst',
       options: {
         cacheName: 'supabase-api',
         expiration: {
           maxEntries: 50,
-          maxAgeSeconds: 60 * 60, // 1 hour
+          maxAgeSeconds: 60 * 5, // 5 minutos (era 1 hora — muito agressivo)
         },
-        networkTimeoutSeconds: 10,
+        networkTimeoutSeconds: 5, // era 10s — reduzido para não servir cache em cold start
       },
     },
   ],
@@ -219,6 +223,29 @@ const nextConfig = {
           {
             key: 'Cache-Control',
             value: 'public, max-age=86400, stale-while-revalidate=604800',
+          },
+        ],
+      },
+      // Páginas admin: nunca cachear — o middleware verifica sessão a cada request.
+      // Sem este header, o CDN ou o browser podem cachear respostas de redirect
+      // (ex.: /admin/dashboard → /admin/login) e criar um loop eterno em produção.
+      {
+        source: '/admin/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate',
+          },
+        ],
+      },
+      // O arquivo sw.js deve ser sempre buscado fresh para garantir que o browser
+      // detecte novas versões do Service Worker corretamente.
+      {
+        source: '/sw.js',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=0, must-revalidate',
           },
         ],
       },
