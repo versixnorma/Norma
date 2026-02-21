@@ -82,6 +82,22 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
       }
     }
 
+    // Cleanup redundant registrations with same scope (old versions)
+    try {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      regs.forEach((r) => {
+        try {
+          if (r.scope === registration.scope && r !== registration) {
+            r.unregister().catch(() => undefined);
+          }
+        } catch {
+          // ignore
+        }
+      });
+    } catch {
+      // ignore
+    }
+
     logger.log('Service Worker registrado com sucesso');
     return registration;
   } catch (error) {

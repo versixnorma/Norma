@@ -81,6 +81,11 @@ const nextConfig = {
         source: '/api/admin/:path*',
         headers: [{ key: 'Cache-Control', value: 's-maxage=0, stale-while-revalidate=59' }],
       },
+      // Ensure service worker script is always fetched fresh by browsers
+      {
+        source: '/sw.js',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' }],
+      },
       // Global security headers (fallback)
       {
         source: '/(.*)',
