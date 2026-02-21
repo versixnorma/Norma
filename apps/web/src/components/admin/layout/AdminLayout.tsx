@@ -4,6 +4,7 @@ import { AuthGuard } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import { AdminSidebar } from './AdminSidebar';
 import { AdminHeader } from './AdminHeader';
+import { useServiceWorkerUpdate } from '@/lib/pwa';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -23,6 +24,8 @@ export function AdminLayout({
   );
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const { updateAvailable, applyUpdate } = useServiceWorkerUpdate();
+  const [dismissedUpdateBanner, setDismissedUpdateBanner] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -77,6 +80,34 @@ export function AdminLayout({
               }
             }}
           />
+
+          {/* Service Worker update banner */}
+          {updateAvailable && !dismissedUpdateBanner && (
+            <div className="mx-6 mt-4 flex items-center justify-between rounded-lg border border-yellow-300 bg-yellow-50 p-3 text-sm text-yellow-800 shadow-sm">
+              <div>
+                <strong>Nova versão disponível</strong>
+                <div className="mt-1 text-xs text-yellow-700">
+                  Atualize para aplicar as últimas correções e melhorias.
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    applyUpdate();
+                  }}
+                  className="rounded-md bg-yellow-600 px-3 py-1 text-xs font-medium text-white hover:bg-yellow-700"
+                >
+                  Atualizar agora
+                </button>
+                <button
+                  onClick={() => setDismissedUpdateBanner(true)}
+                  className="rounded-md px-2 py-1 text-xs text-yellow-800 hover:underline"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Page Content */}
           <main className="p-6">{children}</main>
