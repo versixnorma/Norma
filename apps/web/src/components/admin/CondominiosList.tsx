@@ -23,7 +23,10 @@ export function CondominiosList({ condominios, loading }: CondominiosListProps) 
     try {
       if (action === 'delete') {
         if (!confirm('Confirmar exclusão do condomínio? Esta ação é irreversível.')) return;
-        const res = await fetch(`/api/admin/condominios/${id}`, { method: 'DELETE' });
+        const res = await fetch(`/api/admin/condominios/${id}`, {
+          method: 'DELETE',
+          credentials: 'include',
+        });
         if (!res.ok) throw new Error('Erro ao deletar condomínio');
         // refresh page data if provided
         window.location.reload();
@@ -35,6 +38,7 @@ export function CondominiosList({ condominios, loading }: CondominiosListProps) 
       const res = await fetch(`/api/admin/condominios/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ action }),
       });
       if (!res.ok) throw new Error('Erro ao atualizar status');
