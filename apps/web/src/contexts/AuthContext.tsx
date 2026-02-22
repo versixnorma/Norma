@@ -53,12 +53,19 @@ export function AuthGuard({ children, fallback, requiredRoles }: AuthGuardProps)
   const { isAuthenticated, loading, profile } = useAuthContext();
   const router = useRouter();
   const pathname = usePathname();
-  const [mounted] = useState(() => typeof window !== 'undefined');
+  // mounted começa como false em ambos servidor e cliente — atualizado após hidratação.
+  // NÃO usar `useState(() => typeof window !== 'undefined')` pois isso produz valores
+  // diferentes no servidor (false) vs cliente (true) durante a hidratação → Error #418.
+  const [mounted, setMounted] = useState(false);
   const [loadingTooLong, setLoadingTooLong] = useState(false);
   const loadingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Admin routes redirect to /admin/login, others to /login
   const loginPath = pathname?.startsWith('/admin') ? '/admin/login' : '/login';
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Se o loading durar mais de 10s, mostrar botão de recarregar
   useEffect(() => {
@@ -73,13 +80,17 @@ export function AuthGuard({ children, fallback, requiredRoles }: AuthGuardProps)
     };
   }, [loading]);
 
+  // Redirect protegido por mounted — nunca redirecionar durante SSR/hidratação
   useEffect(() => {
     if (!loading && !isAuthenticated && mounted) {
       router.replace(loginPath);
     }
   }, [loading, isAuthenticated, mounted, router, loginPath]);
 
-  if (!mounted || loading) {
+  // Não usar `!mounted` aqui: causaria mismatch entre o HTML do servidor (spinner)
+  // e o que o React tenta hidratar no cliente (conteúdo) → Error #418.
+  // O middleware já garante que usuários não autenticados nunca chegam ao admin.
+  if (loading) {
     return (
       fallback || (
         <div className="flex h-screen items-center justify-center bg-bg-light dark:bg-bg-dark">

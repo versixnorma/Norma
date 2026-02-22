@@ -19,13 +19,11 @@ export function AdminLayout({
   initialSession,
   initialProfile,
 }: AdminLayoutProps) {
-  // Initialize from viewport immediately to avoid layout shift
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== 'undefined' ? window.innerWidth < 1024 : false
-  );
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() =>
-    typeof window !== 'undefined' ? window.innerWidth < 1024 : false
-  );
+  // Valores iniciais seguros (false) para garantir que servidor e cliente
+  // renderizem o mesmo HTML durante a hidratação — evita Error #418.
+  // Os valores reais (baseados em window.innerWidth) são definidos no useEffect.
+  const [isMobile, setIsMobile] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { updateAvailable, applyUpdate } = useServiceWorkerUpdate();
@@ -33,10 +31,15 @@ export function AdminLayout({
 
   useEffect(() => {
     setMounted(true);
+    // Define os valores iniciais baseados no viewport após hidratação
+    const mobile = window.innerWidth < 1024;
+    setIsMobile(mobile);
+    setSidebarCollapsed(mobile);
+
     const handleResize = () => {
-      const mobile = window.innerWidth < 1024;
-      setIsMobile(mobile);
-      if (mobile) {
+      const m = window.innerWidth < 1024;
+      setIsMobile(m);
+      if (m) {
         setSidebarCollapsed(true);
       }
     };
