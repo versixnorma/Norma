@@ -8,7 +8,6 @@ import type { UsuarioWithCondominios } from './types';
 type SessionDeps = {
   supabase: {
     auth: {
-      getSession: () => Promise<any>;
       onAuthStateChange: (callback: (event: string, session: Session | null) => void) => any;
     };
   };
@@ -36,45 +35,40 @@ export function useAuthSession({
   setLoading,
 }: SessionDeps) {
   useEffect(() => {
-    const initAuth = async () => {
-      try {
-        const {
-          data: { session },
-          error,
-        } = await supabase.auth.getSession();
-        if (error) throw error;
-
-        if (session?.user) {
-          const profile = await fetchProfile(session.user.id);
-          if (!profile) {
-            // No profile found for this authenticated user -> treat as signed out for app flows
-            onSignedOut();
-            // Redirect to login to avoid inconsistent state (routerPush provided by caller)
-            try {
-              routerPush('/login');
-            } catch {
-              // best-effort
-            }
-          } else {
-            onSignedIn({ user: session.user, profile, session });
-          }
-        } else {
-          onSignedOut();
-        }
-      } catch (error) {
-        logger.error('Auth initialization error:', error);
-        onError(error as Error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initAuth();
-
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event: string, session: Session | null) => {
       logger.log('Auth event:', event);
+
+      if (event === 'INITIAL_SESSION') {
+        // Fires immediately from local storage/cookies — no network, no Web Lock.
+        // Replaces the old getSession() call which could hang indefinitely when another
+        // tab holds the refresh lock. Background token refresh (if needed) completes
+        // asynchronously and fires TOKEN_REFRESHED or SIGNED_OUT when done.
+        try {
+          if (session?.user) {
+            const profile = await fetchProfile(session.user.id);
+            if (!profile) {
+              onSignedOut();
+              try {
+                routerPush('/login');
+              } catch {
+                // best-effort
+              }
+            } else {
+              onSignedIn({ user: session.user, profile, session });
+            }
+          } else {
+            onSignedOut();
+          }
+        } catch (error) {
+          logger.error('Auth initialization error:', error);
+          onError(error as Error);
+        } finally {
+          setLoading(false);
+        }
+        return;
+      }
 
       if (event === 'TOKEN_REFRESHED' && session?.user) {
         onSessionUpdated(session);
