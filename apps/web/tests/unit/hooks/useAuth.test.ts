@@ -1,13 +1,12 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Mock Supabase
-const mockGetSession = vi.fn();
+// Captura o callback do onAuthStateChange para disparar eventos nos testes
+let capturedAuthCb: ((event: string, session: any) => void) | null = null;
+
 const mockSignIn = vi.fn();
 const mockSignOut = vi.fn();
-const mockOnAuthStateChange = vi.fn(() => ({
-  data: { subscription: { unsubscribe: vi.fn() } },
-}));
+const mockOnAuthStateChange = vi.fn();
 
 const profileRow = {
   id: '1',
@@ -30,19 +29,11 @@ const profileRow = {
   ],
 };
 
-const mockFrom = vi.fn(() => ({
-  select: vi.fn(() => ({
-    eq: vi.fn(() => ({
-      data: [profileRow],
-      error: null,
-    })),
-  })),
-}));
+const mockFrom = vi.fn();
 
 vi.mock('@/lib/supabase', () => ({
   getSupabaseClient: () => ({
     auth: {
-      getSession: mockGetSession,
       signInWithPassword: mockSignIn,
       signOut: mockSignOut,
       onAuthStateChange: mockOnAuthStateChange,
@@ -67,13 +58,25 @@ vi.mock('@/lib/schemas/auth', () => ({
   UsuarioSchema: { safeParse: () => ({ success: true }) },
 }));
 
+const mockSession = { access_token: 'tok', user: { id: 'auth-1' } };
+
 describe('useAuth', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetSession.mockResolvedValue({
-      data: { session: null },
-      error: null,
+    capturedAuthCb = null;
+
+    // onAuthStateChange captura o callback — INITIAL_SESSION é disparado manualmente nos testes
+    mockOnAuthStateChange.mockImplementation((cb: (event: string, session: any) => void) => {
+      capturedAuthCb = cb;
+      return { data: { subscription: { unsubscribe: vi.fn() } } };
     });
+
+    // fetchProfile retorna perfil válido por padrão
+    mockFrom.mockImplementation(() => ({
+      select: vi.fn(() => ({
+        eq: vi.fn(() => ({ data: [profileRow], error: null })),
+      })),
+    }));
   });
 
   it('inicia com loading true e termina em false sem sessão', async () => {
@@ -81,6 +84,13 @@ describe('useAuth', () => {
     const { result } = renderHook(() => useAuth());
 
     expect(result.current.loading).toBe(true);
+
+    // Dispara INITIAL_SESSION sem sessão (usuário não autenticado)
+    await act(async () => {
+      capturedAuthCb?.('INITIAL_SESSION', null);
+      await new Promise((r) => setTimeout(r, 10));
+    });
+
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.user).toBeNull();
     expect(result.current.profile).toBeNull();
@@ -88,37 +98,51 @@ describe('useAuth', () => {
   });
 
   it('carrega perfil quando existe sessão ativa', async () => {
-    mockGetSession.mockResolvedValue({
-      data: {
-        session: { access_token: 'tok', user: { id: 'auth-1' } },
-      },
-      error: null,
-    });
-
     const { useAuth } = await import('@/hooks/useAuth');
     const { result } = renderHook(() => useAuth());
+
+    // Dispara INITIAL_SESSION com sessão válida
+    await act(async () => {
+      capturedAuthCb?.('INITIAL_SESSION', mockSession);
+      await new Promise((r) => setTimeout(r, 10));
+    });
 
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.user).toBeTruthy();
     expect(result.current.isAuthenticated).toBe(true);
   });
 
-  it('limpa estado em caso de erro de rede no init', async () => {
-    mockGetSession.mockRejectedValue(new Error('Network error'));
+  it('limpa estado quando sessão existe mas perfil não encontrado na base', async () => {
+    // fetchProfile retorna null (usuário não encontrado no DB)
+    mockFrom.mockImplementation(() => ({
+      select: vi.fn(() => ({
+        eq: vi.fn(() => ({ data: [], error: null })),
+      })),
+    }));
 
     const { useAuth } = await import('@/hooks/useAuth');
     const { result } = renderHook(() => useAuth());
-    await waitFor(() => expect(result.current.loading).toBe(false));
 
+    await act(async () => {
+      capturedAuthCb?.('INITIAL_SESSION', mockSession);
+      await new Promise((r) => setTimeout(r, 10));
+    });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.user).toBeNull();
     expect(result.current.profile).toBeNull();
     expect(result.current.session).toBeNull();
-    expect(result.current.error).toBeTruthy();
   });
 
   it('expõe computed values corretos sem sessão', async () => {
     const { useAuth } = await import('@/hooks/useAuth');
     const { result } = renderHook(() => useAuth());
+
+    await act(async () => {
+      capturedAuthCb?.('INITIAL_SESSION', null);
+      await new Promise((r) => setTimeout(r, 10));
+    });
+
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.isSuperAdmin).toBe(false);
@@ -131,6 +155,12 @@ describe('useAuth', () => {
   it('expõe todos os métodos esperados', async () => {
     const { useAuth } = await import('@/hooks/useAuth');
     const { result } = renderHook(() => useAuth());
+
+    await act(async () => {
+      capturedAuthCb?.('INITIAL_SESSION', null);
+      await new Promise((r) => setTimeout(r, 10));
+    });
+
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(typeof result.current.login).toBe('function');
