@@ -46,28 +46,35 @@ export function PWAProvider({ children }: PWAProviderProps) {
       return;
     }
 
-    // Limpar caches residuais do fallback sw.js de versões anteriores ao deploy atual.
-    // Usuários com 'https-calls' ou 'precache-v1' no cache podem ter HTML de admin
-    // cacheado pelo antigo sw.js. Esta limpeza é idempotente e roda apenas uma vez
-    // porque o Workbox ativado já deleta esses caches via EXPECTED_CACHES no activate.
-    caches.keys().then((names) => {
-      names.forEach((name) => {
-        if (name === 'https-calls' || name === 'precache-v1' || name === 'others') {
-          caches.delete(name);
-        }
+    // Admin = sem SW. O painel é usado em desktop por gestores e não precisa de
+    // funcionalidades PWA (offline, install, push). Manter o SW ativo no admin
+    // é a causa raiz de F5 precisar de hard reset: o NavigationRoute do Workbox
+    // intercepta navegações HTML antes de qualquer regra de cache ser avaliada.
+    // Comportamento idêntico ao ambiente de desenvolvimento (SW desabilitado).
+    const isAdmin = window.location.pathname.startsWith('/admin');
+    if (isAdmin) {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        registrations.forEach((reg) => reg.unregister());
       });
-    });
+      // Limpar caches residuais que possam conter HTML obsoleto de admin.
+      caches.keys().then((names) => {
+        names.forEach((name) => {
+          if (name === 'https-calls' || name === 'precache-v1' || name === 'others') {
+            caches.delete(name);
+          }
+        });
+      });
+      return;
+    }
 
-    // Registrar o SW globalmente (escopo '/') em todas as rotas, incluindo admin.
-    // O próprio worker (src/worker/index.ts) tem um listener de fetch que captura
-    // /admin/* ANTES do Workbox e força cache: 'no-store', garantindo que F5 no
-    // painel sempre vá à rede sem que o SW sirva dados obsoletos.
+    // Moradores e áreas públicas: registrar SW para suporte offline e PWA.
+    // O worker (src/worker/index.ts) tem bypass para /admin/* como rede de segurança
+    // caso clients.claim() do SW reclame um tab de admin aberto em paralelo.
     navigator.serviceWorker
       .register('/sw.js', { scope: '/', updateViaCache: 'none' })
       .then((registration) => {
         console.log('[PWA] Service Worker registrado');
 
-        // Detectar nova versão disponível
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
           newWorker?.addEventListener('statechange', () => {
@@ -83,7 +90,7 @@ export function PWAProvider({ children }: PWAProviderProps) {
         console.warn('[PWA] Falha ao registrar SW:', err);
       });
 
-    // Detectar se está rodando como PWA
+    // Detectar se está rodando como PWA instalada
     const navigatorWithStandalone = window.navigator as NavigatorWithStandalone;
     const isPWA =
       window.matchMedia('(display-mode: standalone)').matches ||
