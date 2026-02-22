@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/hooks/useAuth';
 import { usePathname, useRouter } from 'next/navigation';
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
 // ============================================
 // TYPES
@@ -45,9 +45,24 @@ export function AuthGuard({ children, fallback, requiredRoles }: AuthGuardProps)
   const router = useRouter();
   const pathname = usePathname();
   const [mounted] = useState(() => typeof window !== 'undefined');
+  const [loadingTooLong, setLoadingTooLong] = useState(false);
+  const loadingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Admin routes redirect to /admin/login, others to /login
   const loginPath = pathname?.startsWith('/admin') ? '/admin/login' : '/login';
+
+  // Se o loading durar mais de 10s, mostrar botão de recarregar
+  useEffect(() => {
+    if (loading) {
+      loadingTimerRef.current = setTimeout(() => setLoadingTooLong(true), 10000);
+    } else {
+      if (loadingTimerRef.current) clearTimeout(loadingTimerRef.current);
+      setLoadingTooLong(false);
+    }
+    return () => {
+      if (loadingTimerRef.current) clearTimeout(loadingTimerRef.current);
+    };
+  }, [loading]);
 
   useEffect(() => {
     if (!loading && !isAuthenticated && mounted) {
@@ -62,6 +77,14 @@ export function AuthGuard({ children, fallback, requiredRoles }: AuthGuardProps)
           <div className="flex flex-col items-center gap-4">
             <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
             <p className="text-sm text-text-sub">Carregando...</p>
+            {loadingTooLong && (
+              <button
+                onClick={() => window.location.reload()}
+                className="mt-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+              >
+                Recarregar página
+              </button>
+            )}
           </div>
         </div>
       )

@@ -36,6 +36,14 @@ export function useAuthSession({
   setLoading,
 }: SessionDeps) {
   useEffect(() => {
+    // Safety timeout: se getSession() ou fetchProfile() nunca resolverem
+    // (ex.: token refresh request travado), liberar o loading após 8s para
+    // que o AuthGuard redirecione ao login em vez de travar a tela infinitamente.
+    const safetyTimer = setTimeout(() => {
+      logger.warn('[Auth] Timeout na inicialização — forçando loading: false');
+      setLoading(false);
+    }, 8000);
+
     const initAuth = async () => {
       try {
         const {
@@ -65,6 +73,7 @@ export function useAuthSession({
         logger.error('Auth initialization error:', error);
         onError(error as Error);
       } finally {
+        clearTimeout(safetyTimer);
         setLoading(false);
       }
     };
@@ -95,6 +104,7 @@ export function useAuthSession({
     });
 
     return () => {
+      clearTimeout(safetyTimer);
       subscription.unsubscribe();
     };
   }, [
