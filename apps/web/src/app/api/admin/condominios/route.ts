@@ -306,8 +306,20 @@ export const POST = withAdminAuth(async ({ admin }, req) => {
       .map((s) => s.trim())
       .filter(Boolean);
 
-    const total_unidades =
-      Number(form.quantidade_blocos || 0) * Number(form.unidades_por_bloco || 0);
+    // Use named blocos array when provided, otherwise fall back to legacy count fields
+    let total_unidades: number;
+    let blocos_ruas_value: string[] | undefined;
+
+    if (form.blocos && form.blocos.length > 0) {
+      total_unidades = form.blocos.reduce((acc, b) => acc + b.unidades, 0);
+      blocos_ruas_value = form.blocos.map((b) => b.nome);
+    } else {
+      total_unidades = Number(form.quantidade_blocos || 0) * Number(form.unidades_por_bloco || 0);
+      blocos_ruas_value =
+        Number(form.quantidade_blocos) > 0
+          ? Array.from({ length: Number(form.quantidade_blocos) }).map((_, i) => `Bloco ${i + 1}`)
+          : undefined;
+    }
 
     const insertPayload: Record<string, unknown> = {
       nome: form.nome,
@@ -328,10 +340,7 @@ export const POST = withAdminAuth(async ({ admin }, req) => {
       total_unidades: total_unidades || null,
       areas_comuns: areas.length > 0 ? areas : null,
       modules: form.modules || null,
-      blocos_ruas:
-        Number(form.quantidade_blocos) > 0
-          ? Array.from({ length: Number(form.quantidade_blocos) }).map((_, i) => `Bloco ${i + 1}`)
-          : undefined,
+      blocos_ruas: blocos_ruas_value,
     };
 
     // Validate minimally against existing create schema

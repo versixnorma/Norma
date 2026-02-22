@@ -22,14 +22,30 @@ export const condominioFormSchema = z.object({
   estado: z.string().optional(),
 
   dia_vencimento: z.number().int().min(1).max(28),
-  quantidade_blocos: z.number().int().min(1),
-  unidades_por_bloco: z.number().int().min(1),
-  areas_comuns_string: z.string().optional(),
-  logo_url: z.string().url().optional(),
-  primary_color: z
-    .string()
-    .regex(/^#([0-9A-Fa-f]{6})$/, 'Cor inválida (formato hex)')
+
+  // Named blocks with unit counts (preferred over quantidade_blocos + unidades_por_bloco)
+  blocos: z
+    .array(
+      z.object({
+        nome: z.string().min(1, 'Nome do bloco obrigatório'),
+        unidades: z.number().int().min(1, 'Mínimo 1 unidade'),
+      })
+    )
     .optional(),
+
+  // Legacy fields kept optional for backward compatibility
+  quantidade_blocos: z.number().int().min(1).optional(),
+  unidades_por_bloco: z.number().int().min(1).optional(),
+
+  areas_comuns_string: z.string().optional(),
+  logo_url: z.preprocess((v) => (v === '' ? undefined : v), z.string().url().optional()),
+  primary_color: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z
+      .string()
+      .regex(/^#([0-9A-Fa-f]{6})$/, 'Cor inválida (formato hex)')
+      .optional()
+  ),
 
   modules: z.object({
     financeiro: z.boolean().default(true),
