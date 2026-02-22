@@ -14,6 +14,8 @@ type CondominioListRow = {
   cnpj: string | null;
   endereco: string | null;
   created_at: string;
+  ativo: boolean;
+  deleted_at: string | null;
 };
 type UsuarioCondominioRow = {
   condominio_id: string;
@@ -194,9 +196,12 @@ export const GET = withAdminAuth(async ({ admin }) => {
       nome,
       cnpj,
       endereco,
-      created_at
+      created_at,
+      ativo,
+      deleted_at
     `
     )
+    .is('deleted_at', null)
     .order('nome');
 
   if (error) {
@@ -237,7 +242,7 @@ export const GET = withAdminAuth(async ({ admin }) => {
     nome: c.nome,
     slug: c.cnpj || c.id,
     endereco: c.endereco || '',
-    status: 'ativo',
+    status: c.ativo ? 'ativo' : 'inativo',
     created_at: c.created_at,
     total_usuarios: userCountMap[c.id] || 0,
     total_unidades: unitCountMap[c.id] || 0,
