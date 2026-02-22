@@ -9,14 +9,23 @@ import { useAuthProfile } from './auth/useAuthProfile';
 import { useAuthSession } from './auth/useAuthSession';
 import type { UsuarioWithCondominios } from './auth/types';
 
-export function useAuth() {
+export interface UseAuthOptions {
+  initialUser?: User | null;
+  initialSession?: Session | null;
+  initialProfile?: UsuarioWithCondominios | null;
+}
+
+export function useAuth({ initialUser, initialSession, initialProfile }: UseAuthOptions = {}) {
   const router = useRouter();
   const supabase = getSupabaseClient();
-  const profileState = useAuthProfile({ supabase });
+  // hasInitialData: true quando dados foram pre-loaded no servidor — evita fetchProfile async
+  const hasInitialData = !!(initialUser && initialProfile);
+  const profileState = useAuthProfile({ supabase, initialProfile });
 
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(initialUser ?? null);
+  const [session, setSession] = useState<Session | null>(initialSession ?? null);
+  // loading começa false quando temos dados iniciais — sem spinner no primeiro render do admin
+  const [loading, setLoading] = useState(!hasInitialData);
   const [error, setError] = useState<AuthError | Error | null>(null);
 
   // Destructure stable references (useState setters and useCallback fns) from profileState
@@ -80,6 +89,7 @@ export function useAuth() {
     onSignedOut,
     onSessionUpdated,
     onError,
+    hasInitialData,
   });
 
   const methods = useAuthMethods({

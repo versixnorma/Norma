@@ -9,10 +9,11 @@ type ProfileDeps = {
   supabase: {
     from: (table: string) => any;
   };
+  initialProfile?: UsuarioWithCondominios | null;
 };
 
-export function useAuthProfile({ supabase }: ProfileDeps) {
-  const [profile, setProfile] = useState<UsuarioWithCondominios | null>(null);
+export function useAuthProfile({ supabase, initialProfile }: ProfileDeps) {
+  const [profile, setProfile] = useState<UsuarioWithCondominios | null>(initialProfile ?? null);
 
   const fetchProfile = useCallback(
     async (userId: string): Promise<UsuarioWithCondominios | null> => {

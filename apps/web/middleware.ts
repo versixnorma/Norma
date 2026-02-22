@@ -59,7 +59,12 @@ const CSP_HEADER = `
  * Protege rotas autenticadas e redireciona usuários não autenticados
  */
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({ request });
+  // Propaga o pathname para Server Components via request header.
+  // Server Components lêem este header via headers().get('x-pathname').
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-pathname', request.nextUrl.pathname);
+
+  let response = NextResponse.next({ request: { headers: requestHeaders } });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -79,7 +84,8 @@ export async function middleware(request: NextRequest) {
           // Propaga os novos cookies para o request (leituras subsequentes no middleware)
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           // Cria UM ÚNICO response novo com TODOS os cookies de uma vez
-          response = NextResponse.next({ request });
+          // (mantém o requestHeaders com x-pathname)
+          response = NextResponse.next({ request: { headers: requestHeaders } });
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options)
           );

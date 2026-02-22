@@ -22,6 +22,8 @@ type SessionDeps = {
   fetchProfile: (userId: string) => Promise<UsuarioWithCondominios | null>;
   routerPush: (path: string) => void;
   setLoading: (value: boolean) => void;
+  /** Quando true, dados foram pre-loaded no servidor — pula fetchProfile no INITIAL_SESSION */
+  hasInitialData?: boolean;
 };
 
 export function useAuthSession({
@@ -33,6 +35,7 @@ export function useAuthSession({
   fetchProfile,
   routerPush,
   setLoading,
+  hasInitialData,
 }: SessionDeps) {
   useEffect(() => {
     const {
@@ -45,6 +48,25 @@ export function useAuthSession({
         // Replaces the old getSession() call which could hang indefinitely when another
         // tab holds the refresh lock. Background token refresh (if needed) completes
         // asynchronously and fires TOKEN_REFRESHED or SIGNED_OUT when done.
+
+        if (hasInitialData) {
+          // Dados já foram pre-loaded no servidor — nenhum fetchProfile necessário.
+          // Apenas sincroniza a referência de sessão (pode ter sido renovada em background).
+          if (session) {
+            onSessionUpdated(session);
+          } else {
+            // Sessão expirou entre o render do servidor e a hidratação do cliente.
+            onSignedOut();
+            try {
+              routerPush('/login');
+            } catch {
+              // best-effort
+            }
+          }
+          setLoading(false);
+          return;
+        }
+
         try {
           if (session?.user) {
             const profile = await fetchProfile(session.user.id);
@@ -100,5 +122,6 @@ export function useAuthSession({
     fetchProfile,
     routerPush,
     setLoading,
+    hasInitialData,
   ]);
 }

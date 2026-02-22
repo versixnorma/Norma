@@ -75,52 +75,6 @@ const withPWA = withPWAInit({
   ],
 });
 
-// @ts-check
-// Temporariamente desabilitando next-pwa para evitar conflitos
-// import withPWAInit from 'next-pwa';
-
-// const withPWA = withPWAInit({
-//   dest: 'public',
-//   disable: process.env.NODE_ENV === 'development',
-//   register: true,
-//   skipWaiting: true,
-//   disable: process.env.NODE_ENV === 'development' || process.env.DISABLE_PWA === 'true',
-//   fallbacks: {
-//     document: '/offline',
-//   },
-//   buildExcludes: [
-//     /app-build-manifest\.json$/,
-//     /_buildManifest\.js$/,
-//     /_ssgManifest\.js$/,
-//     /_next\/static\/.*\.js\.map$/,
-//     /_next\/static\/chunks\/.*\.js\.map$/,
-//   ],
-//   runtimeCaching: [
-//     {
-//       urlPattern: /^https:\/\/.*\/_next\/static\/.*/,
-//       handler: 'CacheFirst',
-//       options: {
-//         cacheName: 'next-static',
-//         expiration: {
-//           maxEntries: 200,
-//           maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
-//         },
-//       },
-//     },
-//     {
-//       urlPattern: /^https:\/\/.*\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/,
-//       handler: 'CacheFirst',
-//       options: {
-//         cacheName: 'images',
-//         expiration: {
-//           maxEntries: 100,
-//           maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
-//         },
-//       },
-//     },
-//   ],
-// });
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   env: {
@@ -164,11 +118,17 @@ const nextConfig = {
   },
 
   // Webpack config para melhor code-splitting
-  webpack: (config, { isServer }) => {
+  webpack: (config, { dev, isServer }) => {
+    // Sourcemaps em produção (client-side apenas)
+    if (!dev && !isServer) {
+      config.devtool = 'source-map';
+    }
+
     config.optimization = {
       ...config.optimization,
       splitChunks: {
         ...config.optimization.splitChunks,
+        chunks: 'all',
         cacheGroups: {
           // Vendor libraries separados
           vendors: {
@@ -266,35 +226,6 @@ const nextConfig = {
     ];
   },
 
-  // Webpack optimizations
-  webpack: (config, { dev, isServer }) => {
-    // Configurar sourcemaps para produção
-    if (!dev && !isServer) {
-      config.devtool = 'source-map';
-    }
-
-    // Otimizar bundle size em produção
-    if (!dev && !isServer) {
-      config.optimization.splitChunks.chunks = 'all';
-      config.optimization.splitChunks.cacheGroups = {
-        ...config.optimization.splitChunks.cacheGroups,
-        vendor: {
-          test: /[\\/]node_modules[\\/]/,
-          name: 'vendors',
-          chunks: 'all',
-          priority: 10,
-        },
-        radix: {
-          test: /[\\/]node_modules[\\/]@radix-ui[\\/]/,
-          name: 'radix-ui',
-          chunks: 'all',
-          priority: 20,
-        },
-      };
-    }
-
-    return config;
-  },
 };
 
 const withBundleAnalyzer = (await import('@next/bundle-analyzer')).default({

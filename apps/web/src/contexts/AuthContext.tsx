@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth, type UseAuthOptions } from '@/hooks/useAuth';
 import { usePathname, useRouter } from 'next/navigation';
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
@@ -14,8 +14,17 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // ============================================
 // PROVIDER
 // ============================================
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const auth = useAuth();
+interface AuthProviderProps extends UseAuthOptions {
+  children: ReactNode;
+}
+
+export function AuthProvider({
+  children,
+  initialUser,
+  initialSession,
+  initialProfile,
+}: AuthProviderProps) {
+  const auth = useAuth({ initialUser, initialSession, initialProfile });
 
   return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>;
 }
