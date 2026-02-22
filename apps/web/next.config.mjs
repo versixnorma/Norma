@@ -6,7 +6,10 @@ const withPWA = withPWAInit({
   dest: 'public',
   sw: 'sw.js',
   disable: process.env.NODE_ENV === 'development' || process.env.DISABLE_PWA === 'true',
-  register: true,
+  // register: false → PWAProvider.tsx registra manualmente APENAS em rotas não-admin.
+  // Isso impede que o register.js gerado pelo next-pwa injete o SW em páginas admin,
+  // evitando que F5 no painel precise de hard reset para ver conteúdo atualizado.
+  register: false,
   skipWaiting: true,
   // Desabilitar o cache dinâmico da start URL para evitar que o next-pwa injete
   // uma rota NetworkFirst para '/' que pode interferir no fluxo de auth SSR.

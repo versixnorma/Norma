@@ -11,12 +11,20 @@ self.addEventListener('activate', (event) => {
 });
 
 // NetworkFirst strategy for HTTP requests
+// Admin routes (/admin/*) nunca são interceptadas — sempre vão direto para a rede.
+// Isso evita que o fallback SW sirva HTML obsoleto de admin após um redeploy.
 self.addEventListener('fetch', (event) => {
   const request = event.request;
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
   if (!url.protocol.startsWith('http')) return;
+
+  // Deixar rotas admin e auth passarem direto para a rede, sem cache.
+  if (url.pathname.startsWith('/admin') || url.pathname.startsWith('/auth')) return;
+
+  // Deixar navegações (HTML) passarem direto — só cachear assets estáticos.
+  if (request.mode === 'navigate') return;
 
   event.respondWith(
     (async () => {

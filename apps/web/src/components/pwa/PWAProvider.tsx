@@ -46,10 +46,52 @@ export function PWAProvider({ children }: PWAProviderProps) {
       return;
     }
 
-    // O next-pwa (register: true em next.config.mjs) já registra /sw.js automaticamente.
-    // Registrar novamente aqui causava double registration: dois chamados concorrentes a
-    // navigator.serviceWorker.register() disparam updatefound com mais frequência e podem
-    // interromper o fluxo de autenticação com clients.claim() inesperado.
+    // Páginas admin não precisam de PWA/offline.
+    // Como next.config.mjs usa register: false, o SW NÃO é injetado automaticamente.
+    // Aqui garantimos que qualquer SW residual de visitas anteriores seja removido,
+    // e limpamos caches que podem conter HTML obsoleto de admin.
+    const isAdmin = window.location.pathname.startsWith('/admin');
+    if (isAdmin) {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        registrations.forEach((reg) => {
+          reg.unregister().then((ok) => {
+            if (ok) console.log('[PWA] SW desregistrado (rota admin)');
+          });
+        });
+      });
+      // Limpar caches residuais do fallback sw.js e versões antigas.
+      caches.keys().then((names) => {
+        names.forEach((name) => {
+          if (name === 'https-calls' || name === 'precache-v1' || name === 'others') {
+            caches.delete(name).then(() => console.log('[PWA] Cache limpo:', name));
+          }
+        });
+      });
+      return;
+    }
+
+    // Em rotas não-admin: registrar o SW manualmente (next-pwa tem register: false).
+    // Isso garante que o SW só esteja ativo em páginas públicas/offline-first.
+    navigator.serviceWorker
+      .register('/sw.js', { scope: '/', updateViaCache: 'none' })
+      .then((registration) => {
+        console.log('[PWA] Service Worker registrado');
+
+        // Detectar nova versão disponível
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          newWorker?.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              window.dispatchEvent(
+                new CustomEvent('sw-update-available', { detail: registration })
+              );
+            }
+          });
+        });
+      })
+      .catch((err) => {
+        console.warn('[PWA] Falha ao registrar SW:', err);
+      });
 
     // Detectar se está rodando como PWA
     const navigatorWithStandalone = window.navigator as NavigatorWithStandalone;
