@@ -28,6 +28,13 @@ const withPWA = withPWAInit({
   customWorkerDir: 'src/worker',
   runtimeCaching: [
     {
+      // REGRA PRIORITÁRIA: /admin/* nunca é cacheado pelo SW.
+      // Mesmo que o SW seja registrado de uma rota pública (escopo '/'), esta
+      // regra NetworkOnly garante que reloads em admin sempre vão direto à rede.
+      urlPattern: /\/admin(\/.*)?$/,
+      handler: 'NetworkOnly',
+    },
+    {
       urlPattern: /^https:\/\/.*\/_next\/static\/.*/,
       handler: 'CacheFirst',
       options: {

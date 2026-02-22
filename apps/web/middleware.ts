@@ -97,6 +97,16 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  // Prevenir cache de rotas admin diretamente no middleware — garante que CDN e
+  // browser nunca armazenem respostas de páginas protegidas, independentemente do
+  // que next.config.mjs configurar (aplicado depois do middleware em alguns cenários).
+  if (pathname.startsWith('/admin') && !pathname.startsWith('/admin/login')) {
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+    response.headers.set('Surrogate-Control', 'no-store');
+  }
+
   // Redirect root /admin to the admin login or dashboard depending on session
   if (pathname === '/admin' || pathname === '/admin/') {
     if (user) {
