@@ -4,6 +4,34 @@
 const sw = self as unknown as ServiceWorkerGlobalScope;
 
 // ============================================
+// BYPASS FORÇADO PARA ROTAS ADMIN (ANTES DO WORKBOX)
+// ============================================
+// Este listener é registrado ANTES dos handlers do Workbox injetados pelo next-pwa.
+// Service Workers executam listeners de 'fetch' na ordem em que foram adicionados.
+// Como este arquivo é concatenado ANTES do código Workbox gerado, este handler
+// captura /admin/* e chama event.respondWith() impedindo que o NavigationRoute
+// global do Workbox intercepte estas navegações.
+//
+// Sem este bypass, o NavigationRoute do Workbox intercepta todas as navegações
+// HTML (incluindo F5 em /admin/*) ANTES de avaliar as regras runtimeCaching,
+// tornando a regra NetworkOnly ineficaz para F5/navegação direta.
+sw.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+
+  // Bypassa o Workbox completamente para rotas admin e auth.
+  // cache: 'no-store' garante que o browser também ignore o HTTP cache nativo.
+  if (url.pathname.startsWith('/admin') || url.pathname.startsWith('/auth/')) {
+    event.respondWith(
+      fetch(event.request, { cache: 'no-store' }).catch((err) => {
+        console.error('[SW] Bypass de rede falhou para rota crítica:', err);
+        throw err;
+      })
+    );
+    return;
+  }
+});
+
+// ============================================
 // INSTALL / ACTIVATE
 // ============================================
 // Nota: skipWaiting já é gerenciado pelo next-pwa (skipWaiting: true no next.config.mjs).

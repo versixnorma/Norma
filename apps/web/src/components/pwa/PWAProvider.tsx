@@ -46,32 +46,22 @@ export function PWAProvider({ children }: PWAProviderProps) {
       return;
     }
 
-    // Páginas admin não precisam de PWA/offline.
-    // Como next.config.mjs usa register: false, o SW NÃO é injetado automaticamente.
-    // Aqui garantimos que qualquer SW residual de visitas anteriores seja removido,
-    // e limpamos caches que podem conter HTML obsoleto de admin.
-    const isAdmin = window.location.pathname.startsWith('/admin');
-    if (isAdmin) {
-      navigator.serviceWorker.getRegistrations().then((registrations) => {
-        registrations.forEach((reg) => {
-          reg.unregister().then((ok) => {
-            if (ok) console.log('[PWA] SW desregistrado (rota admin)');
-          });
-        });
+    // Limpar caches residuais do fallback sw.js de versões anteriores ao deploy atual.
+    // Usuários com 'https-calls' ou 'precache-v1' no cache podem ter HTML de admin
+    // cacheado pelo antigo sw.js. Esta limpeza é idempotente e roda apenas uma vez
+    // porque o Workbox ativado já deleta esses caches via EXPECTED_CACHES no activate.
+    caches.keys().then((names) => {
+      names.forEach((name) => {
+        if (name === 'https-calls' || name === 'precache-v1' || name === 'others') {
+          caches.delete(name);
+        }
       });
-      // Limpar caches residuais do fallback sw.js e versões antigas.
-      caches.keys().then((names) => {
-        names.forEach((name) => {
-          if (name === 'https-calls' || name === 'precache-v1' || name === 'others') {
-            caches.delete(name).then(() => console.log('[PWA] Cache limpo:', name));
-          }
-        });
-      });
-      return;
-    }
+    });
 
-    // Em rotas não-admin: registrar o SW manualmente (next-pwa tem register: false).
-    // Isso garante que o SW só esteja ativo em páginas públicas/offline-first.
+    // Registrar o SW globalmente (escopo '/') em todas as rotas, incluindo admin.
+    // O próprio worker (src/worker/index.ts) tem um listener de fetch que captura
+    // /admin/* ANTES do Workbox e força cache: 'no-store', garantindo que F5 no
+    // painel sempre vá à rede sem que o SW sirva dados obsoletos.
     navigator.serviceWorker
       .register('/sw.js', { scope: '/', updateViaCache: 'none' })
       .then((registration) => {
