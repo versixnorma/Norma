@@ -321,25 +321,37 @@ export const POST = withAdminAuth(async ({ admin }, req) => {
           : undefined;
     }
 
+    // Build the "endereco" required column from address parts (legacy combined field)
+    const logradouro = form.logradouro || '';
+    const numeroAddr = form.numero || '';
+    const enderecoCombinado =
+      [logradouro, numeroAddr && `nº ${numeroAddr}`].filter(Boolean).join(', ') || logradouro;
+
     const insertPayload: Record<string, unknown> = {
+      // Core identification
       nome: form.nome,
       cnpj: cnpjDigits || null,
-      razao_social: form.razao_social || null,
+      razao_social: form.razao_social || null, // new column (migration)
       logo_url: form.logo_url || null,
-      primary_color: form.primary_color || null,
-      email_administrativo: form.email_administrativo || null,
+      cor_primaria: form.primary_color || null, // DB column is "cor_primaria"
+      email: form.email_administrativo || null, // DB column is "email"
       telefone: form.telefone || null,
-      cep: cepDigits || null,
-      logradouro: form.logradouro || null,
+
+      // Address — required NOT NULL columns default to '' instead of null
+      cep: cepDigits || '',
+      endereco: enderecoCombinado || '', // required combined field
+      logradouro: logradouro || null, // new column (migration)
       numero: form.numero || null,
       complemento: form.complemento || null,
-      bairro: form.bairro || null,
-      cidade: form.cidade || null,
-      estado: form.estado || null,
-      dia_vencimento: form.dia_vencimento || 10,
-      total_unidades: total_unidades || null,
-      areas_comuns: areas.length > 0 ? areas : null,
-      modules: form.modules || null,
+      bairro: form.bairro || '',
+      cidade: form.cidade || '',
+      estado: form.estado || '',
+
+      // Operational
+      dia_vencimento: form.dia_vencimento || 10, // new column (migration)
+      total_unidades: total_unidades || 0, // required number field
+      areas_comuns: areas.length > 0 ? areas : null, // new column (migration)
+      modules: form.modules || null, // new column (migration)
       blocos_ruas: blocos_ruas_value,
     };
 

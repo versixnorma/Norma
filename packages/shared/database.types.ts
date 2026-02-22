@@ -1669,6 +1669,7 @@ export type Database = {
       };
       condominios: {
         Row: {
+          areas_comuns: string[] | null;
           ativo: boolean;
           bairro: string;
           cep: string;
@@ -1682,19 +1683,24 @@ export type Database = {
           created_at: string;
           created_by: string | null;
           deleted_at: string | null;
+          dia_vencimento: number;
           email: string | null;
           endereco: string;
           estado: string;
           id: string;
+          logradouro: string | null;
           logo_url: string | null;
+          modules: Json | null;
           nome: string;
           numero: string | null;
+          razao_social: string | null;
           telefone: string | null;
           tier: Database['public']['Enums']['tier_type'];
           total_unidades: number;
           updated_at: string;
         };
         Insert: {
+          areas_comuns?: string[] | null;
           ativo?: boolean;
           bairro: string;
           cep: string;
@@ -1708,19 +1714,24 @@ export type Database = {
           created_at?: string;
           created_by?: string | null;
           deleted_at?: string | null;
+          dia_vencimento?: number;
           email?: string | null;
           endereco: string;
           estado: string;
           id?: string;
+          logradouro?: string | null;
           logo_url?: string | null;
+          modules?: Json | null;
           nome: string;
           numero?: string | null;
+          razao_social?: string | null;
           telefone?: string | null;
           tier?: Database['public']['Enums']['tier_type'];
           total_unidades: number;
           updated_at?: string;
         };
         Update: {
+          areas_comuns?: string[] | null;
           ativo?: boolean;
           bairro?: string;
           cep?: string;
@@ -1734,13 +1745,17 @@ export type Database = {
           created_at?: string;
           created_by?: string | null;
           deleted_at?: string | null;
+          dia_vencimento?: number;
           email?: string | null;
           endereco?: string;
           estado?: string;
           id?: string;
+          logradouro?: string | null;
           logo_url?: string | null;
+          modules?: Json | null;
           nome?: string;
           numero?: string | null;
+          razao_social?: string | null;
           telefone?: string | null;
           tier?: Database['public']['Enums']['tier_type'];
           total_unidades?: number;
