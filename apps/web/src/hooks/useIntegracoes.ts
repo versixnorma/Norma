@@ -7,6 +7,7 @@ import type {
   CreateWebhookInput,
   Integracao,
   IntegracaoDashboard,
+  IntegracaoTipo,
   IntegracoesFilters,
   WebhookEvento,
 } from '@versix/shared';
