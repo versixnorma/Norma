@@ -23,10 +23,10 @@ export default defineConfig({
       ],
 
       thresholds: {
-        statements: 40,
-        branches: 30,
-        functions: 35,
-        lines: 40,
+        statements: 50,
+        branches: 40,
+        functions: 45,
+        lines: 50,
       },
     },
     include: ['tests/unit/**/*.{test,spec}.{ts,tsx}'],

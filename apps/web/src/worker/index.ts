@@ -117,22 +117,27 @@ async function syncCriticalData() {
 // ============================================
 // PUSH NOTIFICATIONS
 // ============================================
+interface ExtendedNotificationOptions extends NotificationOptions {
+  actions?: Array<{ action: string; title: string; icon?: string }>;
+  tag?: string;
+}
+
 sw.addEventListener('push', (event) => {
   if (!event.data) return;
 
   try {
     const data = event.data.json();
     const title = data.title || 'Nova Notificação';
-    const options: NotificationOptions = {
+    const options: ExtendedNotificationOptions = {
       body: data.body || '',
       icon: '/icons/icon-192x192.png',
       badge: '/icons/badge-72x72.png',
       data: data.data || {},
       actions: data.actions || [],
       tag: data.tag || 'versix-norma-notification',
-    } as any;
+    };
 
-    event.waitUntil(sw.registration.showNotification(title, options));
+    event.waitUntil(sw.registration.showNotification(title, options as NotificationOptions));
   } catch (err) {
     console.error('[Worker] Erro ao processar push:', err);
   }

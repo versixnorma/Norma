@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { corsHeaders } from '../_shared/cors.ts';
+import { fetchWithResilience } from '../_shared/resilience.ts';
 
 // PDF parsing library for Deno
 import pdfParse from 'https://esm.sh/pdf-parse@1.1.1';
@@ -93,18 +94,22 @@ async function generateEmbedding(text: string): Promise<number[]> {
     throw new Error('OPENAI_API_KEY not configured');
   }
 
-  const response = await fetch('https://api.openai.com/v1/embeddings', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${openaiApiKey}`,
-      'Content-Type': 'application/json',
+  const response = await fetchWithResilience(
+    'https://api.openai.com/v1/embeddings',
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${openaiApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        input: text,
+        model: 'text-embedding-3-small',
+        encoding_format: 'float',
+      }),
     },
-    body: JSON.stringify({
-      input: text,
-      model: 'text-embedding-3-small',
-      encoding_format: 'float',
-    }),
-  });
+    { timeoutMs: 15000, maxRetries: 2, operationName: 'process-doc-embedding' }
+  );
 
   if (!response.ok) {
     const error = await response.text();

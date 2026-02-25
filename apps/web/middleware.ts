@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { checkRateLimit } from '@/lib/rate-limit-api';
 
 // Rotas públicas que não requerem autenticação
 const PUBLIC_ROUTES = [
@@ -63,6 +64,23 @@ export async function middleware(request: NextRequest) {
   // Server Components lêem este header via headers().get('x-pathname').
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-pathname', request.nextUrl.pathname);
+
+  // Rate limiting para rotas de API
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ?? 'unknown';
+    const { allowed, remaining } = checkRateLimit(ip);
+    if (!allowed) {
+      return new NextResponse(JSON.stringify({ error: 'Too many requests' }), {
+        status: 429,
+        headers: {
+          'Content-Type': 'application/json',
+          'Retry-After': '60',
+          'X-RateLimit-Remaining': '0',
+        },
+      });
+    }
+    requestHeaders.set('X-RateLimit-Remaining', String(remaining));
+  }
 
   let response = NextResponse.next({ request: { headers: requestHeaders } });
 

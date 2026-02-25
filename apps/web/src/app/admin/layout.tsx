@@ -4,6 +4,23 @@ import { AdminLayout } from '@/components/admin';
 import type { UsuarioWithCondominios } from '@/hooks/auth/types';
 import type { UsuarioCondominioJoin } from '@/hooks/auth/types';
 
+interface UsuarioWithJoin {
+  id: string;
+  auth_id: string;
+  nome: string;
+  email: string;
+  role: string;
+  status: string;
+  avatar_url: string | null;
+  unidade_id: string | null;
+  [key: string]: unknown;
+  usuario_condominios: Array<{
+    condominio: { id: string; nome: string };
+    role: string;
+    status: string;
+  }>;
+}
+
 export default async function AdminRootLayout({ children }: { children: React.ReactNode }) {
   const headersList = await headers();
   const pathname = headersList.get('x-pathname') ?? '';
@@ -28,7 +45,7 @@ export default async function AdminRootLayout({ children }: { children: React.Re
 
   if (user) {
     const { data: profileData } = await supabase
-      .from('usuarios' as any)
+      .from('usuarios')
       .select(
         `
         *,
@@ -42,10 +59,11 @@ export default async function AdminRootLayout({ children }: { children: React.Re
         )
       `
       )
-      .eq('auth_id', user.id);
+      .eq('auth_id', user.id)
+      .returns<UsuarioWithJoin[]>();
 
     if (profileData && profileData.length > 0) {
-      const rawUser = profileData[0] as any;
+      const rawUser = profileData[0];
 
       const userCondominios = (rawUser.usuario_condominios || [])
         .filter((uc: UsuarioCondominioJoin) => uc.status === 'active' || uc.status === 'ativo')

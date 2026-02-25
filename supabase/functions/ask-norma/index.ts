@@ -3,6 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { z } from 'https://esm.sh/zod@3.22.4';
 import { corsHeaders, getCorsHeaders, handleCors } from '../_shared/cors.ts';
 import { withRateLimit } from '../_shared/rate-limit.ts';
+import { AI_FALLBACK_RESPONSE, fetchWithResilience } from '../_shared/resilience.ts';
 
 // ============================================
 // P1 Security Fix: Sanitize document content to prevent prompt injection
@@ -229,56 +230,66 @@ export async function handler(req: Request): Promise<Response> {
       );
     }
 
-    // Generate embedding for the user message
-    const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        input: message,
-        model: 'text-embedding-3-small',
-        encoding_format: 'float',
-      }),
-    });
+    // Generate embedding for the user message (com timeout + retry + fallback sem RAG)
+    let queryEmbedding: number[] | null = null;
+    try {
+      const embeddingResponse = await fetchWithResilience(
+        'https://api.openai.com/v1/embeddings',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            input: message,
+            model: 'text-embedding-3-small',
+            encoding_format: 'float',
+          }),
+        },
+        { timeoutMs: 10000, maxRetries: 1, operationName: 'openai-embedding' }
+      );
 
-    if (!embeddingResponse.ok) {
-      const errorText = await embeddingResponse.text();
-      console.error('Failed to generate embedding:', errorText);
-      Sentry.captureException(new Error(`OpenAI Embedding API Error: ${errorText}`), {
-        extra: { input_length: message.length },
-      });
-      return new Response(JSON.stringify({ error: 'Failed to process message' }), {
-        status: 500,
-        headers: { ...headers, 'Content-Type': 'application/json' },
+      if (embeddingResponse.ok) {
+        const embeddingData = await embeddingResponse.json();
+        queryEmbedding = embeddingData.data[0].embedding;
+      } else {
+        const errorText = await embeddingResponse.text();
+        Sentry.captureMessage(`OpenAI embedding error: ${errorText}`, { level: 'warning' });
+      }
+    } catch {
+      // Embedding falhou → responder sem RAG context
+      Sentry.captureMessage('OpenAI embedding timeout/failure — responding without RAG', {
+        level: 'warning',
       });
     }
 
-    const embeddingData = await embeddingResponse.json();
-    const queryEmbedding = embeddingData.data[0].embedding;
+    // Search for relevant document chunks (só executa se embedding foi gerado)
+    let relevantChunks = null;
+    if (queryEmbedding) {
+      const { data: chunks, error: searchError } = await supabase.rpc(
+        'search_document_chunks',
+        {
+          query_embedding: queryEmbedding,
+          match_threshold: 0.7,
+          match_count: 5,
+          condominio_id: condominioId,
+        }
+      );
 
-    // Search for relevant document chunks
-    const { data: relevantChunks, error: searchError } = await supabase.rpc(
-      'search_document_chunks',
-      {
-        query_embedding: queryEmbedding,
-        match_threshold: 0.7,
-        match_count: 5,
-        condominio_id: condominioId,
+      if (searchError) {
+        console.error('Search error:', searchError);
+        Sentry.captureException(searchError, { tags: { component: 'pgvector_search' } });
+        // Continue without context if search fails
+      } else if (!chunks || chunks.length === 0) {
+        Sentry.addBreadcrumb({
+          category: 'rag',
+          message: 'No relevant chunks found',
+          level: 'warning',
+        });
+      } else {
+        relevantChunks = chunks;
       }
-    );
-
-    if (searchError) {
-      console.error('Search error:', searchError);
-      Sentry.captureException(searchError, { tags: { component: 'pgvector_search' } });
-      // Continue without context if search fails
-    } else if (!relevantChunks || relevantChunks.length === 0) {
-      Sentry.addBreadcrumb({
-        category: 'rag',
-        message: 'No relevant chunks found',
-        level: 'warning',
-      });
     }
 
     // Build context from relevant chunks with sanitization
@@ -362,21 +373,34 @@ Conteúdo: ${sanitizedContent}
       },
     ];
 
-    // Call Groq API with streaming
-    const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${groqApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'llama3-8b-8192',
-        messages,
-        max_tokens: 1000,
-        temperature: 0.7,
-        stream: true, // Enable streaming
-      }),
-    });
+    // Call Groq API with streaming (com timeout 30s + 2 retries + fallback gracioso)
+    let groqResponse: Response;
+    try {
+      groqResponse = await fetchWithResilience(
+        'https://api.groq.com/openai/v1/chat/completions',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${groqApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'llama3-8b-8192',
+            messages,
+            max_tokens: 1000,
+            temperature: 0.7,
+            stream: true,
+          }),
+        },
+        { timeoutMs: 30000, maxRetries: 2, operationName: 'groq-llm' }
+      );
+    } catch {
+      // LLM indisponível após retries → fallback gracioso
+      Sentry.captureException(new Error('Groq LLM unavailable after retries'));
+      return new Response(JSON.stringify(AI_FALLBACK_RESPONSE), {
+        headers: { ...headers, 'Content-Type': 'application/json' },
+      });
+    }
 
     if (!groqResponse.ok) {
       const errorText = await groqResponse.text();
@@ -384,8 +408,7 @@ Conteúdo: ${sanitizedContent}
       Sentry.captureException(new Error(`Groq API Error: ${errorText}`), {
         tags: { provider: 'groq' },
       });
-      return new Response(JSON.stringify({ error: 'Failed to generate response' }), {
-        status: 500,
+      return new Response(JSON.stringify(AI_FALLBACK_RESPONSE), {
         headers: { ...headers, 'Content-Type': 'application/json' },
       });
     }

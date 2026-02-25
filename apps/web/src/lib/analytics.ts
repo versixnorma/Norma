@@ -99,11 +99,11 @@ export function trackUserAction(
   target?: string,
   details?: Record<string, JsonValue>
 ) {
-  trackEvent('user_action', action, { target: target as any, ...details });
+  trackEvent('user_action', action, { ...(target !== undefined ? { target } : {}), ...details });
 }
 
 export function trackError(error: string, source?: string, details?: Record<string, JsonValue>) {
-  trackEvent('error_occurred', error, { source: source as any, ...details });
+  trackEvent('error_occurred', error, { ...(source !== undefined ? { source } : {}), ...details });
 }
 
 // =====================================================

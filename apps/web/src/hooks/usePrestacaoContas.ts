@@ -81,9 +81,9 @@ export function usePrestacaoContas() {
 
         return {
           ...data,
-          lancamentos: (lancamentos || []) as any,
+          lancamentos: (lancamentos ?? []) as LancamentoResumoRow[],
           lancamentos_por_categoria: porCategoria,
-        };
+        } as unknown as PrestacaoContas;
       } catch (err) {
         setError(getErrorMessage(err));
         return null;
