@@ -2,7 +2,6 @@ import { cookies, headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { AdminLayout } from '@/components/admin';
 import type { UsuarioWithCondominios } from '@/hooks/auth/types';
-import type { UsuarioCondominioJoin } from '@/hooks/auth/types';
 
 interface UsuarioWithJoin {
   id: string;
@@ -66,8 +65,8 @@ export default async function AdminRootLayout({ children }: { children: React.Re
       const rawUser = profileData[0];
 
       const userCondominios = (rawUser.usuario_condominios || [])
-        .filter((uc: UsuarioCondominioJoin) => uc.status === 'active' || uc.status === 'ativo')
-        .map((uc: UsuarioCondominioJoin) => ({
+        .filter((uc) => uc.status === 'active' || uc.status === 'ativo')
+        .map((uc) => ({
           condominio_id: uc.condominio.id,
           nome: uc.condominio.nome,
           role: uc.role,
