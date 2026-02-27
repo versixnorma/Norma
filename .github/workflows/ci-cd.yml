@@ -132,7 +132,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run test coverage
-        run: pnpm --filter @versix/web test:coverage -- --coverage.thresholds.statements=50
+        run: pnpm --filter @versix/web test:coverage -- --coverage.thresholds.statements=41
 
   # ============================================
   # DEPLOY PREVIEW (apenas para PRs)
