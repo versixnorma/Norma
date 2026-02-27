@@ -28,7 +28,7 @@ function WebhookDLQContent() {
       .select(
         'id, canal, status, erro_mensagem, max_tentativas, created_at, proxima_tentativa, notificacao_id'
       )
-      .in('status', ['falhou', 'erro'])
+      .in('status', ['falhou'])
       .order('created_at', { ascending: false })
       .limit(50);
 
