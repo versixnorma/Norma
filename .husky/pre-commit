@@ -1,6 +1,17 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
+# Verificar se algum .sql foi staged
+SQL_CHANGED=$(git diff --cached --name-only --diff-filter=ACM | grep -c '\.sql$' || true)
+
+if [ "$SQL_CHANGED" -gt 0 ]; then
+  echo "⚠️  SQL files changed. Verifying database.types.ts is in sync..."
+  bash scripts/audit-types.sh || {
+    echo "❌ Run './scripts/regenerate-types.sh' before committing."
+    exit 1
+  }
+fi
+
 # Type-check do pacote shared
 echo "🔍 Type-checking shared package..."
 pnpm types:check || {
@@ -11,4 +22,3 @@ pnpm types:check || {
 
 # Lint-staged (se configurado)
 pnpm lint-staged 2>/dev/null || true
-

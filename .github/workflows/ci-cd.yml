@@ -69,6 +69,44 @@ jobs:
           fi
 
   # ============================================
+  # DB TYPES SYNC CHECK
+  # ============================================
+  check-types-sync:
+    name: Verify DB Types in Sync
+    runs-on: ubuntu-latest
+    needs: lint
+    if: >
+      contains(toJSON(github.event.head_commit.modified), '.sql') ||
+      contains(toJSON(github.event.head_commit.modified), 'database.types.ts')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Audit types
+        run: |
+          echo "Verificando se rpc-overrides está sincronizado com migrations..."
+          bash scripts/audit-types.sh
+          if [ $? -ne 0 ]; then
+            echo "❌ database.types.ts está dessincronizado com as migrations."
+            echo "   Execute: ./scripts/regenerate-types.sh"
+            exit 1
+          fi
+
+  # ============================================
   # TEST COVERAGE
   # ============================================
   test-coverage:
@@ -94,7 +132,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run test coverage
-        run: pnpm --filter @versix/web test:coverage -- --coverage.thresholds.statements=40
+        run: pnpm --filter @versix/web test:coverage -- --coverage.thresholds.statements=50
 
   # ============================================
   # DEPLOY PREVIEW (apenas para PRs)
@@ -104,6 +142,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint, test-coverage]
     if: github.event_name == 'pull_request'
+    outputs:
+      deployment_url: ${{ steps.deploy.outputs.deployment_url }}
     environment:
       name: preview
       url: ${{ steps.deploy.outputs.deployment_url }}
@@ -225,3 +265,33 @@ jobs:
         run: |
           echo "✅ Deploy para produção concluído com sucesso!"
           echo "🌐 URL: https://app.versixnorma.com.br"
+
+  # ============================================
+  # LIGHTHOUSE PERFORMANCE (apenas PRs com preview)
+  # ============================================
+  lighthouse:
+    name: Lighthouse Performance
+    runs-on: ubuntu-latest
+    needs: [deploy-preview]
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v11
+        with:
+          urls: |
+            ${{ needs.deploy-preview.outputs.deployment_url }}/
+            ${{ needs.deploy-preview.outputs.deployment_url }}/login
+          budgetPath: ./scripts/lighthouse-budget.json
+          uploadArtifacts: true
+
+      - name: Assert performance score
+        run: |
+          SCORE=$(jq '.categories.performance.score' .lighthouseci/lhr-*.json 2>/dev/null | head -1 || echo "null")
+          echo "Performance score: $SCORE"
+          if [ "$SCORE" != "null" ] && [ "$(echo "$SCORE < 0.8" | bc -l 2>/dev/null || echo 0)" = "1" ]; then
+            echo "❌ Performance score below 0.8"
+            exit 1
+          fi

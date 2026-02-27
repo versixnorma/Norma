@@ -2,12 +2,13 @@ import { createAdminClient } from '@/lib/supabase';
 import { createClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 
-async function resolveParams(params: unknown): Promise<{ id?: string } | undefined> {
-  return await Promise.resolve(params as { id?: string } | undefined);
-}
+const PurchaseSchema = z.object({
+  idempotencyKey: z.string().uuid('Idempotency key deve ser UUID'),
+});
 
-export async function POST(_request: NextRequest, context: { params: unknown }) {
+export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const authClient = createClient(await cookies());
   const {
     data: { user },
@@ -18,8 +19,18 @@ export async function POST(_request: NextRequest, context: { params: unknown }) 
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const admin = createAdminClient();
+  // Validar body com Zod
+  let body: z.infer<typeof PurchaseSchema>;
+  try {
+    body = PurchaseSchema.parse(await request.json());
+  } catch {
+    return NextResponse.json({ error: 'idempotencyKey (UUID) é obrigatório' }, { status: 400 });
+  }
 
+  const admin = createAdminClient();
+  const { id: discountId } = await context.params;
+
+  // Resolver perfil e condomínio ativo
   type UsuarioProfile = {
     id: string;
     condominio_id?: string | null;
@@ -28,13 +39,7 @@ export async function POST(_request: NextRequest, context: { params: unknown }) 
 
   const { data: profile } = (await admin
     .from('usuarios')
-    .select(
-      `
-      id,
-      condominio_id,
-      usuario_condominios (condominio_id, status)
-    `
-    )
+    .select('id, condominio_id, usuario_condominios(condominio_id, status)')
     .eq('auth_id', user.id)
     .single()) as { data: UsuarioProfile | null; error: unknown };
 
@@ -42,93 +47,37 @@ export async function POST(_request: NextRequest, context: { params: unknown }) 
     return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
   }
 
-  type UserCondominio = { condominio_id: string; status?: string };
+  type UC = { condominio_id: string; status?: string };
   const activeCondo =
-    profile.usuario_condominios?.find(
-      (uc: UserCondominio) => uc.status === 'active' || uc.status === 'ativo'
+    (profile.usuario_condominios as UC[])?.find(
+      (uc) => uc.status === 'active' || uc.status === 'ativo'
     )?.condominio_id || profile.condominio_id;
 
-  const params = await resolveParams(context.params);
-  const discountId = params?.id;
-  if (!discountId) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
+  // RPC atômica — toda a lógica é server-side em uma única transação
+  const { data: result, error } = await admin.rpc('marketplace_purchase' as never, {
+    p_discount_id: discountId,
+    p_usuario_id: profile.id,
+    p_condominio_id: activeCondo,
+    p_idempotency_key: body.idempotencyKey,
+  } as never);
 
-  const { data: discount, error: discountError } = await admin
-    .from('marketplace_discounts')
-    .select('*')
-    .eq('id', discountId)
-    .single();
-
-  if (discountError || !discount) {
-    return NextResponse.json({ error: 'Desconto não encontrado' }, { status: 404 });
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  if (discount.status !== 'active') {
-    return NextResponse.json({ error: 'Desconto indisponível' }, { status: 400 });
+  // RPC retorna { error: "..." } ou { data: { id: "..." } }
+  const rpcResult = result as Record<string, unknown>;
+  if (rpcResult.error) {
+    const status =
+      rpcResult.error === 'Desconto não encontrado'
+        ? 404
+        : rpcResult.error === 'Limite de uso atingido'
+          ? 409
+          : 400;
+    return NextResponse.json({ error: rpcResult.error }, { status });
   }
 
-  const now = new Date();
-  if (discount.valid_from && new Date(discount.valid_from) > now) {
-    return NextResponse.json({ error: 'Desconto ainda não disponível' }, { status: 400 });
-  }
-  if (discount.valid_until && new Date(discount.valid_until) < now) {
-    return NextResponse.json({ error: 'Desconto expirado' }, { status: 400 });
-  }
-  if (discount.usage_limit && (discount.usage_count ?? 0) >= discount.usage_limit) {
-    return NextResponse.json({ error: 'Limite de uso atingido' }, { status: 400 });
-  }
-
-  const { data: partner } = await admin
-    .from('marketplace_partners')
-    .select('commission_rate')
-    .eq('id', discount.partner_id)
-    .single();
-
-  const original = Number(discount.original_price || 0);
-  let finalAmount = Number(discount.discounted_price || 0);
-  let discountAmount = 0;
-
-  if (!finalAmount) {
-    if (discount.discount_type === 'percentage' && original > 0) {
-      discountAmount = original * (Number(discount.discount_value) / 100);
-      finalAmount = Math.max(original - discountAmount, 0);
-    } else if (discount.discount_type === 'fixed' && original > 0) {
-      discountAmount = Number(discount.discount_value);
-      finalAmount = Math.max(original - discountAmount, 0);
-    } else {
-      finalAmount = original;
-    }
-  } else if (original > 0) {
-    discountAmount = Math.max(original - finalAmount, 0);
-  }
-
-  const commissionRate = Number(partner?.commission_rate || 0);
-  const commissionAmount = commissionRate > 0 ? (finalAmount * commissionRate) / 100 : null;
-
-  const { data: transaction, error: txError } = await admin
-    .from('marketplace_transactions')
-    .insert({
-      discount_id: discount.id,
-      usuario_id: profile.id,
-      condominio_id: activeCondo || null,
-      partner_id: discount.partner_id,
-      transaction_amount: original || finalAmount,
-      discount_amount: discountAmount || null,
-      final_amount: finalAmount,
-      commission_amount: commissionAmount,
-      status: 'pending',
-      payment_method: 'marketplace',
-    })
-    .select('id')
-    .single();
-
-  if (txError) {
-    return NextResponse.json({ error: txError.message }, { status: 400 });
-  }
-
-  await admin
-    .from('marketplace_discounts')
-    .update({ usage_count: (discount.usage_count ?? 0) + 1 })
-    .eq('id', discount.id);
-
-  return NextResponse.json({ data: transaction });
+  return NextResponse.json(rpcResult, {
+    headers: rpcResult.idempotent ? { 'X-Idempotent-Replay': 'true' } : {},
+  });
 }

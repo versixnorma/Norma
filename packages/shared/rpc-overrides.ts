@@ -1,14 +1,18 @@
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- RPCs não-geradas usam `as any` no nome da função (padrão do projeto)
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database, Json } from './database.types';
+import type { RpcExtensions } from './database-rpc-extensions';
 
-type TypedClient = SupabaseClient<Database>;
+type BaseClient = SupabaseClient<Database>;
 
-export async function rpcContarNaoLidas(client: TypedClient, userId: string) {
+// ─── RPCs nativas (supabase gen types já infere corretamente) ───────────────
+
+export async function rpcContarNaoLidas(client: BaseClient, userId: string) {
   return client.rpc('contar_nao_lidas', { p_usuario_id: userId });
 }
 
 export async function rpcConfirmarLeitura(
-  client: TypedClient,
+  client: BaseClient,
   notificacaoId: string,
   userId: string,
   canal: 'push' | 'email' | 'whatsapp' | 'sms' | 'voz' | 'in_app' | 'mural' = 'in_app'
@@ -20,11 +24,20 @@ export async function rpcConfirmarLeitura(
   });
 }
 
-export async function rpcMarcarTodasLidas(client: TypedClient, userId: string) {
+export async function rpcMarcarTodasLidas(client: BaseClient, userId: string) {
   return client.rpc('marcar_todas_lidas', { p_usuario_id: userId });
 }
 
-interface EnviarNotificacaoArgs {
+// ─── encerrar_assembleia: presente nos tipos gerados, Args compatíveis ───────
+
+export async function rpcEncerrarAssembleia(client: BaseClient, assembleiaId: string) {
+  return client.rpc('encerrar_assembleia', { p_assembleia_id: assembleiaId });
+}
+
+// ─── enviar_notificacao: presente nos tipos gerados mas com interface
+//     parcialmente incompatível (p_tipo: string vs enum). Cast documentado. ──
+
+export interface EnviarNotificacaoArgs {
   p_condominio_id: string;
   p_tipo: string;
   p_titulo: string;
@@ -38,46 +51,83 @@ interface EnviarNotificacaoArgs {
   p_criado_por: string;
 }
 
-export async function rpcEnviarNotificacao(client: TypedClient, args: EnviarNotificacaoArgs) {
-  return client.rpc('enviar_notificacao' as never, args as never);
+export async function rpcEnviarNotificacao(client: BaseClient, args: EnviarNotificacaoArgs) {
+  return client.rpc(
+    'enviar_notificacao',
+    args as unknown as Database['public']['Functions']['enviar_notificacao']['Args']
+  );
 }
 
-export function queryNotificacoesDashboard(client: TypedClient, condominioId: string) {
-  return client
-    .from('v_notificacoes_dashboard' as never)
-    .select('*')
-    .eq('condominio_id', condominioId);
-}
+// ─── registrar_push_token: presente nos tipos gerados mas gerador exige
+//     p_usuario_id que é derivado do auth na função SQL. Cast documentado. ───
 
-interface RegistrarPushTokenArgs {
+export interface RegistrarPushTokenArgs {
   p_token: string;
   p_provider?: string;
 }
 
-export async function rpcRegistrarPushToken(client: TypedClient, args: RegistrarPushTokenArgs) {
-  return client.rpc('registrar_push_token' as never, args as never);
+export async function rpcRegistrarPushToken(client: BaseClient, args: RegistrarPushTokenArgs) {
+  return client.rpc(
+    'registrar_push_token',
+    args as unknown as Database['public']['Functions']['registrar_push_token']['Args']
+  );
 }
 
-export async function rpcRemoverPushToken(client: TypedClient, token: string) {
-  return client.rpc('remover_fcm_token' as never, { p_token: token } as never);
+// ─── RPCs ausentes no gerador — `as any` APENAS no nome da RPC ───────────────
+// Padrão documentado do projeto para table/RPC names não presentes nos tipos gerados.
+// Os args permanecem fortemente tipados via RpcExtensions.
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+export async function rpcRemoverPushToken(client: BaseClient, token: string) {
+  return client.rpc('remover_fcm_token' as any, {
+    p_token: token,
+  } satisfies RpcExtensions['remover_fcm_token']['Args']);
 }
 
-export async function rpcConvocarAssembleia(client: TypedClient, assembleiaId: string) {
-  return client.rpc('convocar_assembleia' as never, { p_assembleia_id: assembleiaId } as never);
+export async function rpcConvocarAssembleia(client: BaseClient, assembleiaId: string) {
+  return client.rpc('convocar_assembleia' as any, {
+    p_assembleia_id: assembleiaId,
+  } satisfies RpcExtensions['convocar_assembleia']['Args']);
 }
 
-export async function rpcIniciarAssembleia(client: TypedClient, assembleiaId: string) {
-  return client.rpc('iniciar_assembleia' as never, { p_assembleia_id: assembleiaId } as never);
+export async function rpcIniciarAssembleia(client: BaseClient, assembleiaId: string) {
+  return client.rpc('iniciar_assembleia' as any, {
+    p_assembleia_id: assembleiaId,
+  } satisfies RpcExtensions['iniciar_assembleia']['Args']);
 }
 
-export async function rpcEncerrarAssembleia(client: TypedClient, assembleiaId: string) {
-  return client.rpc('encerrar_assembleia' as never, { p_assembleia_id: assembleiaId } as never);
+export async function rpcRetentarWebhook(client: BaseClient, entregaId: string) {
+  return client.rpc('retentar_webhook' as any, {
+    p_entrega_id: entregaId,
+  } satisfies RpcExtensions['retentar_webhook']['Args']);
 }
 
-export async function rpcRetentarWebhook(client: TypedClient, entregaId: string) {
-  return client.rpc('retentar_webhook' as never, { p_entrega_id: entregaId } as never);
+export async function rpcSetAppUserId(client: BaseClient, userId: string) {
+  return client.rpc('set_app_user_id' as any, {
+    user_id: userId,
+  } satisfies RpcExtensions['set_app_user_id']['Args']);
 }
 
-export async function rpcSetAppUserId(client: TypedClient, userId: string) {
-  return client.rpc('set_app_user_id' as never, { user_id: userId } as never);
+export async function rpcMarketplacePurchase(
+  client: BaseClient,
+  args: RpcExtensions['marketplace_purchase']['Args']
+) {
+  return client.rpc('marketplace_purchase' as any, args);
 }
+
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
+// ─── View queries (views não-geradas pelo supabase gen types) ────────────────
+
+export function queryNotificacoesDashboard(client: BaseClient, condominioId: string) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (client as any)
+    .from('v_notificacoes_dashboard')
+    .select('*')
+    .eq('condominio_id', condominioId);
+}
+
+// Re-exportar Json para compatibilidade com importações legadas
+export type { Json };
+export type MarketplacePurchaseArgs = RpcExtensions['marketplace_purchase']['Args'];
